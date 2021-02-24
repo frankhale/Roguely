@@ -46,6 +46,8 @@ int main(int argc, char* args[])
     }
 
     SDL_Surface* window_surface = SDL_GetWindowSurface(window);
+    SDL_Surface* window_icon_surface = IMG_Load(WINDOW_ICON_PATH);
+    SDL_SetWindowIcon(window, window_icon_surface);
 
     if (!window_surface)
     {
@@ -59,9 +61,6 @@ int main(int argc, char* args[])
     auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH);
     auto text = std::make_shared<Text>();
     text->LoadFont(FONT_PATH);
-
-    SDL_Surface* window_icon_surface = IMG_Load(WINDOW_ICON_PATH);
-    SDL_SetWindowIcon(window, window_icon_surface);
 
     bool keep_window_open = true;
     while (keep_window_open)
@@ -86,6 +85,7 @@ int main(int argc, char* args[])
 
             text->DrawText(renderer, 10, 110, "Simple tilemap:");
 
+            // Draw simple tile based map
             for (int r = 0; r < 10; r++)
             {
                 for (int c = 0; c < 10; c++)
