@@ -9,8 +9,8 @@
 const int MAP_WIDTH = 100;
 const int MAP_HEIGHT = 100;
 
-const int VIEW_PORT_HEIGHT = 10;
-const int VIEW_PORT_WIDTH = 10;
+const int VIEW_PORT_WIDTH = 22;
+const int VIEW_PORT_HEIGHT = 13;
 
 enum class MovementDirection {
 		LEFT,
@@ -37,6 +37,8 @@ public:
 		void MovePlayerDown();
 		void MovePlayerUp();
 
+		int GetPlayerHealth() const { return player->GetHealth(); }
+		int GetPlayerScore() const { return player->GetScore(); }
 		int GetPlayerX() const { return player->X(); }
 		int GetPlayerY() const { return player->Y(); }
 		int GetViewPortX() const { return view_port_x; }
@@ -54,4 +56,5 @@ private:
 
 		int map[MAP_HEIGHT][MAP_WIDTH];
 };
+
 

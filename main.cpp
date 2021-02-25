@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <SDL.h>
 #include <SDL_keycode.h>
 #include <SDL_image.h>
@@ -8,7 +9,7 @@
 #include "Game.h"
 //#include <lua.hpp>
 
-const int WINDOW_WIDTH = 1024;
+const int WINDOW_WIDTH = 1056;
 const int WINDOW_HEIGHT = 768;
 
 #define WINDOW_ICON_PATH "assets/icon.png"
@@ -93,6 +94,9 @@ int main(int argc, char* args[])
 		auto text = std::make_shared<Text>();
 		text->LoadFont(FONT_PATH, 40);
 
+		std::cout << "view port width = " << game->GetViewPortWidth() << std::endl;
+		std::cout << "view port height = " << game->GetViewPortHeight() << std::endl;
+
 		bool keep_window_open = true;
 		while (keep_window_open)
 		{
@@ -119,6 +123,9 @@ int main(int argc, char* args[])
 										game->MovePlayerDown();
 										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
 										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
+
+										std::cout << "view port width = " << game->GetViewPortWidth() << std::endl;
+										std::cout << "view port height = " << game->GetViewPortHeight() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_LEFT)
 								{
@@ -154,6 +161,14 @@ int main(int argc, char* args[])
 										}
 								}
 						}
+
+						std::ostringstream player_health;
+						player_health << "Health: " << game->GetPlayerHealth();
+						std::ostringstream player_score;
+						player_score << "Score: " << game->GetPlayerScore();
+
+						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 24, player_health.str().c_str());
+						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 24, player_score.str().c_str());
 
 						SDL_RenderPresent(renderer);
 						SDL_Delay(1000 / 60);

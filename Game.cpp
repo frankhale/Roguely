@@ -2,7 +2,7 @@
 
 Game::Game()
 {
-		srand(time(NULL));
+		srand((unsigned int)time(NULL));
 
 		view_port_x = 0;
 		view_port_y = 0;
