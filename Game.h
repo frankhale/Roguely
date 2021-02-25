@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <iostream>
-#include <stdlib.h>
-#include <time.h>
+#include <vector>
+#include <cstdlib> 
+#include <ctime> 
+
 #include "Player.h"
 
 const int MAP_WIDTH = 100;
@@ -19,16 +21,20 @@ enum class MovementDirection {
 		DOWN
 };
 
+struct Point
+{
+		int x, y;
+};
+
+struct Entity
+{
+		Point point;
+};
+
 class Game
 {
 public:
 		Game();
-
-		const int COIN_VALUE = 50;
-		const int POTION_VALUE = 25;
-		const int NUMBER_OF_COINS_ON_MAP = 50;
-		const int NUMBER_OF_POTIONS_ON_MAP = 10;
-		const int NUMBER_OF_ENEMIES_ON_MAP = 25;
 
 		auto Map() const { return map; }
 
@@ -48,13 +54,27 @@ public:
 
 		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);
 		void UpdatePlayerViewPortPoints(int playerX, int playerY);
+		void UpdateAfterPlayerMoved();
+
+		Point GenerateRandomPoint();
+
+		std::vector<Entity> GetCoins() const { return coins; }
+
+		void SpawnCoins();
 
 private:
 		std::shared_ptr<Player> player;
 
 		int view_port_x, view_port_y, view_port_width, view_port_height;
-
 		int map[MAP_HEIGHT][MAP_WIDTH];
+
+		const int COIN_VALUE = 50;
+		const int POTION_VALUE = 25;
+		const int NUMBER_OF_COINS_ON_MAP = 150;
+		const int NUMBER_OF_POTIONS_ON_MAP = 50;
+		const int NUMBER_OF_ENEMIES_ON_MAP = 50;
+
+		std::vector<Entity> coins;
 };
 
 

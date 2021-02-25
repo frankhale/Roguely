@@ -115,29 +115,18 @@ int main(int argc, char* args[])
 								if (e.key.keysym.sym == SDLK_UP)
 								{
 										game->MovePlayerUp();
-										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
-										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_DOWN)
 								{
 										game->MovePlayerDown();
-										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
-										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
-
-										std::cout << "view port width = " << game->GetViewPortWidth() << std::endl;
-										std::cout << "view port height = " << game->GetViewPortHeight() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_LEFT)
 								{
 										game->MovePlayerLeft();
-										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
-										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_RIGHT)
 								{
 										game->MovePlayerRight();
-										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
-										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
 								/*else if (e.key.keysym.sym == SDLK_SPACE)
 								{
@@ -154,6 +143,15 @@ int main(int argc, char* args[])
 										int dy = (r * 24) - (game->GetViewPortY() * 24);
 
 										sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
+
+										for (auto& elem : game->GetCoins())
+										{
+												if (elem.point.x == c &&
+														elem.point.y == r)
+												{														
+														sprite_sheet->drawSprite(renderer, COIN, dx, dy);
+												}
+										}
 
 										if (r == game->GetPlayerY() && c == game->GetPlayerX())
 										{

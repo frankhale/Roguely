@@ -2,7 +2,7 @@
 
 Game::Game()
 {
-		srand((unsigned int)time(NULL));
+		std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 		view_port_x = 0;
 		view_port_y = 0;
@@ -25,7 +25,7 @@ Game::Game()
 						}
 						else
 						{
-								if ((rand() % 100) <= 5 && height != player->Y() && width != player->X())
+								if ((std::rand() % 100) <= 5 && height != player->Y() && width != player->X())
 								{
 										map[height][width] = 0;
 								}
@@ -36,6 +36,8 @@ Game::Game()
 						}
 				}
 		}
+
+		SpawnCoins();
 }
 
 bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId)
@@ -52,6 +54,7 @@ void Game::MovePlayerLeft()
 
 		player->SetX(player->X() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
+		UpdateAfterPlayerMoved();
 };
 
 void Game::MovePlayerRight()
@@ -60,6 +63,7 @@ void Game::MovePlayerRight()
 
 		player->SetX(player->X() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
+		UpdateAfterPlayerMoved();
 };
 
 void Game::MovePlayerDown()
@@ -68,6 +72,7 @@ void Game::MovePlayerDown()
 
 		player->SetY(player->Y() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
+		UpdateAfterPlayerMoved();
 };
 
 void Game::MovePlayerUp()
@@ -76,6 +81,7 @@ void Game::MovePlayerUp()
 
 		player->SetY(player->Y() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
+		UpdateAfterPlayerMoved();
 };
 
 void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
@@ -91,4 +97,42 @@ void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
 
 		view_port_width = view_port_x + (VIEW_PORT_WIDTH * 2);
 		view_port_height = view_port_y + (VIEW_PORT_HEIGHT * 2);
+}
+
+void Game::UpdateAfterPlayerMoved()
+{
+		coins.erase(std::remove_if(coins.begin(), coins.end(),
+				[&](Entity e) { 
+						if(e.point.x == player->X() && e.point.y == player->Y())
+						{
+								player->SetScore(player->GetScore() + COIN_VALUE);
+								return true;
+						}
+						return false;
+				}), coins.end());
+}
+
+Point Game::GenerateRandomPoint()
+{
+		int r = 0;
+		int c = 0;
+
+		do
+		{
+				r = rand() % (MAP_HEIGHT - 1);
+				c = rand() % (MAP_WIDTH - 1);
+		}
+		while (map[r][c] == 0 || player->X() == c && player->Y() == r);
+
+		return { c, r };
+}
+
+void Game::SpawnCoins()
+{
+		for (int i = 0; i < NUMBER_OF_COINS_ON_MAP; i++)
+		{				
+				Entity e;
+				e.point = GenerateRandomPoint();
+				coins.push_back(e);
+		}
 }
