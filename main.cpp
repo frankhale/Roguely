@@ -5,27 +5,28 @@
 #include <SDL_ttf.h>
 #include "SpriteSheet.h"
 #include "Text.h"
+#include "Game.h"
 //#include <lua.hpp>
 
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
+const int WINDOW_WIDTH = 1024;
+const int WINDOW_HEIGHT = 768;
 
 #define WINDOW_ICON_PATH "assets/icon.png"
 #define GAME_TILESET_PATH "assets/tileset2.png"
 #define FONT_PATH "assets/VT323-Regular.ttf"
 
-int map[10][10] = {
-		{ 0,0,0,0,0,0,0,0,0,0 },
-		{ 0,9,9,9,9,4,9,9,9,0 },
-		{ 0,9,3,9,9,9,9,9,9,0 },
-		{ 0,9,9,9,9,9,14,9,9,0 },
-		{ 0,9,9,9,5,9,9,9,9,0 },
-		{ 0,9,9,9,9,9,9,14,9,0 },
-		{ 0,9,1,9,9,9,9,9,9,0 },
-		{ 0,9,9,9,9,9,2,9,9,0 },
-		{ 0,9,9,12,9,9,9,9,6,0 },
-		{ 0,0,0,0,0,0,0,0,0,0 },
-};
+//int map[10][10] = {
+//		{ 0,0,0,0,0,0,0,0,0,0 },
+//		{ 0,9,9,9,9,4,9,9,9,0 },
+//		{ 0,9,3,9,9,9,9,9,9,0 },
+//		{ 0,9,9,9,9,9,14,9,9,0 },
+//		{ 0,9,9,9,5,9,9,9,9,0 },
+//		{ 0,9,9,9,9,9,9,14,9,0 },
+//		{ 0,9,1,9,9,9,9,9,9,0 },
+//		{ 0,9,9,9,9,9,2,9,9,0 },
+//		{ 0,9,9,12,9,9,9,9,6,0 },
+//		{ 0,0,0,0,0,0,0,0,0,0 },
+//};
 
 int main(int argc, char* args[])
 {
@@ -87,6 +88,7 @@ int main(int argc, char* args[])
 		SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
 		SDL_Renderer* icon_renderer = SDL_CreateRenderer(window, -1, 0);
 
+		auto game = std::make_shared<Game>();
 		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH, 24, 24);
 		auto text = std::make_shared<Text>();
 		text->LoadFont(FONT_PATH, 40);
@@ -108,49 +110,53 @@ int main(int argc, char* args[])
 						case SDL_KEYDOWN:
 								if (e.key.keysym.sym == SDLK_UP)
 								{
-										text->DrawText(renderer, 10, WINDOW_HEIGHT - 50, "Up Key Pressed");
+										game->MovePlayerUp();
+										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
+										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_DOWN)
 								{
-										text->DrawText(renderer, 10, WINDOW_HEIGHT - 50, "Down Key Pressed");
+										game->MovePlayerDown();
+										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
+										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_LEFT)
 								{
-										text->DrawText(renderer, 10, WINDOW_HEIGHT - 50, "Left Key Pressed");
+										game->MovePlayerLeft();
+										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
+										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
 								else if (e.key.keysym.sym == SDLK_RIGHT)
 								{
-										text->DrawText(renderer, 10, WINDOW_HEIGHT - 50, "Right Key Pressed");
+										game->MovePlayerRight();
+										//std::cout << "player X = " << game->GetPlayerX() << std::endl;
+										//std::cout << "player Y = " << game->GetPlayerY() << std::endl;
 								}
-								else if (e.key.keysym.sym == SDLK_SPACE)
+								/*else if (e.key.keysym.sym == SDLK_SPACE)
 								{
 										text->DrawText(renderer, 10, WINDOW_HEIGHT - 50, "Space bar Pressed");
-								}
+								}*/
 								break;
 						}
 
-						text->DrawText(renderer, 10, 10, "Sprites in my spritesheet:");
-
-						// Draw sprite sheet tiles
-						for (int i = 0; i < sprite_sheet->totalSprites(); i++)
+						for (int r = 0; r < game->GetViewPortHeight(); r++)
 						{
-								sprite_sheet->drawSprite(renderer, i, (10 + i * 24), 70);
-						}
-
-						text->DrawText(renderer, 10, 110, "Simple tilemap:");
-
-						// Draw simple tile based map
-						for (int r = 0; r < 10; r++)
-						{
-								for (int c = 0; c < 10; c++)
+								for (int c = 0; c < game->GetViewPortWidth(); c++)
 								{
-										sprite_sheet->drawSprite(renderer, map[r][c], 10 + c * 24, 160 + r * 24);
+										int dx = (c * 24) - (game->GetViewPortX() * 24);
+										int dy = (r * 24) - (game->GetViewPortY() * 24);
+
+										sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
+
+										if (r == game->GetPlayerY() && c == game->GetPlayerX())
+										{
+												sprite_sheet->drawSprite(renderer, 3, dx, dy);
+										}
 								}
 						}
 
 						SDL_RenderPresent(renderer);
-
-						SDL_Delay(1000/60);
+						SDL_Delay(1000 / 60);
 				}
 		}
 
