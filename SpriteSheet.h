@@ -3,6 +3,9 @@
 #include <SDL_image.h>
 
 #pragma once
+
+#define NUM_SPRITES 16
+
 enum Sprites {
     WALL = 0,
     HEALTH_GEM = 1,
@@ -29,11 +32,12 @@ public:
     ~SpriteSheet();
 
     void drawSprite(SDL_Renderer *renderer, int sprite_id, int x, int y);
+    int totalSprites() const { return NUM_SPRITES; }
 
     SDL_Texture* get_spritesheet_texture() const { return spritesheet_texture; }
 
 private:
-    SDL_Rect sprites[16];
+    SDL_Rect sprites[NUM_SPRITES];
 
     SDL_Texture* spritesheet_texture;
 };

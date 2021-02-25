@@ -9,7 +9,7 @@ public:
 		Text();
 		~Text();
 
-		int LoadFont(const char* path);
+		int LoadFont(const char* path, int ptsize);
 		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text);
 
 private:
