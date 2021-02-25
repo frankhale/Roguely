@@ -46,11 +46,11 @@ int main(int argc, char* args[])
 		//		std::cout << lua_tostring(L, -1) << std::endl;
 		//}
 
-		if (SDL_Init(SDL_INIT_VIDEO) < 0)
-		{
-				std::cout << "Failed to initialize the SDL2 library: " << SDL_GetError() << std::endl;
-				return -1;
-		}
+		//if (SDL_Init(SDL_INIT_VIDEO) < 0)
+		//{
+		//		std::cout << "Failed to initialize the SDL2 library: " << SDL_GetError() << std::endl;
+		//		return -1;
+		//}
 
 		IMG_Init(IMG_INIT_PNG);
 		TTF_Init();
@@ -87,7 +87,7 @@ int main(int argc, char* args[])
 		SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
 		SDL_Renderer* icon_renderer = SDL_CreateRenderer(window, -1, 0);
 
-		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH);
+		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH, 24, 24);
 		auto text = std::make_shared<Text>();
 		text->LoadFont(FONT_PATH, 40);
 

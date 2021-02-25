@@ -28,7 +28,7 @@ enum Sprites {
 class SpriteSheet
 {
 public:
-    SpriteSheet(SDL_Renderer *renderer, const char* path);
+    SpriteSheet(SDL_Renderer *renderer, const char* path, int sw, int sh);
     ~SpriteSheet();
 
     void drawSprite(SDL_Renderer *renderer, int sprite_id, int x, int y);
@@ -37,8 +37,8 @@ public:
     SDL_Texture* get_spritesheet_texture() const { return spritesheet_texture; }
 
 private:
+    int sprite_width, sprite_height;
     SDL_Rect sprites[NUM_SPRITES];
-
     SDL_Texture* spritesheet_texture;
 };
 

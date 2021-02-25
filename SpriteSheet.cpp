@@ -1,30 +1,30 @@
 #include "SpriteSheet.h"
 
-SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path)
+SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int sh)
 {
 		SDL_Surface* game_tileset = IMG_Load(path);
 		spritesheet_texture = SDL_CreateTextureFromSurface(renderer, game_tileset);
 		SDL_FreeSurface(game_tileset);
 
-		const int width = 24;
-		const int height = 24;
+		sprite_width = sw;
+		sprite_height = sh;
 
-		sprites[WALL] = { 0, 0, width, height };
-		sprites[HEALTH_GEM] = { 24, 0, width, height };
-		sprites[ATTACK_BONUS_GEM] = { 2 * 24, 0, width, height };
-		sprites[PLAYER] = { 3 * 24, 0, width, height  };
-		sprites[SPIDER] = { 4 * 24, 0, width, height };
-		sprites[LURCHER] = { 5 * 24, 0, width, height };		
-		sprites[GOLDEN_CANDLE] = { 6 * 24, 0, width, height };
-		sprites[DOWN_LADDER] = { 7 * 24, 0, width, height };
-		sprites[UP_LADDER] = { 8 * 24, 0, width, height };
-		sprites[GROUND] = { 9 * 24, 0, width, height };
-		sprites[WATER] = { 10 * 24, 0, width, height };
-		sprites[GRASS] = { 11 * 24, 0, width, height };
-		sprites[CRAB] = { 12 * 24, 0, width, height };
-		sprites[TREASURE_CHEST] = { 13 * 24, 0, width, height };
-		sprites[COIN] = { 14 * 24, 0, width, height };
-		sprites[DOOR] = { 15 * 24, 0, width, height };
+		sprites[WALL] = { 0, 0, sprite_width, sprite_height };
+		sprites[HEALTH_GEM] = { sprite_width, 0, sprite_width, sprite_height };
+		sprites[ATTACK_BONUS_GEM] = { 2 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[PLAYER] = { 3 * sprite_width, 0, sprite_width, sprite_height  };
+		sprites[SPIDER] = { 4 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[LURCHER] = { 5 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[GOLDEN_CANDLE] = { 6 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[DOWN_LADDER] = { 7 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[UP_LADDER] = { 8 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[GROUND] = { 9 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[WATER] = { 10 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[GRASS] = { 11 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[CRAB] = { 12 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[TREASURE_CHEST] = { 13 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[COIN] = { 14 * sprite_width, 0, sprite_width, sprite_height };
+		sprites[DOOR] = { 15 * sprite_width, 0, sprite_width, sprite_height };
 }
 
 void SpriteSheet::drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y)
