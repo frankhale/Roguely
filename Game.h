@@ -14,11 +14,32 @@ const int MAP_HEIGHT = 100;
 const int VIEW_PORT_WIDTH = 22;
 const int VIEW_PORT_HEIGHT = 13;
 
-enum class MovementDirection {
+enum class MovementDirection
+{
 		LEFT,
 		RIGHT,
 		UP,
 		DOWN
+};
+
+enum class EntityType
+{
+		Enemy,
+		Pickup
+};
+
+enum class EnemyType
+{
+		Spiper,
+		Lurcher,
+		Crab,
+		Bug
+};
+
+enum class WhoAmI
+{
+		Player,
+		Enemy
 };
 
 struct Point
@@ -26,9 +47,32 @@ struct Point
 		int x, y;
 };
 
+class Component {};
+class StatComponent : public Component
+{
+public:
+		int GetHealth() const { return health; }
+		int GetAttack() const { return attack; }
+		void SetHealth(int h) { health = h; }
+		void SetAttack(int a) { attack = a; }
+
+private:
+		int health, attack;
+};
+
 struct Entity
 {
 		Point point;
+		EntityType entityType;
+		std::shared_ptr<std::vector<Component>> components;
+		int id;
+};
+
+struct TileWalkableInfo
+{
+		bool walkable;
+		Point point;
+		Entity entity;
 };
 
 class Game
@@ -44,6 +88,7 @@ public:
 		void MovePlayerDown();
 		void MovePlayerUp();
 
+		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }
 		int GetPlayerX() const { return player->X(); }
@@ -53,18 +98,21 @@ public:
 		int GetViewPortWidth() const { return view_port_width; }
 		int GetViewPortHeight() const { return view_port_height; }
 
+		bool IsEntityLocationTraversable(int x, int y, std::vector<Entity>& entities, WhoAmI whoAmI, MovementDirection dir);
+		bool IsTilePlayerTile(int x, int y, MovementDirection dir);
 		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);
 		void UpdatePlayerViewPortPoints(int playerX, int playerY);
 		void UpdateAfterPlayerMoved();
 
 		Point GenerateRandomPoint();
 
-		std::vector<Entity> GetCoins() const { return coins; }
-		std::vector<Entity> GetHealthGems() const { return health_gems; }
-		
-		void SpawnEntities(std::vector<Entity> &entity, int num);
+		std::shared_ptr<std::vector<Entity>> GetCoins() const { return coins; }
+		std::shared_ptr<std::vector<Entity>> GetHealthGems() const { return health_gems; }
+		Entity GetGoldenCandle() const { return golden_candle; }
 
-		void RB_FOV();		
+		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, int id);
+
+		void RB_FOV();
 
 private:
 		std::shared_ptr<Player> player;
@@ -79,8 +127,9 @@ private:
 		const int NUMBER_OF_HEALTH_GEMS_ON_MAP = 50;
 		const int NUMBER_OF_ENEMIES_ON_MAP = 50;
 
-		std::vector<Entity> coins;
-		std::vector<Entity> health_gems;
+		std::shared_ptr<std::vector<Entity>> coins;
+		std::shared_ptr<std::vector<Entity>> health_gems;
+		Entity golden_candle;
 };
 
 

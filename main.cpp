@@ -69,13 +69,6 @@ int main(int argc, char* args[])
 				return -1;
 		}
 
-		//int ww = 0;
-		//int wh = 0;
-		//SDL_GetWindowSize(window, &ww, &wh);
-
-		//std::cout << "window width = " << ww << std::endl;
-		//std::cout << "window height = " << wh << std::endl;
-
 		SDL_Surface* window_surface = SDL_GetWindowSurface(window);
 		SDL_Surface* window_icon_surface = IMG_Load(WINDOW_ICON_PATH);
 		SDL_SetWindowIcon(window, window_icon_surface);
@@ -143,7 +136,7 @@ int main(int argc, char* args[])
 										{
 												sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
 
-												for (auto& elem : game->GetCoins())
+												for (auto& elem : *game->GetCoins())
 												{
 														if (elem.point.x == c &&
 																elem.point.y == r)
@@ -152,7 +145,7 @@ int main(int argc, char* args[])
 														}
 												}
 
-												for (auto& elem : game->GetHealthGems())
+												for (auto& elem : *game->GetHealthGems())
 												{
 														if (elem.point.x == c &&
 																elem.point.y == r)
@@ -174,12 +167,15 @@ int main(int argc, char* args[])
 						}
 
 						std::ostringstream player_health;
-						player_health << "Health: " << game->GetPlayerHealth();
 						std::ostringstream player_score;
+						std::ostringstream enemies_killed;
+						player_health << "Health: " << game->GetPlayerHealth();						
 						player_score << "Score: " << game->GetPlayerScore();
+						enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
 
-						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 24, player_health.str().c_str());
-						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 24, player_score.str().c_str());
+						text->DrawText(renderer, 10, WINDOW_HEIGHT - 7 * 20, player_health.str().c_str());
+						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
+						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
 
 						SDL_RenderPresent(renderer);
 						SDL_Delay(1000 / 60);

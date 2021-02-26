@@ -38,10 +38,41 @@ Game::Game()
 				}
 		}
 
-		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP);
-		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP);
+		coins = std::make_shared<std::vector<Entity>>();
+		health_gems = std::make_shared<std::vector<Entity>>();
+
+		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, 1);
+		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, 2);
+
+		golden_candle.entityType = EntityType::Pickup;
+		golden_candle.id = 100;
+		golden_candle.point = GenerateRandomPoint();
 
 		RB_FOV();
+}
+
+bool Game::IsEntityLocationTraversable(int x, int y, std::vector<Entity>& entities, WhoAmI whoAmI, MovementDirection dir)
+{
+		for (auto& e : entities)
+		{
+				if ((dir == MovementDirection::UP && e.point.y == y - 1 && e.point.x == x) ||
+						(dir == MovementDirection::DOWN && e.point.y == y + 1 && e.point.x == x) ||
+						(dir == MovementDirection::LEFT && e.point.y == y && e.point.x == x - 1) ||
+						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1))
+				{
+						return true;
+				}
+		}
+
+		return false;
+}
+
+bool Game::IsTilePlayerTile(int x, int y, MovementDirection dir)
+{
+		return ((dir == MovementDirection::UP && player->Y() == y - 1 && player->X() == x) ||
+				(dir == MovementDirection::DOWN && player->Y() == y + 1 && player->X() == x) ||
+				(dir == MovementDirection::LEFT && player->Y() == y && player->X() == x - 1) ||
+				(dir == MovementDirection::RIGHT && player->Y() == y && player->X() == x + 1));
 }
 
 bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId)
@@ -105,17 +136,17 @@ void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
 
 void Game::UpdateAfterPlayerMoved()
 {
-		coins.erase(std::remove_if(coins.begin(), coins.end(),
-				[&](Entity e) { 
-						if(e.point.x == player->X() && e.point.y == player->Y())
+		coins->erase(std::remove_if(coins->begin(), coins->end(),
+				[&](Entity e) {
+						if (e.point.x == player->X() && e.point.y == player->Y())
 						{
 								player->SetScore(player->GetScore() + COIN_VALUE);
 								return true;
 						}
 						return false;
-				}), coins.end());
+				}), coins->end());
 
-		health_gems.erase(std::remove_if(health_gems.begin(), health_gems.end(),
+		health_gems->erase(std::remove_if(health_gems->begin(), health_gems->end(),
 				[&](Entity e) {
 						if (e.point.x == player->X() && e.point.y == player->Y())
 						{
@@ -123,7 +154,7 @@ void Game::UpdateAfterPlayerMoved()
 								return true;
 						}
 						return false;
-				}), health_gems.end());
+				}), health_gems->end());
 
 		RB_FOV();
 }
@@ -137,27 +168,28 @@ Point Game::GenerateRandomPoint()
 		{
 				r = rand() % (MAP_HEIGHT - 1);
 				c = rand() % (MAP_WIDTH - 1);
-		}
-		while (map[r][c] == 0 || player->X() == c && player->Y() == r);
+		} 		while (map[r][c] == 0 || player->X() == c && player->Y() == r);
 
 		return { c, r };
 }
 
-void Game::SpawnEntities(std::vector<Entity> &entity, int num)
+void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, int id)
 {
 		for (int i = 0; i < num; i++)
 		{
 				Entity e;
 				e.point = GenerateRandomPoint();
-				entity.push_back(e);
+				e.entityType = entityType;
+				e.id = id;
+
+				entity->push_back(e);
 		}
 }
 
 void Game::RB_FOV()
-{		
-		float x = 0, y = 0;			
+{
+		float x = 0, y = 0;
 
-		//light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
 		for (int r = 0; r < MAP_HEIGHT; r++)
 		{
 				for (int c = 0; c < MAP_WIDTH; c++)
@@ -168,13 +200,13 @@ void Game::RB_FOV()
 
 		for (int i = 0; i < 360; i++)
 		{
-				x = (float) std::cos(i * 0.01745f);
-				y = (float) std::sin(i * 0.01745f);
-										
+				x = (float)std::cos(i * 0.01745f);
+				y = (float)std::sin(i * 0.01745f);
+
 				float ox = (float)player->X() + 0.5f;
 				float oy = (float)player->Y() + 0.5f;
 
-				for (int j = 0; j < 360; j++)
+				for (int j = 0; j < 20; j++)
 				{
 						light_map[(int)oy][(int)ox] = 2;
 
