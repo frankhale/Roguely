@@ -12,7 +12,7 @@ Game::Game()
 		map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
 		light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
 
-		player = std::make_shared<Player>(30, 1);
+		player = std::make_shared<Player>(60, 2);
 
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
 
@@ -231,7 +231,31 @@ void Game::UpdateAfterPlayerMoved()
 						return false;
 				}), health_gems->end());
 
-		//MoveEnemies();
+		treasure_chests->erase(std::remove_if(treasure_chests->begin(), treasure_chests->end(),
+				[&](Entity e) {
+						if (e.point.x == player->X() && e.point.y == player->Y())
+						{
+								auto health_recovery_chance = rand() % 100 <= 20;
+								auto extra_score_change = rand() % 100 <= 15;
+
+								if (health_recovery_chance)
+								{
+										player->SetHealth(player->GetHealth() + 15);
+								}
+
+								if (extra_score_change)
+								{
+										player->SetScore(player->GetScore() + 25);
+								}
+
+								player->SetScore(player->GetScore() + 10);
+
+								return true;
+						}
+						return false;
+				}), treasure_chests->end());
+
+		MoveEnemies();
 
 		RB_FOV();
 }
@@ -303,12 +327,17 @@ void Game::MoveEnemies()
 		}
 }
 
-void Game::InitiateAttackSequence(int x, int y)
+void Game::ClearInfo()
 {
 		win_lose_message.str("");
 		enemy_stats_info.str("");
 		player_combat_info.str("");
 		enemy_combat_info.str("");
+}
+
+void Game::InitiateAttackSequence(int x, int y)
+{
+		ClearInfo();
 
 		Entity enemy;
 		std::shared_ptr<StatComponent> stat_component = nullptr;
@@ -333,15 +362,16 @@ void Game::InitiateAttackSequence(int x, int y)
 		}
 
 		if (stat_component != nullptr)
-		{				
+		{
 				enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 
 				auto player_critical_strike = rand() % 100 <= 20;
 				auto enemy_critical_strike = rand() % 100 <= 20;
 
-				if (player_critical_strike) {
+				if (player_critical_strike)
+				{
 						enemy_stats_info.str("");
-						player_combat_info.str("");						
+						player_combat_info.str("");
 
 						auto damage = player->GetAttack() + 2 * 2;
 						stat_component->SetHealth(stat_component->GetHealth() - damage);
@@ -351,16 +381,17 @@ void Game::InitiateAttackSequence(int x, int y)
 				else
 				{
 						enemy_stats_info.str("");
-						player_combat_info.str("");						
+						player_combat_info.str("");
 
 						player_combat_info << " attack for " << player->GetAttack() << " damage!!!";
 						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 
-				if (enemy_critical_strike) {
+				if (enemy_critical_strike)
+				{
 						enemy_stats_info.str("");
-						enemy_combat_info.str("");
-						
+						player_combat_info.str("");
+
 						auto damage = stat_component->GetAttack() + 2 * 2;
 						player->SetHealth(player->GetHealth() - damage);
 						enemy_combat_info << " CRITICAL STRIKE for " << damage << " damage!!!";
@@ -368,8 +399,8 @@ void Game::InitiateAttackSequence(int x, int y)
 				}
 				else
 				{
-						enemy_stats_info.str("");						
-						enemy_combat_info.str("");
+						enemy_stats_info.str("");
+						player_combat_info.str("");
 
 						player->SetHealth(player->GetHealth() - stat_component->GetAttack());
 						enemy_combat_info << " attack for " << stat_component->GetAttack() << " damage";
@@ -378,7 +409,8 @@ void Game::InitiateAttackSequence(int x, int y)
 
 				if (stat_component->GetHealth() <= 0)
 				{
-						enemy_stats_info << " Ded!!!";
+						ClearInfo();
+
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
 
 						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
@@ -397,6 +429,8 @@ void Game::InitiateAttackSequence(int x, int y)
 
 				if (player->GetHealth() <= 0)
 				{
+						ClearInfo();
+
 						player->SetHealth(0);
 						win_lose_message << "You ded son!";
 				}
@@ -423,7 +457,7 @@ void Game::RB_FOV()
 				float ox = (float)player->X() + 0.5f;
 				float oy = (float)player->Y() + 0.5f;
 
-				for (int j = 0; j < 20; j++)
+				for (int j = 0; j < 40; j++)
 				{
 						light_map[(int)oy][(int)ox] = 2;
 
@@ -434,8 +468,4 @@ void Game::RB_FOV()
 						oy += y;
 				};
 		};
-}
-
-Component::~Component()
-{
 }

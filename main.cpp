@@ -48,7 +48,7 @@ int main(int argc, char* args[])
 		auto game = std::make_shared<Game>();
 		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH, 24, 24);
 		auto text = std::make_shared<Text>();
-		text->LoadFont(FONT_PATH, 24);
+		text->LoadFont(FONT_PATH, 28);
 
 		bool keep_window_open = true;
 		while (keep_window_open)
@@ -128,6 +128,15 @@ int main(int argc, char* args[])
 																		else if (elem.id == 53)enemy_id = BUG;
 
 																		sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
+																}
+														}
+
+														for (auto& elem : **game->GetTreasureChests())
+														{
+																if (elem.point.x == c &&
+																		elem.point.y == r)
+																{
+																		sprite_sheet->drawSprite(renderer, TREASURE_CHEST, dx, dy);
 																}
 														}
 

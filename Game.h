@@ -51,18 +51,19 @@ struct Point
 
 class Component {
 public:
-		virtual ~Component();
+		virtual ~Component() {};
 };
 class StatComponent : public Component
 {
 public:
-		StatComponent(int h, int a) { health = h; attack = a; }		
+		StatComponent(int h, int a) { health = h; attack = a; }
+		~StatComponent() {};
 
 		int GetHealth() const { return health; }
 		int GetAttack() const { return attack; }
 		void SetHealth(int h) { health = h; }
 		void SetAttack(int a) { attack = a; }
-		
+
 private:
 		int health, attack;
 };
@@ -112,15 +113,16 @@ public:
 		auto IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir);
 		bool IsTilePlayerTile(int x, int y, MovementDirection dir);
 		bool IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI);
-		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);		
+		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);
 		void UpdatePlayerViewPortPoints(int playerX, int playerY);
 		void UpdateAfterPlayerMoved();
-		
+
 		Point GenerateRandomPoint();
 
 		auto GetCoins() const { return &coins; }
 		auto GetHealthGems() const { return &health_gems; }
 		auto GetEnemies() const { return &enemies; }
+		auto GetTreasureChests() const { return &treasure_chests; }
 		Entity GetGoldenCandle() const { return golden_candle; }
 
 		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<std::shared_ptr<Component>>> components, int id);
@@ -131,6 +133,8 @@ public:
 		void RB_FOV();
 
 private:
+		void ClearInfo();
+
 		std::shared_ptr<Player> player;
 
 		int view_port_x, view_port_y, view_port_width, view_port_height;
@@ -154,5 +158,3 @@ private:
 		std::ostringstream enemy_combat_info;
 		std::ostringstream player_combat_info;
 };
-
-

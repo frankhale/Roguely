@@ -24,7 +24,9 @@ int Text::LoadFont(const char* path, int ptsize)
 }
 
 void Text::DrawText(SDL_Renderer* renderer, int x, int y, const char* text)
-{    
+{
+    if (strlen(text) <= 0) return;
+
     text_texture = nullptr;
 
     SDL_Rect text_rect;
