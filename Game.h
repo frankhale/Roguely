@@ -94,6 +94,7 @@ public:
 		void MovePlayerDown();
 		void MovePlayerUp();
 
+		auto GetEnemyStatInfo() const { return &enemy_stats_info; }
 		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }

@@ -38,6 +38,8 @@ Game::Game()
 				}
 		}
 
+		enemy_stats_info << " ";
+
 		coins = std::make_shared<std::vector<Entity>>();
 		health_gems = std::make_shared<std::vector<Entity>>();
 		enemies = std::make_shared<std::vector<Entity>>();
@@ -48,24 +50,24 @@ Game::Game()
 		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 4;
 
 		auto spider_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-		/*auto lurcher_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+		auto lurcher_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 		auto crab_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-		auto bug_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();*/
+		auto bug_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 
 		auto spider_stat_component = std::make_shared<StatComponent>(2, 1);
-		/*auto lurcher_stat_component = std::make_shared<StatComponent>(10, 2);
+		auto lurcher_stat_component = std::make_shared<StatComponent>(10, 2);
 		auto crab_stat_component = std::make_shared<StatComponent>(10, 3);
-		auto bug_stat_component = std::make_shared<StatComponent>(12, 4);*/
+		auto bug_stat_component = std::make_shared<StatComponent>(12, 4);
 
 		spider_stat_components->emplace_back(spider_stat_component);
-		/*lurcher_stat_components->push_back(lurcher_stat_component);
+		lurcher_stat_components->push_back(lurcher_stat_component);
 		crab_stat_components->push_back(crab_stat_component);
-		bug_stat_components->push_back(bug_stat_component);*/
+		bug_stat_components->push_back(bug_stat_component);
 
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, spider_stat_components, Spider);
-		/*SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, lurcher_stat_components, Lurcher);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, lurcher_stat_components, Lurcher);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, crab_stat_components, Crab);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, bug_stat_components, Bug);*/
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, bug_stat_components, Bug);
 
 		golden_candle.entityType = EntityType::Pickup;
 		golden_candle.id = 100;
@@ -298,7 +300,7 @@ void Game::MoveEnemies()
 }
 
 void Game::InitiateAttackSequence(int x, int y)
-{
+{		
 		Entity enemy;
 		std::shared_ptr<StatComponent> stat_component = nullptr;
 
@@ -324,6 +326,62 @@ void Game::InitiateAttackSequence(int x, int y)
 		if (stat_component != nullptr)
 		{
 				std::cout << "Enemy Health:" << stat_component->GetHealth() << std::endl;
+
+				enemy_stats_info.str("");
+				enemy_stats_info << "Enemy Health: " << stat_component->GetHealth();
+
+				/*EnemyStats = $"Health: {enemyStatsComponent.Health} | Attack: {enemyStatsComponent.Attack}";
+
+				var playerCriticalStrike = random.Next(0, 100) <= 20;
+				var enemyCriticalStrike = random.Next(0, 100) <= 20;
+
+				if (playerCriticalStrike) {
+						var damage = PlayerAttack + 2 * 2;
+						enemyStatsComponent.Health -= damage;
+
+						PlayerCombatInfo = $"CRITICAL STRIKE for {damage} damage!!!";
+						EnemyStats = $"Health: {enemyStatsComponent.Health} | Attack: {enemyStatsComponent.Attack}";
+				}
+				else
+				{
+						enemyStatsComponent.Health -= PlayerAttack;
+						PlayerCombatInfo = $"attack for {PlayerAttack} damage";
+						EnemyStats = $"Health: {enemyStatsComponent.Health} | Attack: {enemyStatsComponent.Attack}";
+				}
+
+				if (enemyCriticalStrike) {
+						var damage = enemyStatsComponent.Attack + 2 * 2;
+						PlayerHealth -= damage;
+						EnemyStats = $"CRITICAL STRIKE for {damage} damage!!!";
+				}
+				else
+				{
+						var damage =
+								PlayerHealth -= enemyStatsComponent.Attack;
+						EnemyStats = $"attack for {enemyStatsComponent.Attack} damage";
+				}
+
+				if (enemyStatsComponent.Health <= 0)
+				{
+						EnemyStats = "Ded!!!";
+						PlayerEnemiesKilled += 1;
+
+						var treasureChestLocation = new Point(enemy.Location.X, enemy.Location.Y);
+
+						EnemyLocations.Remove(enemy);
+						TreasureChestLocations.Add(new Entity
+								{
+										Id = 20,
+										Location = treasureChestLocation,
+										EntityType = EntityType.Pickup,
+								});
+				}
+
+				if (PlayerHealth <= 0)
+				{
+						PlayerHealth = 0;
+						WinLoseMessage = "You ded son!";
+				}*/
 		}
 }
 

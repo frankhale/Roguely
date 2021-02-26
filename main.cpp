@@ -193,6 +193,8 @@ int main(int argc, char* args[])
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
 
+						text->DrawText(renderer, 450, WINDOW_HEIGHT - 7 * 20, game->GetEnemyStatInfo()->str().c_str());
+
 						SDL_RenderPresent(renderer);
 						SDL_Delay(1000 / 60);
 				}
