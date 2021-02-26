@@ -135,14 +135,8 @@ bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
 		auto enemy = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
 
 		if (!enemy->walkable && is_player)
-		{
 				InitiateAttackSequence(enemy->point.x, enemy->point.y);
-		}
-		else
-		{
-
-		}
-
+		
 		auto coins_traversable = IsEntityLocationTraversable(x, y, coins, whoAmI, dir);
 		auto health_gems_traversable = IsEntityLocationTraversable(x, y, health_gems, whoAmI, dir);
 		auto enemies_traversable = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
@@ -155,8 +149,7 @@ bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
 }
 
 void Game::MovePlayerLeft()
-{
-		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::LEFT, 0)) return;
+{		
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::LEFT, WhoAmI::Player)) return;
 
 		player->SetX(player->X() - 1);
@@ -165,8 +158,7 @@ void Game::MovePlayerLeft()
 };
 
 void Game::MovePlayerRight()
-{
-		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::RIGHT, 0)) return;
+{		
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::RIGHT, WhoAmI::Player)) return;
 
 		player->SetX(player->X() + 1);
@@ -175,8 +167,7 @@ void Game::MovePlayerRight()
 };
 
 void Game::MovePlayerDown()
-{
-		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::DOWN, 0)) return;
+{		
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::DOWN, WhoAmI::Player)) return;
 
 		player->SetY(player->Y() + 1);
@@ -185,8 +176,7 @@ void Game::MovePlayerDown()
 };
 
 void Game::MovePlayerUp()
-{
-		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::UP, 0)) return;
+{		
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::UP, WhoAmI::Player)) return;
 
 		player->SetY(player->Y() - 1);
@@ -236,8 +226,8 @@ void Game::UpdateAfterPlayerMoved()
 
 		UpdateCollection(treasure_chests,
 				[&]() {
-						auto health_recovery_chance = rand() % 100 <= 20;
-						auto extra_score_change = rand() % 100 <= 15;
+						auto health_recovery_chance = std::rand() % 100 <= 20;
+						auto extra_score_change = std::rand() % 100 <= 15;
 
 						if (health_recovery_chance)
 						{
@@ -264,8 +254,8 @@ Point Game::GenerateRandomPoint()
 
 		do
 		{
-				c = rand() % (MAP_WIDTH - 1);
-				r = rand() % (MAP_HEIGHT - 1);
+				c = std::rand() % (MAP_WIDTH - 1);
+				r = std::rand() % (MAP_HEIGHT - 1);
 		} while (map[r][c] == 0 ||
 				player->X() == c ||
 				player->Y() == r ||
@@ -300,9 +290,9 @@ void Game::MoveEnemies()
 {
 		for (auto& enemy : *enemies)
 		{
-				if (rand() % 100 + 1 >= 30) continue;
+				if (std::rand() % 100 + 1 >= 30) continue;
 
-				int direction = rand() % 4;
+				int direction = std::rand() % 4;
 				Point loc = { enemy.point.x, enemy.point.y };
 
 				if (direction == 0 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::UP, WhoAmI::Enemy))
@@ -355,14 +345,14 @@ void Game::InitiateAttackSequence(int x, int y)
 		{
 				//enemy_stats_info << " Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 
-				auto player_critical_strike = rand() % 100 <= 20;
-				auto enemy_critical_strike = rand() % 100 <= 20;
+				auto player_critical_strike = std::rand() % 100 <= 20;
+				auto enemy_critical_strike = std::rand() % 100 <= 20;
 
 				if (player_critical_strike)
 				{
 						player_combat_info.str("");
 
-						auto damage = player->GetAttack() + (rand() % 5 + 1) * 2;
+						auto damage = player->GetAttack() + (std::rand() % 5 + 1) * 2;
 						auto enemy_health = enemy_stat_component->GetHealth() - damage;
 						enemy_stat_component->SetHealth(enemy_health);
 						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
@@ -372,7 +362,7 @@ void Game::InitiateAttackSequence(int x, int y)
 				{
 						player_combat_info.str("");
 
-						auto damage = player->GetAttack() + (rand() % 5 + 1);
+						auto damage = player->GetAttack() + (std::rand() % 5 + 1);
 						auto enemy_health = enemy_stat_component->GetHealth() - damage;
 						enemy_stat_component->SetHealth(enemy_health);
 						player_combat_info << "Player attacks for " << damage << " damage!!!";
@@ -383,7 +373,7 @@ void Game::InitiateAttackSequence(int x, int y)
 				{
 						enemy_stats_info.str("");
 
-						auto damage = enemy_stat_component->GetAttack() + (rand() % 5 + 1) * 2;
+						auto damage = enemy_stat_component->GetAttack() + (std::rand() % 5 + 1) * 2;
 						player->SetHealth(player->GetHealth() - damage);
 						enemy_combat_info << "Enemy CRITICALLY STRIKES for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
@@ -393,7 +383,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						enemy_stats_info.str("");
 
 						player->SetHealth(player->GetHealth() - enemy_stat_component->GetAttack());
-						enemy_combat_info << "Enemy attacks for " << enemy_stat_component->GetAttack() + (rand() % 5 + 1) << " damage";
+						enemy_combat_info << "Enemy attacks for " << enemy_stat_component->GetAttack() + (std::rand() % 5 + 1) << " damage";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
 
