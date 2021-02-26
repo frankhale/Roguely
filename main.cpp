@@ -136,7 +136,7 @@ int main(int argc, char* args[])
 										{
 												sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
 
-												for (auto& elem : *game->GetCoins())
+												for (auto& elem : **game->GetCoins())
 												{
 														if (elem.point.x == c &&
 																elem.point.y == r)
@@ -145,12 +145,28 @@ int main(int argc, char* args[])
 														}
 												}
 
-												for (auto& elem : *game->GetHealthGems())
+												for (auto& elem : **game->GetHealthGems())
 												{
 														if (elem.point.x == c &&
 																elem.point.y == r)
 														{
 																sprite_sheet->drawSprite(renderer, HEALTH_GEM, dx, dy);
+														}
+												}
+
+												for (auto& elem : **game->GetEnemies())
+												{
+														if (elem.point.x == c &&
+																elem.point.y == r)
+														{
+																int enemy_id = 0;
+
+																if (elem.id == 50) enemy_id = SPIDER;
+																else if (elem.id == 51)enemy_id = LURCHER;
+																else if (elem.id == 52)enemy_id = CRAB;
+																else if (elem.id == 53)enemy_id = BUG;
+																
+																sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
 														}
 												}
 

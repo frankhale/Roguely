@@ -28,12 +28,12 @@ enum class EntityType
 		Pickup
 };
 
-enum class EnemyType
+enum EnemyType
 {
-		Spiper,
-		Lurcher,
-		Crab,
-		Bug
+		Spider = 50,
+		Lurcher = 51,
+		Crab = 52,
+		Bug = 53
 };
 
 enum class WhoAmI
@@ -51,6 +51,8 @@ class Component {};
 class StatComponent : public Component
 {
 public:
+		StatComponent(int h, int a) { health = h; attack = a; }
+
 		int GetHealth() const { return health; }
 		int GetAttack() const { return attack; }
 		void SetHealth(int h) { health = h; }
@@ -98,7 +100,8 @@ public:
 		int GetViewPortWidth() const { return view_port_width; }
 		int GetViewPortHeight() const { return view_port_height; }
 
-		bool IsEntityLocationTraversable(int x, int y, std::vector<Entity>& entities, WhoAmI whoAmI, MovementDirection dir);
+		bool IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities);
+		bool IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir);
 		bool IsTilePlayerTile(int x, int y, MovementDirection dir);
 		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);
 		void UpdatePlayerViewPortPoints(int playerX, int playerY);
@@ -106,11 +109,12 @@ public:
 
 		Point GenerateRandomPoint();
 
-		std::shared_ptr<std::vector<Entity>> GetCoins() const { return coins; }
-		std::shared_ptr<std::vector<Entity>> GetHealthGems() const { return health_gems; }
+		auto GetCoins() const { return &coins; }
+		auto GetHealthGems() const { return &health_gems; }
+		auto GetEnemies() const { return &enemies; }
 		Entity GetGoldenCandle() const { return golden_candle; }
 
-		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, int id);
+		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<Component>> components, int id);
 
 		void RB_FOV();
 
@@ -129,6 +133,7 @@ private:
 
 		std::shared_ptr<std::vector<Entity>> coins;
 		std::shared_ptr<std::vector<Entity>> health_gems;
+		std::shared_ptr<std::vector<Entity>> enemies;
 		Entity golden_candle;
 };
 

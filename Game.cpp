@@ -40,9 +40,32 @@ Game::Game()
 
 		coins = std::make_shared<std::vector<Entity>>();
 		health_gems = std::make_shared<std::vector<Entity>>();
+		enemies = std::make_shared<std::vector<Entity>>();
 
-		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, 1);
-		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, 2);
+		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, nullptr, 1);
+		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, nullptr, 2);
+
+		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 4;
+
+		auto spider_stat_components = std::make_shared<std::vector<Component>>();
+		auto lurcher_stat_components = std::make_shared<std::vector<Component>>();
+		auto crab_stat_components = std::make_shared<std::vector<Component>>();
+		auto bug_stat_components = std::make_shared<std::vector<Component>>();
+
+		auto spider_stat_component = std::make_shared<StatComponent>(2, 1);
+		auto lurcher_stat_component = std::make_shared<StatComponent>(10, 2);
+		auto crab_stat_component = std::make_shared<StatComponent>(10, 3);
+		auto bug_stat_component = std::make_shared<StatComponent>(12, 4);
+		
+		spider_stat_components->push_back(*spider_stat_component);
+		lurcher_stat_components->push_back(*lurcher_stat_component);
+		crab_stat_components->push_back(*crab_stat_component);
+		bug_stat_components->push_back(*bug_stat_component);
+
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, spider_stat_components, Spider);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, lurcher_stat_components, Lurcher);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, crab_stat_components, Crab);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, bug_stat_components, Bug);
 
 		golden_candle.entityType = EntityType::Pickup;
 		golden_candle.id = 100;
@@ -51,9 +74,22 @@ Game::Game()
 		RB_FOV();
 }
 
-bool Game::IsEntityLocationTraversable(int x, int y, std::vector<Entity>& entities, WhoAmI whoAmI, MovementDirection dir)
+bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities)
 {
-		for (auto& e : entities)
+		for (auto& e : *entities)
+		{
+				if (e.point.x == x && e.point.y)
+				{
+						return false;
+				}
+		}
+
+		return true;
+}
+
+bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir)
+{
+		for (auto& e : *entities)
 		{
 				if ((dir == MovementDirection::UP && e.point.y == y - 1 && e.point.x == x) ||
 						(dir == MovementDirection::DOWN && e.point.y == y + 1 && e.point.x == x) ||
@@ -161,19 +197,23 @@ void Game::UpdateAfterPlayerMoved()
 
 Point Game::GenerateRandomPoint()
 {
-		int r = 0;
 		int c = 0;
-
+		int r = 0;
+		
 		do
 		{
-				r = rand() % (MAP_HEIGHT - 1);
 				c = rand() % (MAP_WIDTH - 1);
-		} 		while (map[r][c] == 0 || player->X() == c && player->Y() == r);
+				r = rand() % (MAP_HEIGHT - 1);				
+		} while (map[r][c] == 0 &&
+						 player->X() == c && player->Y() == r &&
+						 IsEntityLocationTraversable(c, r, coins) &&
+						 IsEntityLocationTraversable(c, r, health_gems) &&
+						 IsEntityLocationTraversable(c, r, enemies));
 
 		return { c, r };
 }
 
-void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, int id)
+void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<Component>> components, int id)
 {
 		for (int i = 0; i < num; i++)
 		{
@@ -181,6 +221,7 @@ void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, E
 				e.point = GenerateRandomPoint();
 				e.entityType = entityType;
 				e.id = id;
+				e.components = nullptr;
 
 				entity->push_back(e);
 		}
