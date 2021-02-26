@@ -7,7 +7,6 @@
 #include "SpriteSheet.h"
 #include "Text.h"
 #include "Game.h"
-//#include <lua.hpp>
 
 const int WINDOW_WIDTH = 1056;
 const int WINDOW_HEIGHT = 768;
@@ -16,44 +15,8 @@ const int WINDOW_HEIGHT = 768;
 #define GAME_TILESET_PATH "assets/tileset2.png"
 #define FONT_PATH "assets/VT323-Regular.ttf"
 
-//int map[10][10] = {
-//		{ 0,0,0,0,0,0,0,0,0,0 },
-//		{ 0,9,9,9,9,4,9,9,9,0 },
-//		{ 0,9,3,9,9,9,9,9,9,0 },
-//		{ 0,9,9,9,9,9,14,9,9,0 },
-//		{ 0,9,9,9,5,9,9,9,9,0 },
-//		{ 0,9,9,9,9,9,9,14,9,0 },
-//		{ 0,9,1,9,9,9,9,9,9,0 },
-//		{ 0,9,9,9,9,9,2,9,9,0 },
-//		{ 0,9,9,12,9,9,9,9,6,0 },
-//		{ 0,0,0,0,0,0,0,0,0,0 },
-//};
-
 int main(int argc, char* args[])
 {
-		//std::string lua_code = "a = 2 + 2";
-		//lua_State* L = luaL_newstate();
-		//int r = luaL_dostring(L, lua_code.c_str());
-
-		//if (r == LUA_OK)
-		//{
-		//		lua_getglobal(L, "a");
-		//		if (lua_isnumber(L, -1))
-		//		{
-		//				std::cout << lua_tonumber(L, -1) << std::endl;
-		//		}
-		//}
-		//else
-		//{
-		//		std::cout << lua_tostring(L, -1) << std::endl;
-		//}
-
-		//if (SDL_Init(SDL_INIT_VIDEO) < 0)
-		//{
-		//		std::cout << "Failed to initialize the SDL2 library: " << SDL_GetError() << std::endl;
-		//		return -1;
-		//}
-
 		IMG_Init(IMG_INIT_PNG);
 		TTF_Init();
 
@@ -118,13 +81,11 @@ int main(int argc, char* args[])
 								{
 										game->MovePlayerRight();
 								}
-								/*else if (e.key.keysym.sym == SDLK_SPACE)
-								{
-										text->DrawText(renderer, 10, WINDOW_HEIGHT - 50, "Space bar Pressed");
-								}*/
 								break;
 						}
 
+						//if (strlen(game->GetWinLoseMessage()) > 0)
+						//{
 						for (int r = 0; r < game->GetViewPortHeight(); r++)
 						{
 								for (int c = 0; c < game->GetViewPortWidth(); c++)
@@ -165,7 +126,7 @@ int main(int argc, char* args[])
 																else if (elem.id == 51)enemy_id = LURCHER;
 																else if (elem.id == 52)enemy_id = CRAB;
 																else if (elem.id == 53)enemy_id = BUG;
-																
+
 																sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
 														}
 												}
@@ -181,11 +142,17 @@ int main(int argc, char* args[])
 										}
 								}
 						}
+						//}
+						//else
+						//{
+						//		text->DrawText(renderer, 10, 10, game->GetWinLoseMessage());
+						//}
 
 						std::ostringstream player_health;
 						std::ostringstream player_score;
 						std::ostringstream enemies_killed;
-						player_health << "Health: " << game->GetPlayerHealth();						
+
+						player_health << "Health: " << game->GetPlayerHealth();
 						player_score << "Score: " << game->GetPlayerScore();
 						enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
 
@@ -193,7 +160,9 @@ int main(int argc, char* args[])
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
 
-						text->DrawText(renderer, 450, WINDOW_HEIGHT - 7 * 20, game->GetEnemyStatInfo()->str().c_str());
+						//text->DrawText(renderer, 450, WINDOW_HEIGHT - 7 * 20, game->GetPlayerCombatInfo());
+						//text->DrawText(renderer, 450, WINDOW_HEIGHT - 5 * 20, game->GetEnemyStatInfo()->str().c_str());
+						//text->DrawText(renderer, 450, WINDOW_HEIGHT - 3 * 20, game->GetEnemyCombatInfo()->str().c_str());
 
 						SDL_RenderPresent(renderer);
 						SDL_Delay(1000 / 60);

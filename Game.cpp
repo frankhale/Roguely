@@ -38,11 +38,15 @@ Game::Game()
 				}
 		}
 
-		enemy_stats_info << " ";
+		win_lose_message.str("");
+		enemy_stats_info.str("");
+		player_combat_info.str("");
+		enemy_combat_info.str("");
 
 		coins = std::make_shared<std::vector<Entity>>();
 		health_gems = std::make_shared<std::vector<Entity>>();
 		enemies = std::make_shared<std::vector<Entity>>();
+		treasure_chests = std::make_shared<std::vector<Entity>>();
 
 		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, nullptr, 1);
 		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, nullptr, 2);
@@ -300,7 +304,12 @@ void Game::MoveEnemies()
 }
 
 void Game::InitiateAttackSequence(int x, int y)
-{		
+{
+		win_lose_message.str("");
+		enemy_stats_info.str("");
+		player_combat_info.str("");
+		enemy_combat_info.str("");
+
 		Entity enemy;
 		std::shared_ptr<StatComponent> stat_component = nullptr;
 
@@ -314,11 +323,11 @@ void Game::InitiateAttackSequence(int x, int y)
 		}
 
 		for (auto& e : *enemy.components)
-		{				
+		{
 				auto sc = std::dynamic_pointer_cast<StatComponent>(e);
-				
+
 				if (sc != nullptr)
-				{						
+				{
 						stat_component = sc;
 				}
 		}
@@ -327,61 +336,62 @@ void Game::InitiateAttackSequence(int x, int y)
 		{
 				std::cout << "Enemy Health:" << stat_component->GetHealth() << std::endl;
 
-				enemy_stats_info.str("");
-				enemy_stats_info << "Enemy Health: " << stat_component->GetHealth();
+				enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 
-				/*EnemyStats = $"Health: {enemyStatsComponent.Health} | Attack: {enemyStatsComponent.Attack}";
+				auto player_critical_strike = rand() % 100 <= 20;
+				auto enemy_critical_strike = rand() % 100 <= 20;
 
-				var playerCriticalStrike = random.Next(0, 100) <= 20;
-				var enemyCriticalStrike = random.Next(0, 100) <= 20;
-
-				if (playerCriticalStrike) {
-						var damage = PlayerAttack + 2 * 2;
-						enemyStatsComponent.Health -= damage;
-
-						PlayerCombatInfo = $"CRITICAL STRIKE for {damage} damage!!!";
-						EnemyStats = $"Health: {enemyStatsComponent.Health} | Attack: {enemyStatsComponent.Attack}";
+				if (player_critical_strike) {
+						auto damage = player->GetAttack() + 2 * 2;
+						stat_component->SetHealth(stat_component->GetHealth() - damage);
+						player_combat_info << "CRITICAL STRIKE for " << damage << " damage!!!";
+						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 				else
 				{
-						enemyStatsComponent.Health -= PlayerAttack;
-						PlayerCombatInfo = $"attack for {PlayerAttack} damage";
-						EnemyStats = $"Health: {enemyStatsComponent.Health} | Attack: {enemyStatsComponent.Attack}";
+						stat_component->SetHealth(stat_component->GetHealth() - player->GetAttack());
+						player_combat_info << "attack for " << player->GetAttack() << " damage!!!";
+						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 
-				if (enemyCriticalStrike) {
-						var damage = enemyStatsComponent.Attack + 2 * 2;
-						PlayerHealth -= damage;
-						EnemyStats = $"CRITICAL STRIKE for {damage} damage!!!";
+				if (enemy_critical_strike) {
+						auto damage = stat_component->GetAttack() + 2 * 2;
+						player->SetHealth(player->GetHealth() - damage);
+						enemy_combat_info << "CRITICAL STRIKE for " << damage << " damage!!!";
+						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 				else
 				{
-						var damage =
-								PlayerHealth -= enemyStatsComponent.Attack;
-						EnemyStats = $"attack for {enemyStatsComponent.Attack} damage";
+						auto damage = player->GetHealth() - stat_component->GetAttack();
+						player->SetHealth(player->GetHealth() - damage);
+						enemy_combat_info << "attack for " << damage << " damage";
+						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 
-				if (enemyStatsComponent.Health <= 0)
+				if (stat_component->GetHealth() <= 0)
 				{
-						EnemyStats = "Ded!!!";
-						PlayerEnemiesKilled += 1;
+						enemy_stats_info << "Ded!!!";
+						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
+											
+						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
+								[&](Entity e) {
+										return e.point.x == enemy.point.x && e.point.y == enemy.point.y; 
+								}), 
+								enemies->end());
 
-						var treasureChestLocation = new Point(enemy.Location.X, enemy.Location.Y);
+						Entity t_chest;
+						t_chest.id = 20;
+						t_chest.point = { enemy.point.x, enemy.point.y };
+						t_chest.entityType = EntityType::Pickup;
 
-						EnemyLocations.Remove(enemy);
-						TreasureChestLocations.Add(new Entity
-								{
-										Id = 20,
-										Location = treasureChestLocation,
-										EntityType = EntityType.Pickup,
-								});
+						treasure_chests->push_back(t_chest);
 				}
 
-				if (PlayerHealth <= 0)
+				if (player->GetHealth() <= 0)
 				{
-						PlayerHealth = 0;
-						WinLoseMessage = "You ded son!";
-				}*/
+						player->SetHealth(0);
+						win_lose_message << "You ded son!";
+				}
 		}
 }
 

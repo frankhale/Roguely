@@ -94,7 +94,10 @@ public:
 		void MovePlayerDown();
 		void MovePlayerUp();
 
-		auto GetEnemyStatInfo() const { return &enemy_stats_info; }
+		//auto GetPlayerCombatInfo() const { return player_combat_info.str(); }
+		//auto GetWinLoseMessage() const { return win_lose_message.str(); }
+		//auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
+		//auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
 		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }
@@ -143,10 +146,12 @@ private:
 		std::shared_ptr<std::vector<Entity>> coins;
 		std::shared_ptr<std::vector<Entity>> health_gems;
 		std::shared_ptr<std::vector<Entity>> enemies;
+		std::shared_ptr<std::vector<Entity>> treasure_chests;
 		Entity golden_candle;
 
 		std::ostringstream win_lose_message;
 		std::ostringstream enemy_stats_info;
+		std::ostringstream enemy_combat_info;
 		std::ostringstream player_combat_info;
 };
 
