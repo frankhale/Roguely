@@ -94,9 +94,6 @@ int main(int argc, char* args[])
 		auto text = std::make_shared<Text>();
 		text->LoadFont(FONT_PATH, 40);
 
-		std::cout << "view port width = " << game->GetViewPortWidth() << std::endl;
-		std::cout << "view port height = " << game->GetViewPortHeight() << std::endl;
-
 		bool keep_window_open = true;
 		while (keep_window_open)
 		{
@@ -142,20 +139,27 @@ int main(int argc, char* args[])
 										int dx = (c * 24) - (game->GetViewPortX() * 24);
 										int dy = (r * 24) - (game->GetViewPortY() * 24);
 
-										sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
-
-										for (auto& elem : game->GetCoins())
+										if (game->LightMap()[r][c] == 2)
 										{
-												if (elem.point.x == c &&
-														elem.point.y == r)
-												{														
-														sprite_sheet->drawSprite(renderer, COIN, dx, dy);
+												sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
+
+												for (auto& elem : game->GetCoins())
+												{
+														if (elem.point.x == c &&
+																elem.point.y == r)
+														{
+																sprite_sheet->drawSprite(renderer, COIN, dx, dy);
+														}
+												}
+
+												if (r == game->GetPlayerY() && c == game->GetPlayerX())
+												{
+														sprite_sheet->drawSprite(renderer, 3, dx, dy);
 												}
 										}
-
-										if (r == game->GetPlayerY() && c == game->GetPlayerX())
+										else
 										{
-												sprite_sheet->drawSprite(renderer, 3, dx, dy);
+												sprite_sheet->drawSprite(renderer, HIDDEN, dx, dy);
 										}
 								}
 						}

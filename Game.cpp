@@ -10,6 +10,7 @@ Game::Game()
 		view_port_height = VIEW_PORT_HEIGHT;
 
 		map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
+		light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
 
 		player = std::make_shared<Player>(30, 1);
 
@@ -38,6 +39,8 @@ Game::Game()
 		}
 
 		SpawnCoins();
+
+		RB_FOV();
 }
 
 bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId)
@@ -110,6 +113,8 @@ void Game::UpdateAfterPlayerMoved()
 						}
 						return false;
 				}), coins.end());
+
+		RB_FOV();
 }
 
 Point Game::GenerateRandomPoint()
@@ -135,4 +140,38 @@ void Game::SpawnCoins()
 				e.point = GenerateRandomPoint();
 				coins.push_back(e);
 		}
+}
+
+void Game::RB_FOV()
+{		
+		float x = 0, y = 0;			
+
+		//light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
+		for (int r = 0; r < MAP_HEIGHT; r++)
+		{
+				for (int c = 0; c < MAP_WIDTH; c++)
+				{
+						light_map[r][c] = 0;
+				}
+		}
+
+		for (int i = 0; i < 360; i++)
+		{
+				x = (float) std::cos(i * 0.01745f);
+				y = (float) std::sin(i * 0.01745f);
+										
+				float ox = (float)player->X() + 0.5f;
+				float oy = (float)player->Y() + 0.5f;
+
+				for (int j = 0; j < 360; j++)
+				{
+						light_map[(int)oy][(int)ox] = 2;
+
+						if (map[(int)oy][(int)ox] == 0) // if tile is a wall
+								break;
+
+						ox += x;
+						oy += y;
+				};
+		};
 }

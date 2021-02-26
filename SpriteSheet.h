@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define NUM_SPRITES 16
+#define NUM_SPRITES 19
 
 enum Sprites {
     WALL = 0,
@@ -22,7 +22,10 @@ enum Sprites {
     CRAB = 12,
     TREASURE_CHEST = 13,
     COIN = 14,
-    DOOR = 15    
+    DOOR = 15,
+    WALL_SECRET_DOOR = 16,
+    BUG = 17,
+    HIDDEN = 18
 };
 
 class SpriteSheet

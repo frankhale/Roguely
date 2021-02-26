@@ -37,6 +37,7 @@ public:
 		Game();
 
 		auto Map() const { return map; }
+		auto LightMap() const { return light_map; }
 
 		void MovePlayerLeft();
 		void MovePlayerRight();
@@ -62,11 +63,14 @@ public:
 
 		void SpawnCoins();
 
+		void RB_FOV();		
+
 private:
 		std::shared_ptr<Player> player;
 
 		int view_port_x, view_port_y, view_port_width, view_port_height;
 		int map[MAP_HEIGHT][MAP_WIDTH];
+		int light_map[MAP_HEIGHT][MAP_WIDTH];
 
 		const int COIN_VALUE = 50;
 		const int POTION_VALUE = 25;
