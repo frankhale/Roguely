@@ -81,14 +81,14 @@ bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector
 
 auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir)
 {
-		for (auto& e : *entities)
+		for (const auto& e : *entities)
 		{
 				if ((dir == MovementDirection::UP && e.point.y == y - 1 && e.point.x == x) ||
 						(dir == MovementDirection::DOWN && e.point.y == y + 1 && e.point.x == x) ||
 						(dir == MovementDirection::LEFT && e.point.y == y && e.point.x == x - 1) ||
 						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1 &&
-						e.entityType == EntityType::Enemy ||
-						whoAmI == WhoAmI::Enemy))
+						(e.entityType == EntityType::Enemy ||
+						whoAmI == WhoAmI::Enemy)))
 				{
 						auto twi = std::make_shared<TileWalkableInfo>();
 						twi->point = e.point;
@@ -221,6 +221,8 @@ void Game::UpdateAfterPlayerMoved()
 						return false;
 				}), health_gems->end());
 
+		MoveEnemies();
+
 		RB_FOV();
 }
 
@@ -260,6 +262,34 @@ void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, E
 				e.id = id;
 				e.components = components;
 				entity->push_back(e);
+		}
+}
+
+void Game::MoveEnemies()
+{
+		for (auto& enemy : *enemies)
+		{
+				int direction = rand() % 4;			
+				Point loc = { enemy.point.x, enemy.point.y };
+ 
+				if (direction == 0 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::UP, WhoAmI::Enemy))
+				{
+						loc.y -= 1;
+				}
+				else if (direction == 1 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::DOWN, WhoAmI::Enemy))
+				{
+						loc.y += 1;
+				}
+				else if (direction == 2 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::LEFT, WhoAmI::Enemy))
+				{
+						loc.x -= 1;
+				}
+				else if (direction == 3 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::RIGHT, WhoAmI::Enemy))
+				{
+						loc.x += 1;
+				}
+
+				enemy.point = { loc.x, loc.y };				
 		}
 }
 

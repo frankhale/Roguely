@@ -116,6 +116,8 @@ public:
 
 		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<Component>> components, int id);
 
+		void MoveEnemies();
+
 		void RB_FOV();
 
 private:
