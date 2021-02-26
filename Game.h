@@ -102,11 +102,11 @@ public:
 		bool IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities);
 		auto IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir);
 		bool IsTilePlayerTile(int x, int y, MovementDirection dir);
-		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);
 		bool IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI);
+		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);		
 		void UpdatePlayerViewPortPoints(int playerX, int playerY);
 		void UpdateAfterPlayerMoved();
-
+		
 		Point GenerateRandomPoint();
 
 		auto GetCoins() const { return &coins; }

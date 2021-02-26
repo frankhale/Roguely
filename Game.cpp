@@ -76,15 +76,7 @@ Game::Game()
 
 bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities)
 {
-		for (auto& e : *entities)
-		{
-				if (e.point.x == x && e.point.y)
-				{
-						return false;
-				}
-		}
-
-		return true;
+		return !(std::any_of(entities->begin(), entities->end(), [&](const Entity& elem) { return elem.point.x == x && elem.point.y == y; }));
 }
 
 auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir)
@@ -241,11 +233,17 @@ Point Game::GenerateRandomPoint()
 		{
 				c = rand() % (MAP_WIDTH - 1);
 				r = rand() % (MAP_HEIGHT - 1);				
-		} while (map[r][c] == 0 &&
-						 player->X() == c && player->Y() == r &&
-						 IsEntityLocationTraversable(c, r, coins) &&
-						 IsEntityLocationTraversable(c, r, health_gems) &&
-						 IsEntityLocationTraversable(c, r, enemies));
+		} while (map[r][c] == 0 ||
+				player->X() == c ||
+				player->Y() == r ||
+				(!(IsEntityLocationTraversable(c, r, coins) ||
+					 IsEntityLocationTraversable(c, r, health_gems) ||
+				   IsEntityLocationTraversable(c, r, enemies))));
+
+		/*(std::any_of(coins->begin(), coins->end(), [&](const Entity& elem) { return elem.point.x == c && elem.point.y == r; })) ||
+		(std::any_of(health_gems->begin(), health_gems->end(), [&](const Entity& elem) { return elem.point.x == c && elem.point.y == r; })) ||
+		(std::any_of(enemies->begin(), enemies->end(), [&](const Entity& elem) { return elem.point.x == c && elem.point.y == r; }))
+		);*/
 
 		return { c, r };
 }
@@ -254,12 +252,13 @@ void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, E
 {
 		for (int i = 0; i < num; i++)
 		{
+				auto p = GenerateRandomPoint();
+
 				Entity e;
-				e.point = GenerateRandomPoint();
+				e.point = { p.x, p.y };
 				e.entityType = entityType;
 				e.id = id;
-				e.components = nullptr;
-
+				e.components = components;
 				entity->push_back(e);
 		}
 }
