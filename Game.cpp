@@ -427,6 +427,8 @@ void Game::InitiateAttackSequence(int x, int y)
 		}
 }
 
+// Taken from http://www.roguebasin.com/index.php?title=Eligloscode
+// Modified to fit in my game
 void Game::RB_FOV()
 {
 		float x = 0, y = 0;
