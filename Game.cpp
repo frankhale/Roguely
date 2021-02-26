@@ -58,10 +58,10 @@ Game::Game()
 		auto crab_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 		auto bug_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 
-		auto spider_stat_component = std::make_shared<StatComponent>(2, 1);
-		auto lurcher_stat_component = std::make_shared<StatComponent>(10, 2);
-		auto crab_stat_component = std::make_shared<StatComponent>(10, 3);
-		auto bug_stat_component = std::make_shared<StatComponent>(12, 4);
+		auto spider_stat_component = std::make_shared<StatComponent>(10, 1);
+		auto lurcher_stat_component = std::make_shared<StatComponent>(20, 2);
+		auto crab_stat_component = std::make_shared<StatComponent>(30, 3);
+		auto bug_stat_component = std::make_shared<StatComponent>(40, 4);
 
 		spider_stat_components->emplace_back(spider_stat_component);
 		lurcher_stat_components->push_back(lurcher_stat_component);
@@ -300,7 +300,7 @@ void Game::MoveEnemies()
 {
 		for (auto& enemy : *enemies)
 		{
-				if(rand() % 100 + 1 >= 30) continue;
+				if (rand() % 100 + 1 >= 30) continue;
 
 				int direction = rand() % 4;
 				Point loc = { enemy.point.x, enemy.point.y };
@@ -338,8 +338,7 @@ void Game::InitiateAttackSequence(int x, int y)
 {
 		ClearInfo();
 
-		Entity enemy;
-		std::shared_ptr<StatComponent> enemy_stat_component = nullptr;
+		Entity enemy;		
 
 		for (auto const& e : *enemies)
 		{
@@ -350,19 +349,11 @@ void Game::InitiateAttackSequence(int x, int y)
 				}
 		}
 
-		for (auto& e : *enemy.components)
-		{
-				auto sc = std::dynamic_pointer_cast<StatComponent>(e);
-
-				if (sc != nullptr)
-				{
-						enemy_stat_component = sc;
-				}
-		}
+		auto enemy_stat_component = std::dynamic_pointer_cast<StatComponent>(enemy.components->front());
 
 		if (enemy_stat_component != nullptr)
 		{
-				enemy_stats_info << " Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
+				//enemy_stats_info << " Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 
 				auto player_critical_strike = rand() % 100 <= 20;
 				auto enemy_critical_strike = rand() % 100 <= 20;
@@ -372,7 +363,8 @@ void Game::InitiateAttackSequence(int x, int y)
 						player_combat_info.str("");
 
 						auto damage = player->GetAttack() + (rand() % 5 + 1) * 2;
-						enemy_stat_component->SetHealth(enemy_stat_component->GetHealth() - damage);
+						auto enemy_health = enemy_stat_component->GetHealth() - damage;
+						enemy_stat_component->SetHealth(enemy_health);
 						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
@@ -380,7 +372,10 @@ void Game::InitiateAttackSequence(int x, int y)
 				{
 						player_combat_info.str("");
 
-						player_combat_info << "Player attacks for " << player->GetAttack() + (rand() % 5 + 1) << " damage!!!";
+						auto damage = player->GetAttack() + (rand() % 5 + 1);
+						auto enemy_health = enemy_stat_component->GetHealth() - damage;
+						enemy_stat_component->SetHealth(enemy_health);
+						player_combat_info << "Player attacks for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
 
