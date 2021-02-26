@@ -94,10 +94,10 @@ public:
 		void MovePlayerDown();
 		void MovePlayerUp();
 
-		//auto GetPlayerCombatInfo() const { return player_combat_info.str(); }
-		//auto GetWinLoseMessage() const { return win_lose_message.str(); }
-		//auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
-		//auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
+		auto GetPlayerCombatInfo() const { return player_combat_info.str(); }
+		auto GetWinLoseMessage() const { return win_lose_message.str(); }
+		auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
+		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
 		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }

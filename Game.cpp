@@ -38,10 +38,10 @@ Game::Game()
 				}
 		}
 
-		win_lose_message.str("");
-		enemy_stats_info.str("");
-		player_combat_info.str("");
-		enemy_combat_info.str("");
+		win_lose_message.str(" ");
+		enemy_stats_info.str(" ");
+		player_combat_info.str(" ");
+		enemy_combat_info.str(" ");
 
 		coins = std::make_shared<std::vector<Entity>>();
 		health_gems = std::make_shared<std::vector<Entity>>();
@@ -349,7 +349,6 @@ void Game::InitiateAttackSequence(int x, int y)
 				}
 				else
 				{
-						stat_component->SetHealth(stat_component->GetHealth() - player->GetAttack());
 						player_combat_info << "attack for " << player->GetAttack() << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
@@ -362,9 +361,8 @@ void Game::InitiateAttackSequence(int x, int y)
 				}
 				else
 				{
-						auto damage = player->GetHealth() - stat_component->GetAttack();
-						player->SetHealth(player->GetHealth() - damage);
-						enemy_combat_info << "attack for " << damage << " damage";
+						player->SetHealth(player->GetHealth() - stat_component->GetAttack());
+						enemy_combat_info << "attack for " << stat_component->GetAttack() << " damage";
 						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 
@@ -372,11 +370,11 @@ void Game::InitiateAttackSequence(int x, int y)
 				{
 						enemy_stats_info << "Ded!!!";
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
-											
+
 						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
 								[&](Entity e) {
-										return e.point.x == enemy.point.x && e.point.y == enemy.point.y; 
-								}), 
+										return e.point.x == enemy.point.x && e.point.y == enemy.point.y;
+								}),
 								enemies->end());
 
 						Entity t_chest;

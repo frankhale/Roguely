@@ -48,7 +48,7 @@ int main(int argc, char* args[])
 		auto game = std::make_shared<Game>();
 		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH, 24, 24);
 		auto text = std::make_shared<Text>();
-		text->LoadFont(FONT_PATH, 40);
+		text->LoadFont(FONT_PATH, 32);
 
 		bool keep_window_open = true;
 		while (keep_window_open)
@@ -84,69 +84,69 @@ int main(int argc, char* args[])
 								break;
 						}
 
-						//if (strlen(game->GetWinLoseMessage()) > 0)
-						//{
-						for (int r = 0; r < game->GetViewPortHeight(); r++)
+						if (strlen(game->GetWinLoseMessage().c_str()) <= 1)
 						{
-								for (int c = 0; c < game->GetViewPortWidth(); c++)
+								for (int r = 0; r < game->GetViewPortHeight(); r++)
 								{
-										int dx = (c * 24) - (game->GetViewPortX() * 24);
-										int dy = (r * 24) - (game->GetViewPortY() * 24);
-
-										if (game->LightMap()[r][c] == 2)
+										for (int c = 0; c < game->GetViewPortWidth(); c++)
 										{
-												sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
+												int dx = (c * 24) - (game->GetViewPortX() * 24);
+												int dy = (r * 24) - (game->GetViewPortY() * 24);
 
-												for (auto& elem : **game->GetCoins())
+												if (game->LightMap()[r][c] == 2)
 												{
-														if (elem.point.x == c &&
-																elem.point.y == r)
+														sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
+
+														for (auto& elem : **game->GetCoins())
 														{
-																sprite_sheet->drawSprite(renderer, COIN, dx, dy);
+																if (elem.point.x == c &&
+																		elem.point.y == r)
+																{
+																		sprite_sheet->drawSprite(renderer, COIN, dx, dy);
+																}
+														}
+
+														for (auto& elem : **game->GetHealthGems())
+														{
+																if (elem.point.x == c &&
+																		elem.point.y == r)
+																{
+																		sprite_sheet->drawSprite(renderer, HEALTH_GEM, dx, dy);
+																}
+														}
+
+														for (auto& elem : **game->GetEnemies())
+														{
+																if (elem.point.x == c &&
+																		elem.point.y == r)
+																{
+																		int enemy_id = 0;
+
+																		if (elem.id == 50) enemy_id = SPIDER;
+																		else if (elem.id == 51)enemy_id = LURCHER;
+																		else if (elem.id == 52)enemy_id = CRAB;
+																		else if (elem.id == 53)enemy_id = BUG;
+
+																		sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
+																}
+														}
+
+														if (r == game->GetPlayerY() && c == game->GetPlayerX())
+														{
+																sprite_sheet->drawSprite(renderer, 3, dx, dy);
 														}
 												}
-
-												for (auto& elem : **game->GetHealthGems())
+												else
 												{
-														if (elem.point.x == c &&
-																elem.point.y == r)
-														{
-																sprite_sheet->drawSprite(renderer, HEALTH_GEM, dx, dy);
-														}
+														sprite_sheet->drawSprite(renderer, HIDDEN, dx, dy);
 												}
-
-												for (auto& elem : **game->GetEnemies())
-												{
-														if (elem.point.x == c &&
-																elem.point.y == r)
-														{
-																int enemy_id = 0;
-
-																if (elem.id == 50) enemy_id = SPIDER;
-																else if (elem.id == 51)enemy_id = LURCHER;
-																else if (elem.id == 52)enemy_id = CRAB;
-																else if (elem.id == 53)enemy_id = BUG;
-
-																sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
-														}
-												}
-
-												if (r == game->GetPlayerY() && c == game->GetPlayerX())
-												{
-														sprite_sheet->drawSprite(renderer, 3, dx, dy);
-												}
-										}
-										else
-										{
-												sprite_sheet->drawSprite(renderer, HIDDEN, dx, dy);
 										}
 								}
 						}
-						//}
-						//else
-						//{
-						//		text->DrawText(renderer, 10, 10, game->GetWinLoseMessage());
-						//}
+						else
+						{
+								text->DrawText(renderer, 10, 10, game->GetWinLoseMessage().c_str());
+						}
 
 						std::ostringstream player_health;
 						std::ostringstream player_score;
@@ -160,9 +160,9 @@ int main(int argc, char* args[])
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
 
-						//text->DrawText(renderer, 450, WINDOW_HEIGHT - 7 * 20, game->GetPlayerCombatInfo());
-						//text->DrawText(renderer, 450, WINDOW_HEIGHT - 5 * 20, game->GetEnemyStatInfo()->str().c_str());
-						//text->DrawText(renderer, 450, WINDOW_HEIGHT - 3 * 20, game->GetEnemyCombatInfo()->str().c_str());
+						text->DrawText(renderer, 300, WINDOW_HEIGHT - 7 * 20, game->GetPlayerCombatInfo().c_str());
+						text->DrawText(renderer, 300, WINDOW_HEIGHT - 5 * 20, game->GetEnemyStatInfo().c_str());
+						text->DrawText(renderer, 300, WINDOW_HEIGHT - 3 * 20, game->GetEnemyCombatInfo().c_str());
 
 						SDL_RenderPresent(renderer);
 						SDL_Delay(1000 / 60);
