@@ -152,6 +152,15 @@ int main(int argc, char* args[])
 														}
 												}
 
+												for (auto& elem : game->GetHealthGems())
+												{
+														if (elem.point.x == c &&
+																elem.point.y == r)
+														{
+																sprite_sheet->drawSprite(renderer, HEALTH_GEM, dx, dy);
+														}
+												}
+
 												if (r == game->GetPlayerY() && c == game->GetPlayerX())
 												{
 														sprite_sheet->drawSprite(renderer, 3, dx, dy);

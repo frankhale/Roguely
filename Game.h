@@ -60,8 +60,9 @@ public:
 		Point GenerateRandomPoint();
 
 		std::vector<Entity> GetCoins() const { return coins; }
-
-		void SpawnCoins();
+		std::vector<Entity> GetHealthGems() const { return health_gems; }
+		
+		void SpawnEntities(std::vector<Entity> &entity, int num);
 
 		void RB_FOV();		
 
@@ -73,12 +74,13 @@ private:
 		int light_map[MAP_HEIGHT][MAP_WIDTH];
 
 		const int COIN_VALUE = 50;
-		const int POTION_VALUE = 25;
+		const int HEALTH_GEM_VALUE = 25;
 		const int NUMBER_OF_COINS_ON_MAP = 150;
-		const int NUMBER_OF_POTIONS_ON_MAP = 50;
+		const int NUMBER_OF_HEALTH_GEMS_ON_MAP = 50;
 		const int NUMBER_OF_ENEMIES_ON_MAP = 50;
 
 		std::vector<Entity> coins;
+		std::vector<Entity> health_gems;
 };
 
 

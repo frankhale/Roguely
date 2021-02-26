@@ -38,7 +38,8 @@ Game::Game()
 				}
 		}
 
-		SpawnCoins();
+		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP);
+		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP);
 
 		RB_FOV();
 }
@@ -114,6 +115,16 @@ void Game::UpdateAfterPlayerMoved()
 						return false;
 				}), coins.end());
 
+		health_gems.erase(std::remove_if(health_gems.begin(), health_gems.end(),
+				[&](Entity e) {
+						if (e.point.x == player->X() && e.point.y == player->Y())
+						{
+								player->SetHealth(player->GetHealth() + HEALTH_GEM_VALUE);
+								return true;
+						}
+						return false;
+				}), health_gems.end());
+
 		RB_FOV();
 }
 
@@ -132,13 +143,13 @@ Point Game::GenerateRandomPoint()
 		return { c, r };
 }
 
-void Game::SpawnCoins()
+void Game::SpawnEntities(std::vector<Entity> &entity, int num)
 {
-		for (int i = 0; i < NUMBER_OF_COINS_ON_MAP; i++)
-		{				
+		for (int i = 0; i < num; i++)
+		{
 				Entity e;
 				e.point = GenerateRandomPoint();
-				coins.push_back(e);
+				entity.push_back(e);
 		}
 }
 
