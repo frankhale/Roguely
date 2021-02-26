@@ -50,12 +50,20 @@ int main(int argc, char* args[])
 		auto text = std::make_shared<Text>();
 		text->LoadFont(FONT_PATH, 28);
 
+		std::ostringstream player_health;
+		std::ostringstream player_score;
+		std::ostringstream enemies_killed;
+
 		bool keep_window_open = true;
 		while (keep_window_open)
 		{
 				SDL_Event e;
 				while (SDL_PollEvent(&e) > 0)
 				{
+						player_health.str("");
+						player_score.str("");
+						enemies_killed.str("");
+
 						SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 						SDL_RenderClear(renderer);
 
@@ -157,10 +165,6 @@ int main(int argc, char* args[])
 								text->DrawText(renderer, 10, 10, game->GetWinLoseMessage().c_str());
 						}
 
-						std::ostringstream player_health;
-						std::ostringstream player_score;
-						std::ostringstream enemies_killed;
-
 						player_health << "Health: " << game->GetPlayerHealth();
 						player_score << "Score: " << game->GetPlayerScore();
 						enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
@@ -168,7 +172,7 @@ int main(int argc, char* args[])
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 7 * 20, player_health.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
-
+						
 						text->DrawText(renderer, 300, WINDOW_HEIGHT - 7 * 20, game->GetPlayerCombatInfo().c_str());
 						text->DrawText(renderer, 300, WINDOW_HEIGHT - 5 * 20, game->GetEnemyStatInfo().c_str());
 						text->DrawText(renderer, 300, WINDOW_HEIGHT - 3 * 20, game->GetEnemyCombatInfo().c_str());

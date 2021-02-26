@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
@@ -98,7 +99,7 @@ public:
 		auto GetPlayerCombatInfo() const { return player_combat_info.str(); }
 		auto GetWinLoseMessage() const { return win_lose_message.str(); }
 		auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
-		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
+		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }		
 		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }
@@ -134,6 +135,7 @@ public:
 
 private:
 		void ClearInfo();
+		void UpdateCollection(std::shared_ptr < std::vector<Entity>> entities, std::function<void()>);
 
 		std::shared_ptr<Player> player;
 
@@ -155,6 +157,6 @@ private:
 
 		std::ostringstream win_lose_message;
 		std::ostringstream enemy_stats_info;
-		std::ostringstream enemy_combat_info;
+		std::ostringstream enemy_combat_info;		
 		std::ostringstream player_combat_info;
 };

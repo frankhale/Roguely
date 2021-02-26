@@ -209,51 +209,48 @@ void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
 		view_port_height = view_port_y + (VIEW_PORT_HEIGHT * 2);
 }
 
+void Game::UpdateCollection(std::shared_ptr<std::vector<Entity>> entities, std::function<void()> fn)
+{
+		entities->erase(std::remove_if(entities->begin(), entities->end(),
+				[&](Entity e) {
+						if (e.point.x == player->X() && e.point.y == player->Y())
+						{
+								fn();
+								return true;
+						}
+						return false;
+				}), entities->end());
+}
+
 void Game::UpdateAfterPlayerMoved()
 {
-		coins->erase(std::remove_if(coins->begin(), coins->end(),
-				[&](Entity e) {
-						if (e.point.x == player->X() && e.point.y == player->Y())
+		UpdateCollection(coins,
+				[&]() {
+						player->SetScore(player->GetScore() + COIN_VALUE);
+				});
+
+		UpdateCollection(health_gems,
+				[&]() {
+						player->SetHealth(player->GetHealth() + HEALTH_GEM_VALUE);
+				});
+
+		UpdateCollection(treasure_chests,
+				[&]() {
+						auto health_recovery_chance = rand() % 100 <= 20;
+						auto extra_score_change = rand() % 100 <= 15;
+
+						if (health_recovery_chance)
 						{
-								player->SetScore(player->GetScore() + COIN_VALUE);
-								return true;
+								player->SetHealth(player->GetHealth() + 15);
 						}
-						return false;
-				}), coins->end());
 
-		health_gems->erase(std::remove_if(health_gems->begin(), health_gems->end(),
-				[&](Entity e) {
-						if (e.point.x == player->X() && e.point.y == player->Y())
+						if (extra_score_change)
 						{
-								player->SetHealth(player->GetHealth() + HEALTH_GEM_VALUE);
-								return true;
+								player->SetScore(player->GetScore() + 25);
 						}
-						return false;
-				}), health_gems->end());
 
-		treasure_chests->erase(std::remove_if(treasure_chests->begin(), treasure_chests->end(),
-				[&](Entity e) {
-						if (e.point.x == player->X() && e.point.y == player->Y())
-						{
-								auto health_recovery_chance = rand() % 100 <= 20;
-								auto extra_score_change = rand() % 100 <= 15;
-
-								if (health_recovery_chance)
-								{
-										player->SetHealth(player->GetHealth() + 15);
-								}
-
-								if (extra_score_change)
-								{
-										player->SetScore(player->GetScore() + 25);
-								}
-
-								player->SetScore(player->GetScore() + 10);
-
-								return true;
-						}
-						return false;
-				}), treasure_chests->end());
+						player->SetScore(player->GetScore() + 10);
+				});
 
 		MoveEnemies();
 
@@ -303,6 +300,8 @@ void Game::MoveEnemies()
 {
 		for (auto& enemy : *enemies)
 		{
+				if(rand() % 100 + 1 >= 30) continue;
+
 				int direction = rand() % 4;
 				Point loc = { enemy.point.x, enemy.point.y };
 
@@ -340,7 +339,7 @@ void Game::InitiateAttackSequence(int x, int y)
 		ClearInfo();
 
 		Entity enemy;
-		std::shared_ptr<StatComponent> stat_component = nullptr;
+		std::shared_ptr<StatComponent> enemy_stat_component = nullptr;
 
 		for (auto const& e : *enemies)
 		{
@@ -357,57 +356,53 @@ void Game::InitiateAttackSequence(int x, int y)
 
 				if (sc != nullptr)
 				{
-						stat_component = sc;
+						enemy_stat_component = sc;
 				}
 		}
 
-		if (stat_component != nullptr)
+		if (enemy_stat_component != nullptr)
 		{
-				enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+				enemy_stats_info << " Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 
 				auto player_critical_strike = rand() % 100 <= 20;
 				auto enemy_critical_strike = rand() % 100 <= 20;
 
 				if (player_critical_strike)
 				{
-						enemy_stats_info.str("");
 						player_combat_info.str("");
 
-						auto damage = player->GetAttack() + 2 * 2;
-						stat_component->SetHealth(stat_component->GetHealth() - damage);
-						player_combat_info << " CRITICAL STRIKE for " << damage << " damage!!!";
-						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						auto damage = player->GetAttack() + (rand() % 5 + 1) * 2;
+						enemy_stat_component->SetHealth(enemy_stat_component->GetHealth() - damage);
+						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
+						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
 				else
 				{
-						enemy_stats_info.str("");
 						player_combat_info.str("");
 
-						player_combat_info << " attack for " << player->GetAttack() << " damage!!!";
-						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						player_combat_info << "Player attacks for " << player->GetAttack() + (rand() % 5 + 1) << " damage!!!";
+						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
 
 				if (enemy_critical_strike)
 				{
 						enemy_stats_info.str("");
-						player_combat_info.str("");
 
-						auto damage = stat_component->GetAttack() + 2 * 2;
+						auto damage = enemy_stat_component->GetAttack() + (rand() % 5 + 1) * 2;
 						player->SetHealth(player->GetHealth() - damage);
-						enemy_combat_info << " CRITICAL STRIKE for " << damage << " damage!!!";
-						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						enemy_combat_info << "Enemy CRITICALLY STRIKES for " << damage << " damage!!!";
+						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
 				else
 				{
 						enemy_stats_info.str("");
-						player_combat_info.str("");
 
-						player->SetHealth(player->GetHealth() - stat_component->GetAttack());
-						enemy_combat_info << " attack for " << stat_component->GetAttack() << " damage";
-						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						player->SetHealth(player->GetHealth() - enemy_stat_component->GetAttack());
+						enemy_combat_info << "Enemy attacks for " << enemy_stat_component->GetAttack() + (rand() % 5 + 1) << " damage";
+						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 				}
 
-				if (stat_component->GetHealth() <= 0)
+				if (enemy_stat_component->GetHealth() <= 0)
 				{
 						ClearInfo();
 
