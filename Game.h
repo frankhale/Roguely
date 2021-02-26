@@ -74,7 +74,6 @@ struct TileWalkableInfo
 {
 		bool walkable;
 		Point point;
-		Entity entity;
 };
 
 class Game
@@ -101,9 +100,10 @@ public:
 		int GetViewPortHeight() const { return view_port_height; }
 
 		bool IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities);
-		bool IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir);
+		auto IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir);
 		bool IsTilePlayerTile(int x, int y, MovementDirection dir);
 		bool IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId);
+		bool IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI);
 		void UpdatePlayerViewPortPoints(int playerX, int playerY);
 		void UpdateAfterPlayerMoved();
 

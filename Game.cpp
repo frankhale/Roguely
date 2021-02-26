@@ -87,20 +87,28 @@ bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector
 		return true;
 }
 
-bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir)
+auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir)
 {
 		for (auto& e : *entities)
 		{
 				if ((dir == MovementDirection::UP && e.point.y == y - 1 && e.point.x == x) ||
 						(dir == MovementDirection::DOWN && e.point.y == y + 1 && e.point.x == x) ||
 						(dir == MovementDirection::LEFT && e.point.y == y && e.point.x == x - 1) ||
-						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1))
+						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1 &&
+						e.entityType == EntityType::Enemy ||
+						whoAmI == WhoAmI::Enemy))
 				{
-						return true;
+						auto twi = std::make_shared<TileWalkableInfo>();
+						twi->point = e.point;
+						twi->walkable = false;
+						return twi;
 				}
 		}
 
-		return false;
+		auto twi = std::make_shared<TileWalkableInfo>();
+		twi->point = { x, y };
+		twi->walkable = true;
+		return twi;
 }
 
 bool Game::IsTilePlayerTile(int x, int y, MovementDirection dir)
@@ -117,6 +125,35 @@ bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileI
 				dir == MovementDirection::DOWN && map[y + 1][x] == tileId ||
 				dir == MovementDirection::LEFT && map[y][x - 1] == tileId ||
 				dir == MovementDirection::RIGHT && map[y][x + 1] == tileId);
+}
+
+bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
+{
+		auto is_player = player->X() == x && player->Y() == y;
+
+		if (IsTilePlayerTile(x, y, dir)) return false;
+
+		auto enemy = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
+
+		if (!enemy->walkable && is_player)
+
+		{
+				// initiate attack sequence
+		}
+		else
+		{
+
+		}
+
+		auto coins_traversable = IsEntityLocationTraversable(x, y, coins, whoAmI, dir);
+		auto health_gems_traversable = IsEntityLocationTraversable(x, y, health_gems, whoAmI, dir);
+		auto enemies_traversable = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
+
+		return IsTileOnMapTraversable(x, y, dir, 0 /* Wall */) &&
+					 coins_traversable->walkable &&
+					 health_gems_traversable->walkable &&
+					 enemies_traversable->walkable &&
+					 enemy->walkable;
 }
 
 void Game::MovePlayerLeft()
