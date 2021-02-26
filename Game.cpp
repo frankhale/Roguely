@@ -47,25 +47,25 @@ Game::Game()
 
 		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 4;
 
-		auto spider_stat_components = std::make_shared<std::vector<Component>>();
-		auto lurcher_stat_components = std::make_shared<std::vector<Component>>();
-		auto crab_stat_components = std::make_shared<std::vector<Component>>();
-		auto bug_stat_components = std::make_shared<std::vector<Component>>();
+		auto spider_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+		/*auto lurcher_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+		auto crab_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+		auto bug_stat_components = std::make_shared<std::vector<std::shared_ptr<Component>>>();*/
 
 		auto spider_stat_component = std::make_shared<StatComponent>(2, 1);
-		auto lurcher_stat_component = std::make_shared<StatComponent>(10, 2);
+		/*auto lurcher_stat_component = std::make_shared<StatComponent>(10, 2);
 		auto crab_stat_component = std::make_shared<StatComponent>(10, 3);
-		auto bug_stat_component = std::make_shared<StatComponent>(12, 4);
-		
-		spider_stat_components->push_back(*spider_stat_component);
-		lurcher_stat_components->push_back(*lurcher_stat_component);
-		crab_stat_components->push_back(*crab_stat_component);
-		bug_stat_components->push_back(*bug_stat_component);
+		auto bug_stat_component = std::make_shared<StatComponent>(12, 4);*/
+
+		spider_stat_components->emplace_back(spider_stat_component);
+		/*lurcher_stat_components->push_back(lurcher_stat_component);
+		crab_stat_components->push_back(crab_stat_component);
+		bug_stat_components->push_back(bug_stat_component);*/
 
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, spider_stat_components, Spider);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, lurcher_stat_components, Lurcher);
+		/*SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, lurcher_stat_components, Lurcher);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, crab_stat_components, Crab);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, bug_stat_components, Bug);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, bug_stat_components, Bug);*/
 
 		golden_candle.entityType = EntityType::Pickup;
 		golden_candle.id = 100;
@@ -86,14 +86,15 @@ auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector
 				if ((dir == MovementDirection::UP && e.point.y == y - 1 && e.point.x == x) ||
 						(dir == MovementDirection::DOWN && e.point.y == y + 1 && e.point.x == x) ||
 						(dir == MovementDirection::LEFT && e.point.y == y && e.point.x == x - 1) ||
-						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1 &&
-						(e.entityType == EntityType::Enemy ||
-						whoAmI == WhoAmI::Enemy)))
+						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1))
 				{
-						auto twi = std::make_shared<TileWalkableInfo>();
-						twi->point = e.point;
-						twi->walkable = false;
-						return twi;
+						if (e.entityType == EntityType::Enemy || whoAmI == WhoAmI::Enemy)
+						{
+								auto twi = std::make_shared<TileWalkableInfo>();
+								twi->point = e.point;
+								twi->walkable = false;
+								return twi;
+						}
 				}
 		}
 
@@ -128,9 +129,8 @@ bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
 		auto enemy = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
 
 		if (!enemy->walkable && is_player)
-
 		{
-				// initiate attack sequence
+				InitiateAttackSequence(enemy->point.x, enemy->point.y);
 		}
 		else
 		{
@@ -142,15 +142,16 @@ bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
 		auto enemies_traversable = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
 
 		return IsTileOnMapTraversable(x, y, dir, 0 /* Wall */) &&
-					 coins_traversable->walkable &&
-					 health_gems_traversable->walkable &&
-					 enemies_traversable->walkable &&
-					 enemy->walkable;
+				coins_traversable->walkable &&
+				health_gems_traversable->walkable &&
+				enemies_traversable->walkable &&
+				enemy->walkable;
 }
 
 void Game::MovePlayerLeft()
 {
-		if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::LEFT, 0)) return;
+		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::LEFT, 0)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::LEFT, WhoAmI::Player)) return;
 
 		player->SetX(player->X() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -159,7 +160,8 @@ void Game::MovePlayerLeft()
 
 void Game::MovePlayerRight()
 {
-		if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::RIGHT, 0)) return;
+		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::RIGHT, 0)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::RIGHT, WhoAmI::Player)) return;
 
 		player->SetX(player->X() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -168,7 +170,8 @@ void Game::MovePlayerRight()
 
 void Game::MovePlayerDown()
 {
-		if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::DOWN, 0)) return;
+		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::DOWN, 0)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::DOWN, WhoAmI::Player)) return;
 
 		player->SetY(player->Y() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -177,7 +180,8 @@ void Game::MovePlayerDown()
 
 void Game::MovePlayerUp()
 {
-		if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::UP, 0)) return;
+		//if (!IsTileOnMapTraversable(player->X(), player->Y(), MovementDirection::UP, 0)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::UP, WhoAmI::Player)) return;
 
 		player->SetY(player->Y() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -221,7 +225,7 @@ void Game::UpdateAfterPlayerMoved()
 						return false;
 				}), health_gems->end());
 
-		MoveEnemies();
+		//MoveEnemies();
 
 		RB_FOV();
 }
@@ -230,17 +234,17 @@ Point Game::GenerateRandomPoint()
 {
 		int c = 0;
 		int r = 0;
-		
+
 		do
 		{
 				c = rand() % (MAP_WIDTH - 1);
-				r = rand() % (MAP_HEIGHT - 1);				
+				r = rand() % (MAP_HEIGHT - 1);
 		} while (map[r][c] == 0 ||
 				player->X() == c ||
 				player->Y() == r ||
 				(!(IsEntityLocationTraversable(c, r, coins) ||
-					 IsEntityLocationTraversable(c, r, health_gems) ||
-				   IsEntityLocationTraversable(c, r, enemies))));
+						IsEntityLocationTraversable(c, r, health_gems) ||
+						IsEntityLocationTraversable(c, r, enemies))));
 
 		/*(std::any_of(coins->begin(), coins->end(), [&](const Entity& elem) { return elem.point.x == c && elem.point.y == r; })) ||
 		(std::any_of(health_gems->begin(), health_gems->end(), [&](const Entity& elem) { return elem.point.x == c && elem.point.y == r; })) ||
@@ -250,7 +254,7 @@ Point Game::GenerateRandomPoint()
 		return { c, r };
 }
 
-void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<Component>> components, int id)
+void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<std::shared_ptr<Component>>> components, int id)
 {
 		for (int i = 0; i < num; i++)
 		{
@@ -269,9 +273,9 @@ void Game::MoveEnemies()
 {
 		for (auto& enemy : *enemies)
 		{
-				int direction = rand() % 4;			
+				int direction = rand() % 4;
 				Point loc = { enemy.point.x, enemy.point.y };
- 
+
 				if (direction == 0 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::UP, WhoAmI::Enemy))
 				{
 						loc.y -= 1;
@@ -289,7 +293,37 @@ void Game::MoveEnemies()
 						loc.x += 1;
 				}
 
-				enemy.point = { loc.x, loc.y };				
+				enemy.point = { loc.x, loc.y };
+		}
+}
+
+void Game::InitiateAttackSequence(int x, int y)
+{
+		Entity enemy;
+		std::shared_ptr<StatComponent> stat_component = nullptr;
+
+		for (auto const& e : *enemies)
+		{
+				if (e.point.x == x && e.point.y)
+				{
+						enemy = e;
+						break;
+				}
+		}
+
+		for (auto& e : *enemy.components)
+		{				
+				auto sc = std::dynamic_pointer_cast<StatComponent>(e);
+				
+				if (sc != nullptr)
+				{						
+						stat_component = sc;
+				}
+		}
+
+		if (stat_component != nullptr)
+		{
+				std::cout << "Enemy Health:" << stat_component->GetHealth() << std::endl;
 		}
 }
 
@@ -324,4 +358,8 @@ void Game::RB_FOV()
 						oy += y;
 				};
 		};
+}
+
+Component::~Component()
+{
 }

@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+#include <typeinfo>
 #include <vector>
 #include <cstdlib> 
 #include <ctime> 
@@ -47,17 +49,20 @@ struct Point
 		int x, y;
 };
 
-class Component {};
+class Component {
+public:
+		virtual ~Component();
+};
 class StatComponent : public Component
 {
 public:
-		StatComponent(int h, int a) { health = h; attack = a; }
+		StatComponent(int h, int a) { health = h; attack = a; }		
 
 		int GetHealth() const { return health; }
 		int GetAttack() const { return attack; }
 		void SetHealth(int h) { health = h; }
 		void SetAttack(int a) { attack = a; }
-
+		
 private:
 		int health, attack;
 };
@@ -66,7 +71,7 @@ struct Entity
 {
 		Point point;
 		EntityType entityType;
-		std::shared_ptr<std::vector<Component>> components;
+		std::shared_ptr<std::vector<std::shared_ptr<Component>>> components;
 		int id;
 };
 
@@ -114,9 +119,10 @@ public:
 		auto GetEnemies() const { return &enemies; }
 		Entity GetGoldenCandle() const { return golden_candle; }
 
-		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<Component>> components, int id);
+		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<std::shared_ptr<Component>>> components, int id);
 
 		void MoveEnemies();
+		void InitiateAttackSequence(int x, int y);
 
 		void RB_FOV();
 
@@ -137,6 +143,10 @@ private:
 		std::shared_ptr<std::vector<Entity>> health_gems;
 		std::shared_ptr<std::vector<Entity>> enemies;
 		Entity golden_candle;
+
+		std::ostringstream win_lose_message;
+		std::ostringstream enemy_stats_info;
+		std::ostringstream player_combat_info;
 };
 
 
