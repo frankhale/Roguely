@@ -333,42 +333,52 @@ void Game::InitiateAttackSequence(int x, int y)
 		}
 
 		if (stat_component != nullptr)
-		{
-				std::cout << "Enemy Health:" << stat_component->GetHealth() << std::endl;
-
-				enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+		{				
+				enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 
 				auto player_critical_strike = rand() % 100 <= 20;
 				auto enemy_critical_strike = rand() % 100 <= 20;
 
 				if (player_critical_strike) {
+						enemy_stats_info.str("");
+						player_combat_info.str("");						
+
 						auto damage = player->GetAttack() + 2 * 2;
 						stat_component->SetHealth(stat_component->GetHealth() - damage);
-						player_combat_info << "CRITICAL STRIKE for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						player_combat_info << " CRITICAL STRIKE for " << damage << " damage!!!";
+						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 				else
 				{
-						player_combat_info << "attack for " << player->GetAttack() << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						enemy_stats_info.str("");
+						player_combat_info.str("");						
+
+						player_combat_info << " attack for " << player->GetAttack() << " damage!!!";
+						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 
 				if (enemy_critical_strike) {
+						enemy_stats_info.str("");
+						enemy_combat_info.str("");
+						
 						auto damage = stat_component->GetAttack() + 2 * 2;
 						player->SetHealth(player->GetHealth() - damage);
-						enemy_combat_info << "CRITICAL STRIKE for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						enemy_combat_info << " CRITICAL STRIKE for " << damage << " damage!!!";
+						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 				else
 				{
+						enemy_stats_info.str("");						
+						enemy_combat_info.str("");
+
 						player->SetHealth(player->GetHealth() - stat_component->GetAttack());
-						enemy_combat_info << "attack for " << stat_component->GetAttack() << " damage";
-						enemy_stats_info << "Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
+						enemy_combat_info << " attack for " << stat_component->GetAttack() << " damage";
+						enemy_stats_info << " Enemy Health: " << stat_component->GetHealth() << " | Attack: " << stat_component->GetAttack();
 				}
 
 				if (stat_component->GetHealth() <= 0)
 				{
-						enemy_stats_info << "Ded!!!";
+						enemy_stats_info << " Ded!!!";
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
 
 						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),

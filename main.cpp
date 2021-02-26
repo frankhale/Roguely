@@ -48,7 +48,7 @@ int main(int argc, char* args[])
 		auto game = std::make_shared<Game>();
 		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH, 24, 24);
 		auto text = std::make_shared<Text>();
-		text->LoadFont(FONT_PATH, 32);
+		text->LoadFont(FONT_PATH, 24);
 
 		bool keep_window_open = true;
 		while (keep_window_open)
