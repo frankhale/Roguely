@@ -148,6 +148,12 @@ int main(int argc, char* args[])
 																}
 														}
 
+														auto golden_candle = game->GetGoldenCandle();
+														if (golden_candle.point.x == c && golden_candle.point.y == r)
+														{
+																sprite_sheet->drawSprite(renderer, GOLDEN_CANDLE, dx, dy);
+														}
+
 														if (r == game->GetPlayerY() && c == game->GetPlayerX())
 														{
 																sprite_sheet->drawSprite(renderer, 3, dx, dy);
