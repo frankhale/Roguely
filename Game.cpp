@@ -137,7 +137,7 @@ void Game::MovePlayerLeft()
 {
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::LEFT, WhoAmI::Player)) return;
 
-		player->SetX(player->X() - 1);
+		player->X(player->X() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
 		UpdateAfterPlayerMoved();
 };
@@ -146,7 +146,7 @@ void Game::MovePlayerRight()
 {
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::RIGHT, WhoAmI::Player)) return;
 
-		player->SetX(player->X() + 1);
+		player->X(player->X() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
 		UpdateAfterPlayerMoved();
 };
@@ -155,7 +155,7 @@ void Game::MovePlayerDown()
 {
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::DOWN, WhoAmI::Player)) return;
 
-		player->SetY(player->Y() + 1);
+		player->Y(player->Y() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
 		UpdateAfterPlayerMoved();
 };
@@ -164,7 +164,7 @@ void Game::MovePlayerUp()
 {
 		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::UP, WhoAmI::Player)) return;
 
-		player->SetY(player->Y() - 1);
+		player->Y(player->Y() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
 		UpdateAfterPlayerMoved();
 };

@@ -1,8 +1,8 @@
+#pragma once
+
 #include <iostream>
 #include <SDL.h>
 #include <SDL_image.h>
-
-#pragma once
 
 #define NUM_SPRITES 19
 

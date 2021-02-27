@@ -6,6 +6,6 @@ Player::Player(int starting_health, int starting_attack)
 		y = 1;
 		score = 0;
 		enemies_killed = 0;
-		health = starting_health;		
-		attack = starting_attack;		
+		health = starting_health;
+		attack = starting_attack;
 }
