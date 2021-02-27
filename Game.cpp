@@ -58,9 +58,12 @@ Game::Game()
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, nullptr, Crab);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, nullptr, Bug);
 
-		golden_candle.entityType = EntityType::Pickup;
-		golden_candle.id = 100;
-		golden_candle.point = GenerateRandomPoint();
+		golden_candle = {
+				GenerateRandomPoint(),
+				EntityType::Pickup,
+				nullptr,
+				100
+		};
 
 		RB_FOV();
 }
@@ -81,18 +84,22 @@ auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector
 				{
 						if (e.entityType == EntityType::Enemy || whoAmI == WhoAmI::Enemy)
 						{
-								auto twi = std::make_shared<TileWalkableInfo>();
-								twi->point = { e.point.x, e.point.y };
-								twi->walkable = false;
-								return twi;
+								TileWalkableInfo twi{
+										false,
+										{ e.point.x, e.point.y }
+								};
+
+								return std::make_shared<TileWalkableInfo>(twi);
 						}
 				}
 		}
 
-		auto twi = std::make_shared<TileWalkableInfo>();
-		twi->point = { x, y };
-		twi->walkable = true;
-		return twi;
+		TileWalkableInfo twi{
+				true,
+				{ x, y }
+		};
+
+		return std::make_shared<TileWalkableInfo>(twi);
 }
 
 bool Game::IsTilePlayerTile(int x, int y, MovementDirection dir)
@@ -272,13 +279,14 @@ void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, E
 				auto components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 				components->push_back(std::make_shared<StatComponent>(health, attack));
 
-				Entity e;
-				e.point = { p.x, p.y };
-				e.entityType = entityType;
-				e.id = id;
-				e.components = components;
-				entity->push_back(e);
-		}
+				entity->push_back(
+						{
+								{ p.x, p.y },
+								entityType,
+								components,
+								id
+						});
+		};
 }
 
 void Game::MoveEnemies()
@@ -332,8 +340,6 @@ void Game::InitiateAttackSequence(int x, int y)
 
 		if (enemy_stat_component != nullptr)
 		{
-				//enemy_stats_info << " Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
-
 				auto player_critical_strike = std::rand() % 100 <= 20;
 				auto enemy_critical_strike = std::rand() % 100 <= 20;
 
@@ -382,18 +388,18 @@ void Game::InitiateAttackSequence(int x, int y)
 
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
 
-						Entity t_chest;
-						t_chest.id = 20;
-						t_chest.point = { enemy->point.x, enemy->point.y };
-						t_chest.entityType = EntityType::Pickup;
+						treasure_chests->push_back({
+								{ enemy->point.x, enemy->point.y },
+								EntityType::Pickup,
+								nullptr,
+								20
+						});
 
 						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
 								[&](Entity e) {
 										return e.point.x == enemy->point.x && e.point.y == enemy->point.y;
 								}),
 								enemies->end());
-
-						treasure_chests->push_back(t_chest);
 				}
 
 				if (player->GetHealth() <= 0)
