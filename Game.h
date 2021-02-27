@@ -71,8 +71,8 @@ private:
 
 struct Entity
 {
-		Point point;
-		EntityType entityType;
+		Point point{};
+		EntityType entityType{};
 		std::shared_ptr<std::vector<std::shared_ptr<Component>>> components;
 		int id;
 };
@@ -80,7 +80,7 @@ struct Entity
 struct TileWalkableInfo
 {
 		bool walkable;
-		Point point;
+		Point point{};
 };
 
 class Game
@@ -99,7 +99,7 @@ public:
 		auto GetPlayerCombatInfo() const { return player_combat_info.str(); }
 		auto GetWinLoseMessage() const { return win_lose_message.str(); }
 		auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
-		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }		
+		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
 		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }
@@ -157,6 +157,6 @@ private:
 
 		std::ostringstream win_lose_message;
 		std::ostringstream enemy_stats_info;
-		std::ostringstream enemy_combat_info;		
+		std::ostringstream enemy_combat_info;
 		std::ostringstream player_combat_info;
 };
