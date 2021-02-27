@@ -233,7 +233,7 @@ void Game::UpdateAfterPlayerMoved()
 				win_lose_message << "YOU WIN!!!";
 		}
 
-		//MoveEnemies();
+		MoveEnemies();
 
 		RB_FOV();
 }
@@ -285,7 +285,7 @@ void Game::MoveEnemies()
 {
 		for (auto& enemy : *enemies)
 		{
-				if (std::rand() % 100 + 1 >= 30) continue;
+				if (std::rand() % 100 + 1 >= 40) continue;
 
 				int direction = std::rand() % 4;
 				Point loc = { enemy.point.x, enemy.point.y };
