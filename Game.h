@@ -47,7 +47,8 @@ enum class WhoAmI
 
 struct Point
 {
-		int x, y;
+		int x = 0;
+		int y = 0;
 };
 
 class Component {
@@ -73,13 +74,13 @@ struct Entity
 {
 		Point point{};
 		EntityType entityType{};
-		std::shared_ptr<std::vector<std::shared_ptr<Component>>> components;
-		int id;
+		std::shared_ptr<std::vector<std::shared_ptr<Component>>> components = nullptr;
+		int id = 0;
 };
 
 struct TileWalkableInfo
 {
-		bool walkable;
+		bool walkable = false;
 		Point point{};
 };
 
