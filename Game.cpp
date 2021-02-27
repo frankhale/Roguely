@@ -229,7 +229,7 @@ void Game::UpdateAfterPlayerMoved()
 
 		if (golden_candle.point.x == player->X() && golden_candle.point.y == player->Y())
 		{
-				player->SetScore(10000);
+				player->SetScore(player->GetScore() + 10000);
 				win_lose_message << "YOU WIN!!!";
 		}
 

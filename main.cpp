@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <SDL_keycode.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include "SpriteSheet.h"
 #include "Text.h"
@@ -11,14 +12,36 @@
 const int WINDOW_WIDTH = 1056;
 const int WINDOW_HEIGHT = 768;
 
-#define WINDOW_ICON_PATH "assets/icon.png"
-#define GAME_TILESET_PATH "assets/tileset2.png"
-#define FONT_PATH "assets/VT323-Regular.ttf"
+const std::string WINDOW_ICON_PATH = "assets/icon.png";
+const std::string GAME_TILESET_PATH = "assets/tileset2.png";
+const std::string FONT_PATH = "assets/VT323-Regular.ttf";
+const std::string MUSIC = "assets/ExitExitProper.mp3";
 
 int main(int argc, char* args[])
 {
-		IMG_Init(IMG_INIT_PNG);
-		TTF_Init();
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
+		{
+				std::cout << "Failed to initialize the SDL2 library\n";
+				return -1;
+		}
+
+		if (IMG_Init(IMG_INIT_PNG) < 0)
+		{
+				std::cout << "Failed to initialize the SDL2 image library\n";
+				return -1;
+		}
+
+		if (TTF_Init() < 0)
+		{
+				std::cout << "Failed to initialize the SDL2 TTF library\n";
+				return -1;
+		}
+
+		if (MIX_INIT_MP3 != Mix_Init(MIX_INIT_MP3))
+		{
+				std::cout << "Failed to initialize the SDL2 mixer library\n";
+				return -1;
+		}
 
 		SDL_Window* window = SDL_CreateWindow("SDL2 Roguelike",
 				SDL_WINDOWPOS_CENTERED,
@@ -33,7 +56,7 @@ int main(int argc, char* args[])
 		}
 
 		SDL_Surface* window_surface = SDL_GetWindowSurface(window);
-		SDL_Surface* window_icon_surface = IMG_Load(WINDOW_ICON_PATH);
+		SDL_Surface* window_icon_surface = IMG_Load(WINDOW_ICON_PATH.c_str());
 		SDL_SetWindowIcon(window, window_icon_surface);
 
 		if (!window_surface)
@@ -46,13 +69,19 @@ int main(int argc, char* args[])
 		SDL_Renderer* icon_renderer = SDL_CreateRenderer(window, -1, 0);
 
 		auto game = std::make_shared<Game>();
-		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH, 24, 24);
+		auto sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH.c_str(), 24, 24);
 		auto text = std::make_shared<Text>();
-		text->LoadFont(FONT_PATH, 28);
+		text->LoadFont(FONT_PATH.c_str(), 28);
 
 		std::ostringstream player_health;
 		std::ostringstream player_score;
 		std::ostringstream enemies_killed;
+
+		Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
+		Mix_Music* music = Mix_LoadMUS(MUSIC.c_str());
+		Mix_Volume(-1, 5);
+		Mix_VolumeMusic(5);
+		Mix_PlayMusic(music, 1);
 
 		bool keep_window_open = true;
 		while (keep_window_open)
@@ -178,7 +207,7 @@ int main(int argc, char* args[])
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 7 * 20, player_health.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
 						text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
-						
+
 						text->DrawText(renderer, 300, WINDOW_HEIGHT - 7 * 20, game->GetPlayerCombatInfo().c_str());
 						text->DrawText(renderer, 300, WINDOW_HEIGHT - 5 * 20, game->GetEnemyStatInfo().c_str());
 						text->DrawText(renderer, 300, WINDOW_HEIGHT - 3 * 20, game->GetEnemyCombatInfo().c_str());
@@ -188,11 +217,13 @@ int main(int argc, char* args[])
 				}
 		}
 
+		Mix_FreeMusic(music);
 		SDL_FreeSurface(window_icon_surface);
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyRenderer(icon_renderer);
 		SDL_DestroyWindow(window);
 
+		Mix_Quit();
 		TTF_Quit();
 		IMG_Quit();
 		SDL_Quit();
