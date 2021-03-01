@@ -4,7 +4,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#define NUM_SPRITES 19
+#define NUM_SPRITES 20
 
 enum Sprites {
 		WALL = 0,
@@ -25,7 +25,8 @@ enum Sprites {
 		DOOR = 15,
 		WALL_SECRET_DOOR = 16,
 		BUG = 17,
-		HIDDEN = 18
+		FIRE_WALKER = 18,
+		HIDDEN = 19
 };
 
 class SpriteSheet

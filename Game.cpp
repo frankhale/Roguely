@@ -47,16 +47,18 @@ Game::Game()
 		health_gems = std::make_shared<std::vector<Entity>>();
 		enemies = std::make_shared<std::vector<Entity>>();
 		treasure_chests = std::make_shared<std::vector<Entity>>();
+		bonus = std::make_shared<std::vector<Entity>>();
 
-		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, nullptr, 1);
-		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, nullptr, 2);
+		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, EntitySubType::Coin);
+		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, EntitySubType::Health_Gem);
 
-		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 4;
+		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 5;
 
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, nullptr, Spider);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, nullptr, Lurcher);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, nullptr, Crab);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, nullptr, Bug);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Spider);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Lurcher);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Crab);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Bug);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Fire_Walker);
 
 		golden_candle = {
 				GenerateRandomPoint(),
@@ -234,6 +236,11 @@ void Game::UpdateAfterPlayerMoved()
 						player->SetScore(player->GetScore() + 10);
 				});
 
+		UpdateCollection(bonus,
+				[&]() {
+						player->SetAttack(player->GetAttack() + 1);
+				});
+
 		if (golden_candle.point.x == player->X() && golden_candle.point.y == player->Y())
 		{
 				player->SetScore(player->GetScore() + 10000);
@@ -264,28 +271,40 @@ Point Game::GenerateRandomPoint()
 		return { c, r };
 }
 
-void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<std::shared_ptr<Component>>> __components, int id)
+void Game::SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y)
 {
-		for (int i = 0; i < num; i++)
+		auto components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+
+		if (entityType == EntityType::Enemy)
 		{
 				int health, attack;
 
-				if (id == Spider) { health = 20; attack = 1; }
-				else if (id == Lurcher) { health = 30; attack = 2; }
-				else if (id == Crab) { health = 40; attack = 2; }
-				else if (id == Bug) { health = 50; attack = 2; }
+				if (entitySubType == EntitySubType::Spider) { health = 20; attack = 1; }
+				else if (entitySubType == EntitySubType::Lurcher) { health = 30; attack = 2; }
+				else if (entitySubType == EntitySubType::Crab) { health = 40; attack = 2; }
+				else if (entitySubType == EntitySubType::Bug) { health = 50; attack = 2; }
+				else if (entitySubType == EntitySubType::Fire_Walker) { health = 75; attack = 4; }
 
-				auto p = GenerateRandomPoint();
-				auto components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 				components->push_back(std::make_shared<StatComponent>(health, attack));
+		}
 
-				entity->push_back(
-						{
-								{ p.x, p.y },
-								entityType,
-								components,
-								id
-						});
+		components->push_back(std::make_shared<EntitySubTypeComponent>(entitySubType));
+
+		entity->push_back(
+				{
+						{ x, y },
+						entityType,
+						components,
+						static_cast<int>(entitySubType)
+				});
+}
+
+void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType)
+{
+		for (int i = 0; i < num; i++)
+		{
+				auto p = GenerateRandomPoint();
+				SpawnEntity(entity, entityType, entitySubType, p.x, p.y);
 		};
 }
 
@@ -327,6 +346,29 @@ void Game::ClearInfo()
 		enemy_combat_info.str("");
 }
 
+template<typename T>
+std::shared_ptr<T> Game::find_component(std::shared_ptr<std::vector<std::shared_ptr<Component>>> components)
+{
+		auto found_component = std::find_if(components->begin(), components->end(),
+				[](std::shared_ptr<Component> c) {
+						return std::dynamic_pointer_cast<T>(c) != nullptr;
+				});
+
+		std::shared_ptr<T> t_component = nullptr;
+
+		if (*found_component != nullptr)
+		{
+				t_component = std::dynamic_pointer_cast<T>(*found_component);
+
+				if (t_component != nullptr)
+				{
+						return t_component;
+				}
+		}
+
+		return nullptr;
+}
+
 void Game::InitiateAttackSequence(int x, int y)
 {
 		ClearInfo();
@@ -336,7 +378,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						return e.point.x == x && e.point.y == y;
 				});
 
-		auto enemy_stat_component = std::dynamic_pointer_cast<StatComponent>(enemy->components->front());
+		auto enemy_stat_component = find_component<StatComponent>(enemy->components);
 
 		if (enemy_stat_component != nullptr)
 		{
@@ -388,12 +430,20 @@ void Game::InitiateAttackSequence(int x, int y)
 
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
 
+						auto enemy_sub_type_component = find_component<EntitySubTypeComponent>(enemy->components);
+
+						if (enemy_sub_type_component != nullptr && enemy_sub_type_component->GetEntitySubType() == EntitySubType::Fire_Walker)
+						{
+								// TODO: We need a way to make sure we spawn in a good location that is around the enemy that we killed
+								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, enemy->point.x - 1, enemy->point.y);
+						}
+
 						treasure_chests->push_back({
 								{ enemy->point.x, enemy->point.y },
 								EntityType::Pickup,
 								nullptr,
 								20
-						});
+								});
 
 						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
 								[&](Entity e) {
@@ -446,3 +496,4 @@ void Game::RB_FOV()
 				};
 		};
 }
+

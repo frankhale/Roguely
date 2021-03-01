@@ -31,12 +31,16 @@ enum class EntityType
 		Pickup
 };
 
-enum EnemyType
+enum class EntitySubType
 {
+		Coin = 1,
+		Health_Gem = 2,
+		Attack_Gem = 3,
 		Spider = 50,
 		Lurcher = 51,
 		Crab = 52,
-		Bug = 53
+		Bug = 53,
+		Fire_Walker = 54
 };
 
 enum class WhoAmI
@@ -58,8 +62,7 @@ public:
 class StatComponent : public Component
 {
 public:
-		StatComponent(int h, int a) { health = h; attack = a; }
-		~StatComponent() {};
+		StatComponent(int h, int a) { health = h; attack = a; }		
 
 		int GetHealth() const { return health; }
 		int GetAttack() const { return attack; }
@@ -68,6 +71,16 @@ public:
 
 private:
 		int health, attack;
+};
+
+class EntitySubTypeComponent : public Component
+{
+public:
+		EntitySubTypeComponent(EntitySubType est) { entitySubType = est; };
+		auto GetEntitySubType() const { return entitySubType; }
+
+private:
+		EntitySubType entitySubType;
 };
 
 struct Entity
@@ -125,18 +138,21 @@ public:
 		auto GetHealthGems() const { return &health_gems; }
 		auto GetEnemies() const { return &enemies; }
 		auto GetTreasureChests() const { return &treasure_chests; }
+		auto GetBonus() const { return &bonus; }
 		Entity GetGoldenCandle() const { return golden_candle; }
 
-		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, std::shared_ptr<std::vector<std::shared_ptr<Component>>> components, int id);
-
+		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType);
+		void SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y);
 		void MoveEnemies();
 		void InitiateAttackSequence(int x, int y);
-
 		void RB_FOV();
+
+		template<typename T>
+		std::shared_ptr<T> find_component(std::shared_ptr<std::vector<std::shared_ptr<Component>>> components);
 
 private:
 		void ClearInfo();
-		void UpdateCollection(std::shared_ptr < std::vector<Entity>> entities, std::function<void()>);
+		void UpdateCollection(std::shared_ptr<std::vector<Entity>> entities, std::function<void()>);
 
 		std::shared_ptr<Player> player;
 
@@ -148,12 +164,14 @@ private:
 		const int HEALTH_GEM_VALUE = 25;
 		const int NUMBER_OF_COINS_ON_MAP = 150;
 		const int NUMBER_OF_HEALTH_GEMS_ON_MAP = 50;
-		const int NUMBER_OF_ENEMIES_ON_MAP = 50;
+		const int NUMBER_OF_ENEMIES_ON_MAP = 75;
 
 		std::shared_ptr<std::vector<Entity>> coins;
 		std::shared_ptr<std::vector<Entity>> health_gems;
 		std::shared_ptr<std::vector<Entity>> enemies;
 		std::shared_ptr<std::vector<Entity>> treasure_chests;
+		std::shared_ptr<std::vector<Entity>> bonus;
+
 		Entity golden_candle;
 
 		std::ostringstream win_lose_message;

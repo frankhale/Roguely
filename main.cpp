@@ -16,6 +16,7 @@ const int SPRITE_WIDTH = 32;
 const int SPRITE_HEIGHT = 32;
 const bool MUSIC = false;
 
+const std::string WINDOW_TITLE = "Simple SDL2 based Roguelike";
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
 const std::string GAME_TILESET_PATH = "assets/roguelike.png";
 const std::string FONT_PATH = "assets/VT323-Regular.ttf";
@@ -166,6 +167,7 @@ void render_game()
 														else if (elem.id == 51)enemy_id = LURCHER;
 														else if (elem.id == 52)enemy_id = CRAB;
 														else if (elem.id == 53)enemy_id = BUG;
+														else if (elem.id == 54)enemy_id = FIRE_WALKER;
 
 														sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
 												}
@@ -177,6 +179,16 @@ void render_game()
 														elem.point.y == r)
 												{
 														sprite_sheet->drawSprite(renderer, TREASURE_CHEST, dx, dy);
+												}
+										}
+
+										for (auto& elem : **game->GetBonus())
+										{
+												if (elem.point.x == c &&
+														elem.point.y == r)
+												{
+														// TODO: Bonus can be anything but right now it's only attack gems
+														sprite_sheet->drawSprite(renderer, ATTACK_BONUS_GEM, dx, dy);
 												}
 										}
 
@@ -224,7 +236,7 @@ void render_game()
 
 int main(int argc, char* args[])
 {
-		if (init_sdl("SDL2 Roguelike") < 0)
+		if (init_sdl(WINDOW_TITLE) < 0)
 		{
 				return -1;
 		}

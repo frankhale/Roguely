@@ -27,6 +27,7 @@ SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int s
 		sprites[DOOR] = { 15 * sprite_width, 0, sprite_width, sprite_height };
 		sprites[WALL_SECRET_DOOR] = { 0, 1 * sprite_height, sprite_width, sprite_height };
 		sprites[BUG] = { sprite_width * 1, 1 * sprite_height, sprite_width, sprite_height };
+		sprites[FIRE_WALKER] = { 5 * sprite_width, sprite_height, sprite_width, sprite_height };
 		sprites[HIDDEN] = { sprite_width * 2, 1 * sprite_height, sprite_width, sprite_height };
 }
 

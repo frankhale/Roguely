@@ -12,8 +12,8 @@ treasure chest with a chance to increase health and score.
 ## Tileset
 
 I've included the Photoshop file that was used to create the tileset. My 
-workflow is to develop tiles in 8x8 and then upscale them to 24x24 and then 
-export the tileset as a PNG which is used in the game. 
+workflow is to develop tiles in 8x8 and then upscale them to 32x32 and then 
+export the tileset as a PNG which is used in the game.
 
 ## Screenshots
 
