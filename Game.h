@@ -133,6 +133,8 @@ public:
 		void UpdateAfterPlayerMoved();
 
 		Point GenerateRandomPoint();
+		Point GetOpenPointForXY(int x, int y);
+		bool IsXYBlocked(int x, int y);
 
 		auto GetCoins() const { return &coins; }
 		auto GetHealthGems() const { return &health_gems; }

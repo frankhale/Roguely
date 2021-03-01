@@ -252,6 +252,17 @@ void Game::UpdateAfterPlayerMoved()
 		RB_FOV();
 }
 
+bool Game::IsXYBlocked(int x, int y)
+{
+		return (map[y][x] == 0 ||
+				player->X() == x ||
+				player->Y() == y ||
+				(!(IsEntityLocationTraversable(x, y, coins) ||
+						IsEntityLocationTraversable(x, y, health_gems) ||
+						IsEntityLocationTraversable(x, y, bonus) ||
+						IsEntityLocationTraversable(x, y, enemies))));
+}
+
 Point Game::GenerateRandomPoint()
 {
 		int c = 0;
@@ -261,14 +272,24 @@ Point Game::GenerateRandomPoint()
 		{
 				c = std::rand() % (MAP_WIDTH - 1);
 				r = std::rand() % (MAP_HEIGHT - 1);
-		} while (map[r][c] == 0 ||
-				player->X() == c ||
-				player->Y() == r ||
-				(!(IsEntityLocationTraversable(c, r, coins) ||
-						IsEntityLocationTraversable(c, r, health_gems) ||
-						IsEntityLocationTraversable(c, r, enemies))));
+		} while (IsXYBlocked(c, r));
 
 		return { c, r };
+}
+
+Point Game::GetOpenPointForXY(int x, int y)
+{
+		int left = x - 1;
+		int right = x + 1;
+		int up = y - 1;
+		int down = y + 1;
+
+		if (!IsXYBlocked(left, y)) return { left, y };
+		else if (!IsXYBlocked(right, y)) return { right, y };
+		else if (!IsXYBlocked(x, up)) return { x, up };
+		else if (!IsXYBlocked(x, down)) return { x, down };
+
+		return GenerateRandomPoint();
 }
 
 void Game::SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y)
@@ -435,7 +456,8 @@ void Game::InitiateAttackSequence(int x, int y)
 						if (enemy_sub_type_component != nullptr && enemy_sub_type_component->GetEntitySubType() == EntitySubType::Fire_Walker)
 						{
 								// TODO: We need a way to make sure we spawn in a good location that is around the enemy that we killed
-								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, enemy->point.x - 1, enemy->point.y);
+								auto pos = GetOpenPointForXY(enemy->point.x, enemy->point.y);
+								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, pos.x, pos.y);
 						}
 
 						treasure_chests->push_back({
