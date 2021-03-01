@@ -4,7 +4,9 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#define NUM_SPRITES 20
+#include "Common.h"
+
+const int NUM_SPRITES = 20;
 
 enum Sprites {
 		WALL = 0,
@@ -27,6 +29,11 @@ enum Sprites {
 		BUG = 17,
 		FIRE_WALKER = 18,
 		HIDDEN = 19
+};
+
+struct MetaSprite
+{
+		//std::shared_ptr<std::vector<int>> images{};
 };
 
 class SpriteSheet

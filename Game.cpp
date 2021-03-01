@@ -49,6 +49,8 @@ Game::Game()
 		treasure_chests = std::make_shared<std::vector<Entity>>();
 		bonus = std::make_shared<std::vector<Entity>>();
 
+		combat_log = std::make_shared<std::queue<CombatLog>>();
+
 		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, EntitySubType::Coin);
 		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, EntitySubType::Health_Gem);
 
@@ -79,10 +81,10 @@ auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector
 {
 		for (const auto& e : *entities)
 		{
-				if ((dir == MovementDirection::UP && e.point.y == y - 1 && e.point.x == x) ||
-						(dir == MovementDirection::DOWN && e.point.y == y + 1 && e.point.x == x) ||
-						(dir == MovementDirection::LEFT && e.point.y == y && e.point.x == x - 1) ||
-						(dir == MovementDirection::RIGHT && e.point.y == y && e.point.x == x + 1))
+				if ((dir == MovementDirection::Up && e.point.y == y - 1 && e.point.x == x) ||
+						(dir == MovementDirection::Down && e.point.y == y + 1 && e.point.x == x) ||
+						(dir == MovementDirection::Left && e.point.y == y && e.point.x == x - 1) ||
+						(dir == MovementDirection::Right && e.point.y == y && e.point.x == x + 1))
 				{
 						if (e.entityType == EntityType::Enemy || whoAmI == WhoAmI::Enemy)
 						{
@@ -106,18 +108,18 @@ auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector
 
 bool Game::IsTilePlayerTile(int x, int y, MovementDirection dir)
 {
-		return ((dir == MovementDirection::UP && player->Y() == y - 1 && player->X() == x) ||
-				(dir == MovementDirection::DOWN && player->Y() == y + 1 && player->X() == x) ||
-				(dir == MovementDirection::LEFT && player->Y() == y && player->X() == x - 1) ||
-				(dir == MovementDirection::RIGHT && player->Y() == y && player->X() == x + 1));
+		return ((dir == MovementDirection::Up && player->Y() == y - 1 && player->X() == x) ||
+				(dir == MovementDirection::Down && player->Y() == y + 1 && player->X() == x) ||
+				(dir == MovementDirection::Left && player->Y() == y && player->X() == x - 1) ||
+				(dir == MovementDirection::Right && player->Y() == y && player->X() == x + 1));
 }
 
 bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId)
 {
-		return !(dir == MovementDirection::UP && map[y - 1][x] == tileId ||
-				dir == MovementDirection::DOWN && map[y + 1][x] == tileId ||
-				dir == MovementDirection::LEFT && map[y][x - 1] == tileId ||
-				dir == MovementDirection::RIGHT && map[y][x + 1] == tileId);
+		return !(dir == MovementDirection::Up && map[y - 1][x] == tileId ||
+				dir == MovementDirection::Down && map[y + 1][x] == tileId ||
+				dir == MovementDirection::Left && map[y][x - 1] == tileId ||
+				dir == MovementDirection::Right && map[y][x + 1] == tileId);
 }
 
 bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
@@ -144,7 +146,7 @@ bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
 
 void Game::MovePlayerLeft()
 {
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::LEFT, WhoAmI::Player)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Left, WhoAmI::Player)) return;
 
 		player->X(player->X() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -153,7 +155,7 @@ void Game::MovePlayerLeft()
 
 void Game::MovePlayerRight()
 {
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::RIGHT, WhoAmI::Player)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Right, WhoAmI::Player)) return;
 
 		player->X(player->X() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -162,7 +164,7 @@ void Game::MovePlayerRight()
 
 void Game::MovePlayerDown()
 {
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::DOWN, WhoAmI::Player)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Down, WhoAmI::Player)) return;
 
 		player->Y(player->Y() + 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -171,7 +173,7 @@ void Game::MovePlayerDown()
 
 void Game::MovePlayerUp()
 {
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::UP, WhoAmI::Player)) return;
+		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Up, WhoAmI::Player)) return;
 
 		player->Y(player->Y() - 1);
 		UpdatePlayerViewPortPoints(player->X(), player->Y());
@@ -180,8 +182,8 @@ void Game::MovePlayerUp()
 
 void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
 {
-		view_port_x = player->X() - VIEW_PORT_WIDTH;
-		view_port_y = player->Y() - VIEW_PORT_HEIGHT;
+		view_port_x = playerX - VIEW_PORT_WIDTH;
+		view_port_y = playerY - VIEW_PORT_HEIGHT;
 
 		if (view_port_x < 0) view_port_x = std::max(0, view_port_x);
 		if (view_port_x > (MAP_WIDTH - (VIEW_PORT_WIDTH * 2))) view_port_x = (MAP_WIDTH - (VIEW_PORT_WIDTH * 2));
@@ -339,19 +341,19 @@ void Game::MoveEnemies()
 				int direction = std::rand() % 4;
 				Point loc = { enemy.point.x, enemy.point.y };
 
-				if (direction == 0 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::UP, WhoAmI::Enemy))
+				if (direction == 0 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Up, WhoAmI::Enemy))
 				{
 						loc.y -= 1;
 				}
-				else if (direction == 1 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::DOWN, WhoAmI::Enemy))
+				else if (direction == 1 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Down, WhoAmI::Enemy))
 				{
 						loc.y += 1;
 				}
-				else if (direction == 2 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::LEFT, WhoAmI::Enemy))
+				else if (direction == 2 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Left, WhoAmI::Enemy))
 				{
 						loc.x -= 1;
 				}
-				else if (direction == 3 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::RIGHT, WhoAmI::Enemy))
+				else if (direction == 3 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Right, WhoAmI::Enemy))
 				{
 						loc.x += 1;
 				}
@@ -455,7 +457,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						auto enemy_sub_type_component = find_component<EntitySubTypeComponent>(enemy->components);
 
 						if (enemy_sub_type_component != nullptr && enemy_sub_type_component->GetEntitySubType() == EntitySubType::Fire_Walker)
-						{								
+						{
 								auto pos = GetOpenPointForXY(enemy->point.x, enemy->point.y);
 								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, pos.x, pos.y);
 						}

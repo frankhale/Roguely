@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <typeinfo>
 #include <vector>
 #include <cstdlib> 
 #include <ctime>
 
+#include "Common.h"
 #include "Player.h"
 
 const int MAP_WIDTH = 100;
@@ -19,10 +21,10 @@ const int VIEW_PORT_HEIGHT = 13;
 
 enum class MovementDirection
 {
-		LEFT,
-		RIGHT,
-		UP,
-		DOWN
+		Left,
+		Right,
+		Up,
+		Down
 };
 
 enum class EntityType
@@ -49,10 +51,18 @@ enum class WhoAmI
 		Enemy
 };
 
-struct Point
+enum class AttackType
 {
-		int x = 0;
-		int y = 0;
+		Critical,
+		Normal
+};
+
+struct CombatLog
+{
+		Point point{};
+		WhoAmI who{};
+		AttackType attack_type{};
+		std::string message{};
 };
 
 class Component {
@@ -62,7 +72,7 @@ public:
 class StatComponent : public Component
 {
 public:
-		StatComponent(int h, int a) { health = h; attack = a; }		
+		StatComponent(int h, int a) { health = h; attack = a; }
 
 		int GetHealth() const { return health; }
 		int GetAttack() const { return attack; }
@@ -142,6 +152,7 @@ public:
 		auto GetTreasureChests() const { return &treasure_chests; }
 		auto GetBonus() const { return &bonus; }
 		Entity GetGoldenCandle() const { return golden_candle; }
+		auto GetCombatLog() const { return &combat_log; }
 
 		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType);
 		void SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y);
@@ -173,6 +184,8 @@ private:
 		std::shared_ptr<std::vector<Entity>> enemies;
 		std::shared_ptr<std::vector<Entity>> treasure_chests;
 		std::shared_ptr<std::vector<Entity>> bonus;
+
+		std::shared_ptr<std::queue<CombatLog>> combat_log;
 
 		Entity golden_candle;
 
