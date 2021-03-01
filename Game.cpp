@@ -260,7 +260,8 @@ bool Game::IsXYBlocked(int x, int y)
 				(!(IsEntityLocationTraversable(x, y, coins) ||
 						IsEntityLocationTraversable(x, y, health_gems) ||
 						IsEntityLocationTraversable(x, y, bonus) ||
-						IsEntityLocationTraversable(x, y, enemies))));
+						IsEntityLocationTraversable(x, y, enemies) ||
+						(x == golden_candle.point.x && y == golden_candle.point.y))));
 }
 
 Point Game::GenerateRandomPoint()
