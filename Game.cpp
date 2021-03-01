@@ -455,8 +455,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						auto enemy_sub_type_component = find_component<EntitySubTypeComponent>(enemy->components);
 
 						if (enemy_sub_type_component != nullptr && enemy_sub_type_component->GetEntitySubType() == EntitySubType::Fire_Walker)
-						{
-								// TODO: We need a way to make sure we spawn in a good location that is around the enemy that we killed
+						{								
 								auto pos = GetOpenPointForXY(enemy->point.x, enemy->point.y);
 								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, pos.x, pos.y);
 						}
