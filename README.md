@@ -9,6 +9,12 @@ walls inside. Enemies spawn, move around and you can attack them to increase
 your score. You can pick up health gems and coins. Dead enemies spawn a 
 treasure chest with a chance to increase health and score.
 
+## Tileset
+
+I've included the Photoshop file that was used to create the tileset. My 
+workflow is to develop tiles in 8x8 and then upscale them to 24x24 and then 
+export the tileset as a PNG which is used in the game. 
+
 ## Screenshots
 
 ![New](screenshots/second.png)
@@ -31,4 +37,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-26 February 2021
+28 February 2021

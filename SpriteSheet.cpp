@@ -32,7 +32,7 @@ SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int s
 
 void SpriteSheet::drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y)
 {
-		SDL_Rect dest = { x, y, 24, 24 };
+		SDL_Rect dest = { x, y, sprite_width, sprite_height };
 		SDL_RenderCopy(renderer, spritesheet_texture, &sprites[sprite_id], &dest);
 }
 

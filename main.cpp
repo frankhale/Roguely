@@ -10,12 +10,14 @@
 #include "Text.h"
 #include "Game.h"
 
-const int WINDOW_WIDTH = 1056;
+const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 768;
+const int SPRITE_WIDTH = 32;
+const int SPRITE_HEIGHT = 32;
 const bool MUSIC = false;
 
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
-const std::string GAME_TILESET_PATH = "assets/tileset2.png";
+const std::string GAME_TILESET_PATH = "assets/roguelike.png";
 const std::string FONT_PATH = "assets/VT323-Regular.ttf";
 const std::string MUSIC_PATH = "assets/ExitExitProper.mp3";
 
@@ -82,6 +84,7 @@ int init_sdl(std::string window_title)
 		}
 
 		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
+		SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 		if (MUSIC)
 		{
@@ -114,9 +117,9 @@ void tear_down_sdl()
 void init_game()
 {
 		game = std::make_shared<Game>();
-		sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH.c_str(), 24, 24);
+		sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH.c_str(), SPRITE_WIDTH, SPRITE_HEIGHT);
 		text = std::make_shared<Text>();
-		text->LoadFont(FONT_PATH.c_str(), 28);
+		text->LoadFont(FONT_PATH.c_str(), 40);
 }
 
 void render_game()
@@ -127,8 +130,8 @@ void render_game()
 				{
 						for (int c = 0; c < game->GetViewPortWidth(); c++)
 						{
-								int dx = (c * 24) - (game->GetViewPortX() * 24);
-								int dy = (r * 24) - (game->GetViewPortY() * 24);
+								int dx = (c * SPRITE_WIDTH) - (game->GetViewPortX() * SPRITE_WIDTH);
+								int dy = (r * SPRITE_HEIGHT) - (game->GetViewPortY() * SPRITE_HEIGHT);
 
 								if (game->LightMap()[r][c] == 2)
 								{
@@ -200,24 +203,28 @@ void render_game()
 				text->DrawText(renderer, 10, 10, game->GetWinLoseMessage().c_str());
 		}
 
+		SDL_Rect info_panel_rect = { 20, WINDOW_HEIGHT - 175, WINDOW_WIDTH - 40,  150 };
+		SDL_SetRenderDrawColor(renderer, 28, 28, 28, 192);		
+		SDL_RenderFillRect(renderer, &info_panel_rect);
+		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+		SDL_RenderDrawRect(renderer, &info_panel_rect);
+
 		player_health << "Health: " << game->GetPlayerHealth();
 		player_score << "Score: " << game->GetPlayerScore();
 		enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
 
-		text->DrawText(renderer, 10, WINDOW_HEIGHT - 7 * 20, player_health.str().c_str());
-		text->DrawText(renderer, 10, WINDOW_HEIGHT - 5 * 20, player_score.str().c_str());
-		text->DrawText(renderer, 10, WINDOW_HEIGHT - 3 * 20, enemies_killed.str().c_str());
+		text->DrawText(renderer, 35, WINDOW_HEIGHT - 8 * 20, player_health.str().c_str());
+		text->DrawText(renderer, 35, WINDOW_HEIGHT - 6 * 20, player_score.str().c_str());
+		text->DrawText(renderer, 35, WINDOW_HEIGHT - 4 * 20, enemies_killed.str().c_str());
 
-		text->DrawText(renderer, 300, WINDOW_HEIGHT - 7 * 20, game->GetPlayerCombatInfo().c_str());
-		text->DrawText(renderer, 300, WINDOW_HEIGHT - 5 * 20, game->GetEnemyStatInfo().c_str());
-		text->DrawText(renderer, 300, WINDOW_HEIGHT - 3 * 20, game->GetEnemyCombatInfo().c_str());
+		text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 8 * 20, game->GetPlayerCombatInfo().c_str());
+		text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 6 * 20, game->GetEnemyStatInfo().c_str());
+		text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 4 * 20, game->GetEnemyCombatInfo().c_str());
 }
 
 int main(int argc, char* args[])
 {
-		auto result = init_sdl("SDL2 Roguelike");
-
-		if (result < 0)
+		if (init_sdl("SDL2 Roguelike") < 0)
 		{
 				return -1;
 		}
