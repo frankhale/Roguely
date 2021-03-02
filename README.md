@@ -37,6 +37,8 @@ I'm using `Visual Studio 2019 Community Preview Edition` but you can just use
 regular `Visual Studio 2019 Community Edition`. The C++ project library/header
 locations for SDL2 are set up the way I have it on my machine.
 
+Get `Visual Studio 2019` from here: [https://visualstudio.microsoft.com/vs/](https://visualstudio.microsoft.com/vs/)
+
 You can grab SDL2 from here (I'm using 64bit): [https://www.libsdl.org/download-2.0.php](https://www.libsdl.org/download-2.0.php)
 
 You can grab the required libraries (I'm using 64bit) from here: [https://www.libsdl.org/projects/](https://www.libsdl.org/projects/)
