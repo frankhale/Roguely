@@ -217,7 +217,13 @@ void Game::UpdateAfterPlayerMoved()
 
 		UpdateCollection(health_gems,
 				[&]() {
-						player->SetHealth(player->GetHealth() + HEALTH_GEM_VALUE);
+						auto ph = player->GetHealth();
+						if (ph < 100)
+						{
+								auto h = ph + HEALTH_GEM_VALUE;
+								if (h > 100) h = 100;
+								player->SetHealth(h);
+						}
 				});
 
 		UpdateCollection(treasure_chests,

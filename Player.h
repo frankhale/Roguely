@@ -4,6 +4,7 @@ class Player
 public:
 		Player(int starting_health, int starting_attack);
 
+		int GetPlayerStartingHealth() const { return starting_health; }
 		int GetHealth() const { return health; }
 		int GetScore() const { return score; }
 		int GetAttack() const { return attack; }
@@ -21,7 +22,7 @@ public:
 
 private:
 
-		int health, score, attack, enemies_killed;
+		int starting_health, health, score, attack, enemies_killed;
 		int x, y;
 };
 

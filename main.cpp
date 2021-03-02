@@ -34,8 +34,6 @@ std::ostringstream player_health;
 std::ostringstream player_score;
 std::ostringstream enemies_killed;
 
-const int health_bar_max_width = 32;
-
 int init_sdl(std::string window_title)
 {
 		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -125,6 +123,16 @@ void init_game()
 		text->LoadFont(FONT_PATH.c_str(), 40);
 }
 
+int calculate_health_bar_width(int health, int starting_health, int health_bar_max_width)
+{
+		int hw = health_bar_max_width;
+
+		if (health < starting_health)
+				hw = ((health * (100 / starting_health)) * health_bar_max_width) / 100;
+
+		return hw;
+}
+
 void render_game()
 {
 		if (strlen(game->GetWinLoseMessage().c_str()) <= 1)
@@ -175,14 +183,10 @@ void render_game()
 
 														if (enemy_stat_component != nullptr)
 														{
-																auto hw = health_bar_max_width;
-																if (enemy_stat_component->GetHealth() < enemy_stat_component->GetStartingHealth())
-																{
-																		hw = ((enemy_stat_component->GetHealth() * (100 / enemy_stat_component->GetStartingHealth())) * health_bar_max_width) / 100;
-																}
-																
-																SDL_Rect health_panel_rect = { dx, dy - 6, hw, 4 };
-																SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+																auto e_hw = calculate_health_bar_width(enemy_stat_component->GetHealth(), enemy_stat_component->GetStartingHealth(), 32);
+
+																SDL_Rect health_panel_rect = { dx, dy - 8, e_hw, 6 };
+																SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red for enemy
 																SDL_RenderFillRect(renderer, &health_panel_rect);
 														}
 
@@ -217,6 +221,12 @@ void render_game()
 
 										if (r == game->GetPlayerY() && c == game->GetPlayerX())
 										{
+												auto p_hw = calculate_health_bar_width(game->GetPlayerHealth(), game->GetPlayerStartingHealth(), 32);
+
+												SDL_Rect health_panel_rect = { dx, dy - 8, p_hw, 6 };
+												SDL_SetRenderDrawColor(renderer, 8, 138, 41, 255); // green for player
+												SDL_RenderFillRect(renderer, &health_panel_rect);
+
 												sprite_sheet->drawSprite(renderer, 3, dx, dy);
 										}
 								}
@@ -226,29 +236,37 @@ void render_game()
 								}
 						}
 				}
-		}
+		} 
 		else
 		{
 				text->DrawText(renderer, 10, 10, game->GetWinLoseMessage().c_str());
 		}
 
-		SDL_Rect info_panel_rect = { 20, WINDOW_HEIGHT - 175, WINDOW_WIDTH - 40,  150 };
+		sprite_sheet->drawSprite(renderer, HEART, 20, 20, SPRITE_WIDTH * 2, SPRITE_HEIGHT * 2);
+
+		auto p_hw = calculate_health_bar_width(game->GetPlayerHealth(), game->GetPlayerStartingHealth(), 200);
+
+		SDL_Rect health_panel_rect = { (SPRITE_WIDTH*2+20), 38, p_hw, 22 };
+		SDL_SetRenderDrawColor(renderer, 8, 138, 41, 255); // green for player
+		SDL_RenderFillRect(renderer, &health_panel_rect);
+
+		/*SDL_Rect info_panel_rect = { 20, WINDOW_HEIGHT - 175, WINDOW_WIDTH - 40,  150 };
 		SDL_SetRenderDrawColor(renderer, 28, 28, 28, 192);		
 		SDL_RenderFillRect(renderer, &info_panel_rect);
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 		SDL_RenderDrawRect(renderer, &info_panel_rect);
 
 		player_health << "Health: " << game->GetPlayerHealth();
-		player_score << "Score: " << game->GetPlayerScore();
-		enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
+		player_score << "Score: " << game->GetPlayerScore();*/
+		//enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
 
-		text->DrawText(renderer, 35, WINDOW_HEIGHT - 8 * 20, player_health.str().c_str());
-		text->DrawText(renderer, 35, WINDOW_HEIGHT - 6 * 20, player_score.str().c_str());
-		text->DrawText(renderer, 35, WINDOW_HEIGHT - 4 * 20, enemies_killed.str().c_str());
+		//text->DrawText(renderer, 35, WINDOW_HEIGHT - 8 * 20, player_health.str().c_str());
+		//text->DrawText(renderer, 35, WINDOW_HEIGHT - 6 * 20, player_score.str().c_str());
+		//text->DrawText(renderer, 35, WINDOW_HEIGHT - 4 * 20, enemies_killed.str().c_str());
 
-		text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 8 * 20, game->GetPlayerCombatInfo().c_str());
-		text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 6 * 20, game->GetEnemyStatInfo().c_str());
-		text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 4 * 20, game->GetEnemyCombatInfo().c_str());
+		//text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 8 * 20, game->GetPlayerCombatInfo().c_str());
+		//text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 6 * 20, game->GetEnemyStatInfo().c_str());
+		//text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 4 * 20, game->GetEnemyCombatInfo().c_str());
 }
 
 int main(int argc, char* args[])
@@ -272,19 +290,23 @@ int main(int argc, char* args[])
 								keep_window_open = false;
 								break;
 						case SDL_KEYDOWN:
-								if (e.key.keysym.sym == SDLK_UP)
+								if (e.key.keysym.sym == SDLK_UP ||
+										e.key.keysym.sym == SDLK_w)
 								{
 										game->MovePlayerUp();
 								}
-								else if (e.key.keysym.sym == SDLK_DOWN)
+								else if (e.key.keysym.sym == SDLK_DOWN ||
+										e.key.keysym.sym == SDLK_s)
 								{
 										game->MovePlayerDown();
 								}
-								else if (e.key.keysym.sym == SDLK_LEFT)
+								else if (e.key.keysym.sym == SDLK_LEFT ||
+										e.key.keysym.sym == SDLK_a)
 								{
 										game->MovePlayerLeft();
 								}
-								else if (e.key.keysym.sym == SDLK_RIGHT)
+								else if (e.key.keysym.sym == SDLK_RIGHT ||
+										e.key.keysym.sym == SDLK_d)
 								{
 										game->MovePlayerRight();
 								}

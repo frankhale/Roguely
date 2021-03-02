@@ -6,7 +6,7 @@
 
 #include "Common.h"
 
-const int NUM_SPRITES = 20;
+const int NUM_SPRITES = 24;
 
 enum Sprites {
 		WALL = 0,
@@ -28,7 +28,11 @@ enum Sprites {
 		WALL_SECRET_DOOR = 16,
 		BUG = 17,
 		FIRE_WALKER = 18,
-		HIDDEN = 19
+		HIDDEN = 19,
+		HEART = 20,
+		CRIMSON_SHADOW = 21,
+		WALL_WITH_GRASS_1 = 22,
+		WALL_WITH_GRASS_2 = 23
 };
 
 struct MetaSprite
@@ -43,6 +47,7 @@ public:
 		~SpriteSheet();
 
 		void drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y);
+		void drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height);
 		int totalSprites() const { return NUM_SPRITES; }
 
 		SDL_Texture* get_spritesheet_texture() const { return spritesheet_texture; }

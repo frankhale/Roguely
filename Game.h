@@ -126,6 +126,7 @@ public:
 		auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
 		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
 		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
+		int GetPlayerStartingHealth() const { return player->GetPlayerStartingHealth(); }
 		int GetPlayerHealth() const { return player->GetHealth(); }
 		int GetPlayerScore() const { return player->GetScore(); }
 		int GetPlayerX() const { return player->X(); }
