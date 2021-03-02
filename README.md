@@ -17,13 +17,21 @@ export the tileset as a PNG which is used in the game.
 
 ## Screenshots
 
+Combat Text:
+
 ![Combat Text](screenshots/combat_text.png)
 
+Current Gameplay:
+
 ![New](screenshots/fourth.png)
+
+Older gameplay showing how it evolved:
 
 ![Old](screenshots/third.png)
 
 ![Old](screenshots/second.png)
+
+My first screenshot when I was able to render sprites:
 
 ![Old](screenshots/first.png)
 
