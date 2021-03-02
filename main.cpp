@@ -37,8 +37,6 @@ std::ostringstream player_health;
 std::ostringstream player_score;
 //std::ostringstream enemies_killed;
 
-int ticks = 0;
-
 int init_sdl(std::string window_title)
 {
 		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -144,6 +142,8 @@ int calculate_health_bar_width(int health, int starting_health, int health_bar_m
 
 void render_game(double delta_time)
 {
+		auto delta_time_seconds = delta_time / 1000;
+
 		if (strlen(game->GetWinLoseMessage().c_str()) <= 1)
 		{
 				for (int r = 0; r < game->GetViewPortHeight(); r++)
@@ -239,7 +239,9 @@ void render_game(double delta_time)
 												sprite_sheet->drawSprite(renderer, 3, dx, dy);
 										}																	
 								
-										if (game->GetCombatLog()->size() > 0)
+										// TODO: Delta time is not reliable and I don't know why. Need to figure this out!
+
+										/*if (game->GetCombatLog()->size() > 0) 
 										{
 												auto combat_log = game->GetCombatLog()->front();
 												auto c_x = (combat_log->point.x * SPRITE_WIDTH) - (game->GetViewPortX() * SPRITE_WIDTH);
@@ -247,11 +249,10 @@ void render_game(double delta_time)
 
 												text_small->DrawText(renderer, c_x, c_y - 36, combat_log->message.c_str());
 
-												if (ticks >= 12) {
-														game->GetCombatLog()->pop();
-														ticks = 0;
+												if (delta_time_seconds >= .5) {
+														game->GetCombatLog()->pop();														
 												}
-										}
+										}*/
 								}
 								else
 								{
@@ -297,7 +298,7 @@ void render_game(double delta_time)
 		} 
 		else
 		{
-				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - (static_cast<int>(game->GetWinLoseMessage().length())*10), WINDOW_HEIGHT / 2 - 80, game->GetWinLoseMessage().c_str());
+				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - (static_cast<int>(game->GetWinLoseMessage().length())*13), WINDOW_HEIGHT / 2 - 80, game->GetWinLoseMessage().c_str());
 		}
 }
 
@@ -364,10 +365,8 @@ int main(int argc, char* args[])
 
 				render_game(delta_time);
 
-				ticks++;
-
 				SDL_RenderPresent(renderer);
-				//SDL_Delay(1000 / 60);
+				SDL_Delay(1000 / 60);
 		}
 
 		tear_down_sdl();
