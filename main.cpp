@@ -14,7 +14,7 @@ const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 768;
 const int SPRITE_WIDTH = 32;
 const int SPRITE_HEIGHT = 32;
-const bool MUSIC = false;
+const bool MUSIC = true;
 
 const std::string WINDOW_TITLE = "Simple SDL2 based Roguelike";
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
