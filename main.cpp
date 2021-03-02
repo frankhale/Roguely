@@ -30,9 +30,10 @@ Mix_Music* mix_music = nullptr;
 std::shared_ptr<Game> game = nullptr;
 std::shared_ptr<SpriteSheet> sprite_sheet = nullptr;
 std::shared_ptr<Text> text = nullptr;
+std::shared_ptr<Text> text_large = nullptr;
 std::ostringstream player_health;
 std::ostringstream player_score;
-std::ostringstream enemies_killed;
+//std::ostringstream enemies_killed;
 
 int init_sdl(std::string window_title)
 {
@@ -121,6 +122,8 @@ void init_game()
 		sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH.c_str(), SPRITE_WIDTH, SPRITE_HEIGHT);
 		text = std::make_shared<Text>();
 		text->LoadFont(FONT_PATH.c_str(), 40);
+		text_large = std::make_shared<Text>();
+		text_large->LoadFont(FONT_PATH.c_str(), 63);
 }
 
 int calculate_health_bar_width(int health, int starting_health, int health_bar_max_width)
@@ -236,37 +239,42 @@ void render_game()
 								}
 						}
 				}
+
+				SDL_Rect info_panel_rect = { 10, 10, 290,  150 };
+				SDL_SetRenderDrawColor(renderer, 28, 28, 28, 128);
+				SDL_RenderFillRect(renderer, &info_panel_rect);
+				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+				SDL_RenderDrawRect(renderer, &info_panel_rect);
+
+				sprite_sheet->drawSprite(renderer, HEART, 20, 20, SPRITE_WIDTH * 2, SPRITE_HEIGHT * 2);
+
+				auto p_hw = calculate_health_bar_width(game->GetPlayerHealth(), game->GetPlayerStartingHealth(), 200);
+
+				SDL_Rect health_panel_rect = { (SPRITE_WIDTH * 2 + 20), 38, p_hw, 22 };
+				if (game->GetPlayerHealth() <= game->GetPlayerStartingHealth() / 3)
+						SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red player's health is in trouble
+				else
+						SDL_SetRenderDrawColor(renderer, 8, 138, 41, 255); // green for player
+				
+
+				SDL_RenderFillRect(renderer, &health_panel_rect);
+
+				player_health << game->GetPlayerHealth();
+				player_score << game->GetPlayerScore();
+				text->DrawText(renderer, (SPRITE_WIDTH * 3 + 70), 28, player_health.str().c_str());
+				text_large->DrawText(renderer, 40, 90, player_score.str().c_str());
+
+				//enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
+				/*text->DrawText(renderer, 35, WINDOW_HEIGHT - 4 * 20, enemies_killed.str().c_str());
+
+				text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 8 * 20, game->GetPlayerCombatInfo().c_str());
+				text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 6 * 20, game->GetEnemyStatInfo().c_str());
+				text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 4 * 20, game->GetEnemyCombatInfo().c_str());*/
 		} 
 		else
 		{
 				text->DrawText(renderer, 10, 10, game->GetWinLoseMessage().c_str());
 		}
-
-		sprite_sheet->drawSprite(renderer, HEART, 20, 20, SPRITE_WIDTH * 2, SPRITE_HEIGHT * 2);
-
-		auto p_hw = calculate_health_bar_width(game->GetPlayerHealth(), game->GetPlayerStartingHealth(), 200);
-
-		SDL_Rect health_panel_rect = { (SPRITE_WIDTH*2+20), 38, p_hw, 22 };
-		SDL_SetRenderDrawColor(renderer, 8, 138, 41, 255); // green for player
-		SDL_RenderFillRect(renderer, &health_panel_rect);
-
-		/*SDL_Rect info_panel_rect = { 20, WINDOW_HEIGHT - 175, WINDOW_WIDTH - 40,  150 };
-		SDL_SetRenderDrawColor(renderer, 28, 28, 28, 192);		
-		SDL_RenderFillRect(renderer, &info_panel_rect);
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		SDL_RenderDrawRect(renderer, &info_panel_rect);
-
-		player_health << "Health: " << game->GetPlayerHealth();
-		player_score << "Score: " << game->GetPlayerScore();*/
-		//enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
-
-		//text->DrawText(renderer, 35, WINDOW_HEIGHT - 8 * 20, player_health.str().c_str());
-		//text->DrawText(renderer, 35, WINDOW_HEIGHT - 6 * 20, player_score.str().c_str());
-		//text->DrawText(renderer, 35, WINDOW_HEIGHT - 4 * 20, enemies_killed.str().c_str());
-
-		//text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 8 * 20, game->GetPlayerCombatInfo().c_str());
-		//text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 6 * 20, game->GetEnemyStatInfo().c_str());
-		//text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 4 * 20, game->GetEnemyCombatInfo().c_str());
 }
 
 int main(int argc, char* args[])
@@ -313,10 +321,10 @@ int main(int argc, char* args[])
 								break;
 						}
 				}
-
+				
 				player_health.str("");
 				player_score.str("");
-				enemies_killed.str("");
+				//enemies_killed.str("");
 
 				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 				SDL_RenderClear(renderer);
