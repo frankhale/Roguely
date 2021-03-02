@@ -11,6 +11,7 @@ public:
 
 		int LoadFont(const char* path, int ptsize);
 		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text);
+		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color);
 
 private:
 		TTF_Font* font;

@@ -233,15 +233,15 @@ void Game::UpdateAfterPlayerMoved()
 
 						if (health_recovery_chance)
 						{
-								player->SetHealth(player->GetHealth() + 15);
+								player->SetHealth(player->GetHealth() + 40);
 						}
 
 						if (extra_score_change)
 						{
-								player->SetScore(player->GetScore() + 25);
+								player->SetScore(player->GetScore() + 50);
 						}
 
-						player->SetScore(player->GetScore() + 10);
+						player->SetScore(player->GetScore() + 25);
 				});
 
 		UpdateCollection(bonus,
@@ -413,7 +413,7 @@ void Game::AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatM
 		auto log = std::make_shared<CombatLog>();
 		log->who = who;
 		log->point = { point.x, point.y };
-		log->attack_type = attack_type;	
+		log->attack_type = attack_type;
 		log->message = message.str();
 
 		combat_log->push(log);
@@ -443,9 +443,9 @@ void Game::InitiateAttackSequence(int x, int y)
 						auto enemy_health = enemy_stat_component->GetHealth() - damage;
 						enemy_stat_component->SetHealth(enemy_health);
 						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();				
-				
-						AddCombatLog(WhoAmI::Player, { enemy->point.x, enemy->point.y }, AttackType::Critical, CombatMultiplier::Plus, damage);						
+						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
+
+						AddCombatLog(WhoAmI::Player, { enemy->point.x, enemy->point.y }, AttackType::Critical, CombatMultiplier::Plus, damage);
 				}
 				else
 				{
@@ -474,12 +474,12 @@ void Game::InitiateAttackSequence(int x, int y)
 				else
 				{
 						enemy_stats_info.str("");
-						
+
 						auto damage = enemy_stat_component->GetAttack() + (std::rand() % 5 + 1);
 						player->SetHealth(player->GetHealth() - damage);
 						enemy_combat_info << "Enemy attacks for " << damage << " damage";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
-				
+
 						AddCombatLog(WhoAmI::Enemy, { player->X(), player->Y() }, AttackType::Normal, CombatMultiplier::Minus, damage);
 				}
 
@@ -488,6 +488,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						ClearInfo();
 
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
+						player->SetScore(player->GetScore() + 25);
 
 						auto enemy_sub_type_component = find_component<EntitySubTypeComponent>(enemy->components);
 
@@ -509,6 +510,8 @@ void Game::InitiateAttackSequence(int x, int y)
 										return e.point.x == enemy->point.x && e.point.y == enemy->point.y;
 								}),
 								enemies->end());
+
+						ClearQueue<std::shared_ptr<CombatLog>>(*combat_log);
 				}
 
 				if (player->GetHealth() <= 0)

@@ -35,7 +35,23 @@ std::shared_ptr<Text> text_small = nullptr;
 
 std::ostringstream player_health;
 std::ostringstream player_score;
-//std::ostringstream enemies_killed;
+std::ostringstream enemies_killed;
+
+// ref: https://gamedev.stackexchange.com/a/163508/18014
+struct Timer
+{
+		Uint64 previous_ticks{};
+		float elapsed_seconds{};
+
+		void tick()
+		{
+				const Uint64 current_ticks{ SDL_GetPerformanceCounter() };
+				const Uint64 delta{ current_ticks - previous_ticks };
+				previous_ticks = current_ticks;
+				static const Uint64 TICKS_PER_SECOND{ SDL_GetPerformanceFrequency() };
+				elapsed_seconds = delta / static_cast<float>(TICKS_PER_SECOND);
+		}
+};
 
 int init_sdl(std::string window_title)
 {
@@ -103,7 +119,7 @@ int init_sdl(std::string window_title)
 }
 
 void tear_down_sdl()
-{		
+{
 		if (MUSIC)
 		{
 				Mix_FreeMusic(mix_music);
@@ -142,7 +158,7 @@ int calculate_health_bar_width(int health, int starting_health, int health_bar_m
 
 void render_game(double delta_time)
 {
-		auto delta_time_seconds = delta_time / 1000;
+		static double combat_log_render = .0f;
 
 		if (strlen(game->GetWinLoseMessage().c_str()) <= 1)
 		{
@@ -237,22 +253,31 @@ void render_game(double delta_time)
 												SDL_RenderFillRect(renderer, &health_panel_rect);
 
 												sprite_sheet->drawSprite(renderer, 3, dx, dy);
-										}																	
-								
-										// TODO: Delta time is not reliable and I don't know why. Need to figure this out!
+										}
 
-										/*if (game->GetCombatLog()->size() > 0) 
+										if (game->GetCombatLog()->size() > 0)
 										{
 												auto combat_log = game->GetCombatLog()->front();
 												auto c_x = (combat_log->point.x * SPRITE_WIDTH) - (game->GetViewPortX() * SPRITE_WIDTH);
 												auto c_y = (combat_log->point.y * SPRITE_HEIGHT) - (game->GetViewPortY() * SPRITE_HEIGHT);
 
-												text_small->DrawText(renderer, c_x, c_y - 36, combat_log->message.c_str());
-
-												if (delta_time_seconds >= .5) {
-														game->GetCombatLog()->pop();														
+												SDL_Color combat_log_color{};
+												if (combat_log->who == WhoAmI::Player)
+												{
+														combat_log_color = { 0, 255, 0, 255 };
 												}
-										}*/
+												else if (combat_log->who == WhoAmI::Enemy)
+												{
+														combat_log_color = { 255, 0, 0, 255 };
+												}
+
+												text_small->DrawText(renderer, c_x, c_y - 36, combat_log->message.c_str(), combat_log_color);
+
+												if (combat_log_render >= .25) {
+														game->GetCombatLog()->pop();
+														combat_log_render = .0f;
+												}
+										}
 								}
 								else
 								{
@@ -295,15 +320,29 @@ void render_game(double delta_time)
 				text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 8 * 20, game->GetPlayerCombatInfo().c_str());
 				text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 6 * 20, game->GetEnemyStatInfo().c_str());
 				text->DrawText(renderer, WINDOW_WIDTH / 2 - 150, WINDOW_HEIGHT - 4 * 20, game->GetEnemyCombatInfo().c_str());*/
-		} 
+		}
 		else
 		{
-				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - (static_cast<int>(game->GetWinLoseMessage().length())*13), WINDOW_HEIGHT / 2 - 80, game->GetWinLoseMessage().c_str());
+				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - (static_cast<int>(game->GetWinLoseMessage().length()) * 13), WINDOW_HEIGHT / 2 - 80, game->GetWinLoseMessage().c_str());
+		
+				player_score << "Final Score: " << game->GetPlayerScore();
+				text_large->DrawText(renderer, 20, 20, player_score.str().c_str());
+
+				enemies_killed << "Total Enemies Killed: " << game->GetPlayerEnemiesKilled();
+				text_large->DrawText(renderer, 20, 70, enemies_killed.str().c_str());
 		}
+
+		combat_log_render += delta_time;
 }
 
 int main(int argc, char* args[])
 {
+		// ref: https://gamedev.stackexchange.com/a/163508/18014
+		const int UPDATE_FREQUENCY{ 60 };
+		const float CYCLE_TIME{ 1.0f / UPDATE_FREQUENCY };
+		static Timer system_timer;
+		float accumulated_seconds{ 0.0f };
+
 		if (init_sdl(WINDOW_TITLE) < 0)
 		{
 				return -1;
@@ -311,17 +350,12 @@ int main(int argc, char* args[])
 
 		init_game();
 
-		// Delta Time calculation from: https://gamedev.stackexchange.com/a/110831/18014
-		Uint64 now = SDL_GetPerformanceCounter();
-		Uint64 last_time = 0;
-		double delta_time = 0;
-
 		bool keep_window_open = true;
 		while (keep_window_open)
 		{
-				last_time = now;
-				now = SDL_GetPerformanceCounter();
-				delta_time = ((now - last_time) * 1000 / (double)SDL_GetPerformanceFrequency());				
+				// Update clock
+				system_timer.tick();
+				accumulated_seconds += system_timer.elapsed_seconds;
 
 				SDL_Event e;
 				while (SDL_PollEvent(&e) > 0)
@@ -355,18 +389,26 @@ int main(int argc, char* args[])
 								break;
 						}
 				}
-				
+
 				player_health.str("");
 				player_score.str("");
-				//enemies_killed.str("");
+				enemies_killed.str("");
 
 				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 				SDL_RenderClear(renderer);
 
-				render_game(delta_time);
+				static Timer animation_timer;
+				while (std::isgreater(accumulated_seconds, CYCLE_TIME))
+				{
+						// Reset the accumulator
+						accumulated_seconds = -CYCLE_TIME;
 
-				SDL_RenderPresent(renderer);
-				SDL_Delay(1000 / 60);
+						animation_timer.tick();
+
+						render_game(animation_timer.elapsed_seconds);
+
+						SDL_RenderPresent(renderer);
+				}
 		}
 
 		tear_down_sdl();

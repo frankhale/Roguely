@@ -13,11 +13,11 @@
 #include "Common.h"
 #include "Player.h"
 
-const int MAP_WIDTH = 100;
-const int MAP_HEIGHT = 100;
+const int MAP_WIDTH = 75;
+const int MAP_HEIGHT = 75;
 
-const int VIEW_PORT_WIDTH = 22;
-const int VIEW_PORT_HEIGHT = 13;
+const int VIEW_PORT_WIDTH = 20;
+const int VIEW_PORT_HEIGHT = 12;
 
 enum class MovementDirection
 {
@@ -174,6 +174,13 @@ public:
 		void AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatMultiplier combat_multiplier, int damage);
 
 private:
+		template<typename T>
+		void ClearQueue(std::queue<T>& q)
+		{
+				std::queue<T> empty;
+				std::swap(q, empty);
+		}
+
 		void ClearInfo();
 		void UpdateCollection(std::shared_ptr<std::vector<Entity>> entities, std::function<void()>);
 
