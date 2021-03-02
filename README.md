@@ -17,7 +17,9 @@ export the tileset as a PNG which is used in the game.
 
 ## Screenshots
 
-![New](screenshots/third.png)
+![New](screenshots/fourth.png)
+
+![Old](screenshots/third.png)
 
 ![Old](screenshots/second.png)
 
