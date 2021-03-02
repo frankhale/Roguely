@@ -250,12 +250,16 @@ void render_game()
 
 				auto p_hw = calculate_health_bar_width(game->GetPlayerHealth(), game->GetPlayerStartingHealth(), 200);
 
-				SDL_Rect health_panel_rect = { (SPRITE_WIDTH * 2 + 20), 38, p_hw, 22 };
+				SDL_Rect health_panel_rect = { (SPRITE_WIDTH * 2 + 20), 36, p_hw, 24 };
+				SDL_Rect health_panel_rect_underlay = { (SPRITE_WIDTH * 2 + 20), 36, 200, 24 };
+
+				SDL_SetRenderDrawColor(renderer, 33, 33, 33, 255);
+				SDL_RenderFillRect(renderer, &health_panel_rect_underlay);
+
 				if (game->GetPlayerHealth() <= game->GetPlayerStartingHealth() / 3)
 						SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red player's health is in trouble
 				else
 						SDL_SetRenderDrawColor(renderer, 8, 138, 41, 255); // green for player
-				
 
 				SDL_RenderFillRect(renderer, &health_panel_rect);
 
