@@ -131,16 +131,16 @@ public:
 		auto GetWinLoseMessage() const { return win_lose_message.str(); }
 		auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
 		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
-		int GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
-		int GetPlayerStartingHealth() const { return player->GetPlayerStartingHealth(); }
-		int GetPlayerHealth() const { return player->GetHealth(); }
-		int GetPlayerScore() const { return player->GetScore(); }
-		int GetPlayerX() const { return player->X(); }
-		int GetPlayerY() const { return player->Y(); }
-		int GetViewPortX() const { return view_port_x; }
-		int GetViewPortY() const { return view_port_y; }
-		int GetViewPortWidth() const { return view_port_width; }
-		int GetViewPortHeight() const { return view_port_height; }
+		auto GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
+		auto GetPlayerStartingHealth() const { return player->GetPlayerStartingHealth(); }
+		auto GetPlayerHealth() const { return player->GetHealth(); }
+		auto GetPlayerScore() const { return player->GetScore(); }
+		auto GetPlayerX() const { return player->X(); }
+		auto GetPlayerY() const { return player->Y(); }
+		auto GetViewPortX() const { return view_port_x; }
+		auto GetViewPortY() const { return view_port_y; }
+		auto GetViewPortWidth() const { return view_port_width; }
+		auto GetViewPortHeight() const { return view_port_height; }
 
 		bool IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities);
 		auto IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir);
@@ -159,7 +159,7 @@ public:
 		auto GetEnemies() const { return &enemies; }
 		auto GetTreasureChests() const { return &treasure_chests; }
 		auto GetBonus() const { return &bonus; }
-		Entity GetGoldenCandle() const { return golden_candle; }
+		auto GetGoldenCandle() const { return golden_candle; }
 		auto GetCombatLog() const { return combat_log; }
 
 		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType);
