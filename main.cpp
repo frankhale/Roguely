@@ -29,11 +29,15 @@ Mix_Music* mix_music = nullptr;
 
 std::shared_ptr<Game> game = nullptr;
 std::shared_ptr<SpriteSheet> sprite_sheet = nullptr;
-std::shared_ptr<Text> text = nullptr;
+std::shared_ptr<Text> text_medium = nullptr;
 std::shared_ptr<Text> text_large = nullptr;
+std::shared_ptr<Text> text_small = nullptr;
+
 std::ostringstream player_health;
 std::ostringstream player_score;
 //std::ostringstream enemies_killed;
+
+int ticks = 0;
 
 int init_sdl(std::string window_title)
 {
@@ -120,10 +124,12 @@ void init_game()
 {
 		game = std::make_shared<Game>();
 		sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH.c_str(), SPRITE_WIDTH, SPRITE_HEIGHT);
-		text = std::make_shared<Text>();
-		text->LoadFont(FONT_PATH.c_str(), 40);
+		text_medium = std::make_shared<Text>();
+		text_medium->LoadFont(FONT_PATH.c_str(), 40);
 		text_large = std::make_shared<Text>();
 		text_large->LoadFont(FONT_PATH.c_str(), 63);
+		text_small = std::make_shared<Text>();
+		text_small->LoadFont(FONT_PATH.c_str(), 26);
 }
 
 int calculate_health_bar_width(int health, int starting_health, int health_bar_max_width)
@@ -136,7 +142,7 @@ int calculate_health_bar_width(int health, int starting_health, int health_bar_m
 		return hw;
 }
 
-void render_game()
+void render_game(double delta_time)
 {
 		if (strlen(game->GetWinLoseMessage().c_str()) <= 1)
 		{
@@ -231,6 +237,20 @@ void render_game()
 												SDL_RenderFillRect(renderer, &health_panel_rect);
 
 												sprite_sheet->drawSprite(renderer, 3, dx, dy);
+										}																	
+								
+										if (game->GetCombatLog()->size() > 0)
+										{
+												auto combat_log = game->GetCombatLog()->front();
+												auto c_x = (combat_log->point.x * SPRITE_WIDTH) - (game->GetViewPortX() * SPRITE_WIDTH);
+												auto c_y = (combat_log->point.y * SPRITE_HEIGHT) - (game->GetViewPortY() * SPRITE_HEIGHT);
+
+												text_small->DrawText(renderer, c_x, c_y - 36, combat_log->message.c_str());
+
+												if (ticks >= 12) {
+														game->GetCombatLog()->pop();
+														ticks = 0;
+												}
 										}
 								}
 								else
@@ -265,7 +285,7 @@ void render_game()
 
 				player_health << game->GetPlayerHealth();
 				player_score << game->GetPlayerScore();
-				text->DrawText(renderer, (SPRITE_WIDTH * 3 + 70), 28, player_health.str().c_str());
+				text_medium->DrawText(renderer, (SPRITE_WIDTH * 3 + 70), 28, player_health.str().c_str());
 				text_large->DrawText(renderer, 40, 90, player_score.str().c_str());
 
 				//enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
@@ -277,7 +297,7 @@ void render_game()
 		} 
 		else
 		{
-				text->DrawText(renderer, 10, 10, game->GetWinLoseMessage().c_str());
+				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - (static_cast<int>(game->GetWinLoseMessage().length())*10), WINDOW_HEIGHT / 2 - 80, game->GetWinLoseMessage().c_str());
 		}
 }
 
@@ -290,9 +310,18 @@ int main(int argc, char* args[])
 
 		init_game();
 
+		// Delta Time calculation from: https://gamedev.stackexchange.com/a/110831/18014
+		Uint64 now = SDL_GetPerformanceCounter();
+		Uint64 last_time = 0;
+		double delta_time = 0;
+
 		bool keep_window_open = true;
 		while (keep_window_open)
 		{
+				last_time = now;
+				now = SDL_GetPerformanceCounter();
+				delta_time = ((now - last_time) * 1000 / (double)SDL_GetPerformanceFrequency());				
+
 				SDL_Event e;
 				while (SDL_PollEvent(&e) > 0)
 				{
@@ -333,10 +362,12 @@ int main(int argc, char* args[])
 				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 				SDL_RenderClear(renderer);
 
-				render_game();
+				render_game(delta_time);
+
+				ticks++;
 
 				SDL_RenderPresent(renderer);
-				SDL_Delay(1000 / 60);
+				//SDL_Delay(1000 / 60);
 		}
 
 		tear_down_sdl();

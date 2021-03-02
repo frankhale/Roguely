@@ -49,7 +49,7 @@ Game::Game()
 		treasure_chests = std::make_shared<std::vector<Entity>>();
 		bonus = std::make_shared<std::vector<Entity>>();
 
-		combat_log = std::make_shared<std::queue<CombatLog>>();
+		combat_log = std::make_shared<std::queue<std::shared_ptr<CombatLog>>>();
 
 		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, EntitySubType::Coin);
 		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, EntitySubType::Health_Gem);
@@ -399,6 +399,26 @@ std::shared_ptr<T> Game::find_component(std::shared_ptr<std::vector<std::shared_
 		return nullptr;
 }
 
+void Game::AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatMultiplier combat_multiplier, int damage)
+{
+		std::ostringstream message;
+
+		if (combat_multiplier == CombatMultiplier::Plus)
+				message << "+";
+		else if (combat_multiplier == CombatMultiplier::Minus)
+				message << "-";
+
+		message << damage;
+
+		auto log = std::make_shared<CombatLog>();
+		log->who = who;
+		log->point = { point.x, point.y };
+		log->attack_type = attack_type;	
+		log->message = message.str();
+
+		combat_log->push(log);
+}
+
 void Game::InitiateAttackSequence(int x, int y)
 {
 		ClearInfo();
@@ -423,7 +443,9 @@ void Game::InitiateAttackSequence(int x, int y)
 						auto enemy_health = enemy_stat_component->GetHealth() - damage;
 						enemy_stat_component->SetHealth(enemy_health);
 						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
+						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();				
+				
+						AddCombatLog(WhoAmI::Player, { enemy->point.x, enemy->point.y }, AttackType::Critical, CombatMultiplier::Plus, damage);						
 				}
 				else
 				{
@@ -434,6 +456,8 @@ void Game::InitiateAttackSequence(int x, int y)
 						enemy_stat_component->SetHealth(enemy_health);
 						player_combat_info << "Player attacks for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
+
+						AddCombatLog(WhoAmI::Player, { enemy->point.x, enemy->point.y }, AttackType::Normal, CombatMultiplier::Plus, damage);
 				}
 
 				if (enemy_critical_strike)
@@ -444,14 +468,19 @@ void Game::InitiateAttackSequence(int x, int y)
 						player->SetHealth(player->GetHealth() - damage);
 						enemy_combat_info << "Enemy CRITICALLY STRIKES for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
+
+						AddCombatLog(WhoAmI::Enemy, { player->X(), player->Y() }, AttackType::Critical, CombatMultiplier::Minus, damage);
 				}
 				else
 				{
 						enemy_stats_info.str("");
-
-						player->SetHealth(player->GetHealth() - enemy_stat_component->GetAttack());
-						enemy_combat_info << "Enemy attacks for " << enemy_stat_component->GetAttack() + (std::rand() % 5 + 1) << " damage";
+						
+						auto damage = enemy_stat_component->GetAttack() + (std::rand() % 5 + 1);
+						player->SetHealth(player->GetHealth() - damage);
+						enemy_combat_info << "Enemy attacks for " << damage << " damage";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
+				
+						AddCombatLog(WhoAmI::Enemy, { player->X(), player->Y() }, AttackType::Normal, CombatMultiplier::Minus, damage);
 				}
 
 				if (enemy_stat_component->GetHealth() <= 0)

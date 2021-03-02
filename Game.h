@@ -57,6 +57,12 @@ enum class AttackType
 		Normal
 };
 
+enum class CombatMultiplier
+{
+		Plus,
+		Minus
+};
+
 struct CombatLog
 {
 		Point point{};
@@ -154,7 +160,7 @@ public:
 		auto GetTreasureChests() const { return &treasure_chests; }
 		auto GetBonus() const { return &bonus; }
 		Entity GetGoldenCandle() const { return golden_candle; }
-		auto GetCombatLog() const { return &combat_log; }
+		auto GetCombatLog() const { return combat_log; }
 
 		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType);
 		void SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y);
@@ -164,6 +170,8 @@ public:
 
 		template<typename T>
 		std::shared_ptr<T> find_component(std::shared_ptr<std::vector<std::shared_ptr<Component>>> components);
+
+		void AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatMultiplier combat_multiplier, int damage);
 
 private:
 		void ClearInfo();
@@ -187,7 +195,7 @@ private:
 		std::shared_ptr<std::vector<Entity>> treasure_chests;
 		std::shared_ptr<std::vector<Entity>> bonus;
 
-		std::shared_ptr<std::queue<CombatLog>> combat_log;
+		std::shared_ptr<std::queue<std::shared_ptr<CombatLog>>> combat_log;
 
 		Entity golden_candle;
 

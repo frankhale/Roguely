@@ -6,11 +6,6 @@ Text::Text()
     text_texture = nullptr;
 }
 
-Text::~Text()
-{
-    SDL_DestroyTexture(text_texture);
-}
-
 int Text::LoadFont(const char* path, int ptsize)
 {
     font = TTF_OpenFont(path, ptsize);
@@ -40,4 +35,5 @@ void Text::DrawText(SDL_Renderer* renderer, int x, int y, const char* text)
         
     SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);    
     SDL_FreeSurface(text_surface);
+    SDL_DestroyTexture(text_texture);
 }
