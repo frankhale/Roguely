@@ -14,7 +14,7 @@ const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 768;
 const int SPRITE_WIDTH = 32;
 const int SPRITE_HEIGHT = 32;
-const bool MUSIC = true;
+const bool MUSIC = false;
 
 const std::string WINDOW_TITLE = "Simple SDL2 based Roguelike";
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
@@ -33,6 +33,8 @@ std::shared_ptr<Text> text = nullptr;
 std::ostringstream player_health;
 std::ostringstream player_score;
 std::ostringstream enemies_killed;
+
+const int health_bar_max_width = 32;
 
 int init_sdl(std::string window_title)
 {
@@ -168,6 +170,21 @@ void render_game()
 														else if (elem.id == 52)enemy_id = CRAB;
 														else if (elem.id == 53)enemy_id = BUG;
 														else if (elem.id == 54)enemy_id = FIRE_WALKER;
+
+														auto enemy_stat_component = game->find_component<StatComponent>(elem.components);
+
+														if (enemy_stat_component != nullptr)
+														{
+																auto hw = health_bar_max_width;
+																if (enemy_stat_component->GetHealth() < enemy_stat_component->GetStartingHealth())
+																{
+																		hw = ((enemy_stat_component->GetHealth() * (100 / enemy_stat_component->GetStartingHealth())) * health_bar_max_width) / 100;
+																}
+																
+																SDL_Rect health_panel_rect = { dx, dy - 6, hw, 4 };
+																SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+																SDL_RenderFillRect(renderer, &health_panel_rect);
+														}
 
 														sprite_sheet->drawSprite(renderer, enemy_id, dx, dy);
 												}

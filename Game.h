@@ -72,15 +72,16 @@ public:
 class StatComponent : public Component
 {
 public:
-		StatComponent(int h, int a) { health = h; attack = a; }
+		StatComponent(int h, int a) { starting_health = h; health = h; attack = a; }
 
+		int GetStartingHealth() const { return starting_health; }
 		int GetHealth() const { return health; }
 		int GetAttack() const { return attack; }
 		void SetHealth(int h) { health = h; }
 		void SetAttack(int a) { attack = a; }
 
 private:
-		int health, attack;
+		int starting_health, health, attack;
 };
 
 class EntitySubTypeComponent : public Component
