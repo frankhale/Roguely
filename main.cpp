@@ -289,8 +289,8 @@ void render_game(double delta_time)
 				SDL_Rect info_panel_rect = { 10, 10, 290,  150 };
 				SDL_SetRenderDrawColor(renderer, 28, 28, 28, 128);
 				SDL_RenderFillRect(renderer, &info_panel_rect);
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-				SDL_RenderDrawRect(renderer, &info_panel_rect);
+				/*SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+				SDL_RenderDrawRect(renderer, &info_panel_rect);*/
 
 				sprite_sheet->drawSprite(renderer, HEART, 20, 20, SPRITE_WIDTH * 2, SPRITE_HEIGHT * 2);
 
