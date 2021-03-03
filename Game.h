@@ -1,3 +1,29 @@
+/*
+* Game.h
+*
+* MIT License
+*
+* Copyright (c) 2021 Frank Hale
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
+
 #pragma once
 
 #include <algorithm>
@@ -132,8 +158,10 @@ public:
 		auto GetEnemyStatInfo() const { return enemy_stats_info.str(); }
 		auto GetEnemyCombatInfo() const { return enemy_combat_info.str(); }
 		auto GetPlayerEnemiesKilled() const { return player->GetEnemiesKilled(); }
-		auto GetPlayerStartingHealth() const { return player->GetPlayerStartingHealth(); }
+		auto GetPlayerStartingHealth() const { return player->GetStartingHealth(); }
 		auto GetPlayerHealth() const { return player->GetHealth(); }
+		void SetPlayerHealth(int health) const { player->SetHealth(health); }
+		void AddPlayerHealth(int health) { player->SetHealth(player->GetHealth() + health); }
 		auto GetPlayerScore() const { return player->GetScore(); }
 		auto GetPlayerX() const { return player->X(); }
 		auto GetPlayerY() const { return player->Y(); }
@@ -172,6 +200,7 @@ public:
 		std::shared_ptr<T> find_component(std::shared_ptr<std::vector<std::shared_ptr<Component>>> components);
 
 		void AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatMultiplier combat_multiplier, int damage);
+		void HandleLogicTimer(double delta_time);
 
 private:
 		template<typename T>

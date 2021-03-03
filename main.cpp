@@ -1,3 +1,29 @@
+/*
+* main.cpp
+* 
+* MIT License
+*
+* Copyright (c) 2021 Frank Hale
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
+
 #include <iostream>
 #include <sstream>
 #include <SDL.h>
@@ -33,9 +59,9 @@ std::shared_ptr<Text> text_medium = nullptr;
 std::shared_ptr<Text> text_large = nullptr;
 std::shared_ptr<Text> text_small = nullptr;
 
-std::ostringstream player_health;
-std::ostringstream player_score;
-std::ostringstream enemies_killed;
+std::ostringstream player_health_text;
+std::ostringstream player_score_text;
+std::ostringstream enemies_killed_text;
 
 // ref: https://gamedev.stackexchange.com/a/163508/18014
 struct Timer
@@ -110,8 +136,8 @@ int init_sdl(std::string window_title)
 		{
 				Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
 				mix_music = Mix_LoadMUS(MUSIC_PATH.c_str());
-				Mix_Volume(-1, 5);
-				Mix_VolumeMusic(5);
+				Mix_Volume(-1, 3);
+				Mix_VolumeMusic(3);
 				Mix_PlayMusic(mix_music, 1);
 		}
 
@@ -273,7 +299,7 @@ void render_game(double delta_time)
 
 												text_small->DrawText(renderer, c_x, c_y - 36, combat_log->message.c_str(), combat_log_color);
 
-												if (combat_log_render >= .25) {
+												if (combat_log_render >= .4) {
 														game->GetCombatLog()->pop();
 														combat_log_render = .0f;
 												}
@@ -309,10 +335,10 @@ void render_game(double delta_time)
 
 				SDL_RenderFillRect(renderer, &health_panel_rect);
 
-				player_health << game->GetPlayerHealth();
-				player_score << game->GetPlayerScore();
-				text_medium->DrawText(renderer, (SPRITE_WIDTH * 3 + 70), 28, player_health.str().c_str());
-				text_large->DrawText(renderer, 40, 90, player_score.str().c_str());
+				player_health_text << game->GetPlayerHealth();
+				player_score_text << game->GetPlayerScore();
+				text_medium->DrawText(renderer, (SPRITE_WIDTH * 3 + 70), 28, player_health_text.str().c_str());
+				text_large->DrawText(renderer, 40, 90, player_score_text.str().c_str());
 
 				//enemies_killed << "Enemies Killed: " << game->GetPlayerEnemiesKilled();
 				/*text->DrawText(renderer, 35, WINDOW_HEIGHT - 4 * 20, enemies_killed.str().c_str());
@@ -329,11 +355,11 @@ void render_game(double delta_time)
 
 				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - text_extents.width / 2, WINDOW_HEIGHT / 2 - text_extents.height / 2, win_lose_message.c_str());
 
-				player_score << "Final Score: " << game->GetPlayerScore();
-				text_large->DrawText(renderer, 20, 20, player_score.str().c_str());
+				player_score_text << "Final Score: " << game->GetPlayerScore();
+				text_large->DrawText(renderer, 20, 20, player_score_text.str().c_str());
 
-				enemies_killed << "Total Enemies Killed: " << game->GetPlayerEnemiesKilled();
-				text_large->DrawText(renderer, 20, 70, enemies_killed.str().c_str());
+				enemies_killed_text << "Total Enemies Killed: " << game->GetPlayerEnemiesKilled();
+				text_large->DrawText(renderer, 20, 70, enemies_killed_text.str().c_str());
 		}
 
 		combat_log_render += delta_time;
@@ -394,21 +420,23 @@ int main(int argc, char* args[])
 						}
 				}
 
-				player_health.str("");
-				player_score.str("");
-				enemies_killed.str("");
+				player_health_text.str("");
+				player_score_text.str("");
+				enemies_killed_text.str("");
 
 				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 				SDL_RenderClear(renderer);
 
 				static Timer animation_timer;
-				while (std::isgreater(accumulated_seconds, CYCLE_TIME))
-				{
-						// Reset the accumulator
-						accumulated_seconds = -CYCLE_TIME;
+				static Timer logic_timer;
 
+				while (std::isgreater(accumulated_seconds, CYCLE_TIME))
+				{						
+						accumulated_seconds = -CYCLE_TIME;					
+						logic_timer.tick();
 						animation_timer.tick();
 
+						game->HandleLogicTimer(logic_timer.elapsed_seconds);
 						render_game(animation_timer.elapsed_seconds);
 
 						SDL_RenderPresent(renderer);
