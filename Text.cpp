@@ -18,6 +18,17 @@ int Text::LoadFont(const char* path, int ptsize)
 		return 0;
 }
 
+TextExtents Text::GetTextExtents(const char* text)
+{
+		int w{}, h{};
+
+		if (TTF_SizeText(font, text, &w, &h) == 0) {
+				return { w, h };
+		}
+
+		return {};
+}
+
 void Text::DrawText(SDL_Renderer* renderer, int x, int y, const char* text)
 {
 		DrawText(renderer, x, y, text, text_color);

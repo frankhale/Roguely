@@ -4,6 +4,11 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
+struct TextExtents
+{
+		int width, height;
+};
+
 class Text
 {
 public:
@@ -12,6 +17,7 @@ public:
 		int LoadFont(const char* path, int ptsize);
 		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text);
 		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color);
+		TextExtents GetTextExtents(const char* text);
 
 private:
 		TTF_Font* font;

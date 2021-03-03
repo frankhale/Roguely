@@ -323,8 +323,12 @@ void render_game(double delta_time)
 		}
 		else
 		{
-				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - (static_cast<int>(game->GetWinLoseMessage().length()) * 13), WINDOW_HEIGHT / 2 - 80, game->GetWinLoseMessage().c_str());
-		
+				std::string win_lose_message = game->GetWinLoseMessage();
+
+				auto text_extents = text_large->GetTextExtents(win_lose_message.c_str());
+
+				text_large->DrawText(renderer, WINDOW_WIDTH / 2 - text_extents.width / 2, WINDOW_HEIGHT / 2 - text_extents.height / 2, win_lose_message.c_str());
+
 				player_score << "Final Score: " << game->GetPlayerScore();
 				text_large->DrawText(renderer, 20, 20, player_score.str().c_str());
 
