@@ -32,7 +32,7 @@
 
 #include "Common.h"
 
-const int NUM_SPRITES = 24;
+const int NUM_SPRITES = 25;
 
 enum Sprites {
 		WALL = 0,
@@ -58,7 +58,8 @@ enum Sprites {
 		HEART = 20,
 		CRIMSON_SHADOW = 21,
 		WALL_WITH_GRASS_1 = 22,
-		WALL_WITH_GRASS_2 = 23
+		WALL_WITH_GRASS_2 = 23,
+		MANTIS = 24
 };
 
 struct MetaSprite

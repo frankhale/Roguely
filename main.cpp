@@ -192,7 +192,7 @@ int calculate_health_bar_width(int health, int starting_health, int health_bar_m
 		return hw;
 }
 
-void render_graphic(std::string path, int x, int y, bool centered, bool scaled, int scaled_factor)
+void render_graphic(std::string path, int x, int y, bool centered, bool scaled, float scaled_factor)
 {
 		auto graphic = IMG_Load(path.c_str());
 		auto graphic_texture = SDL_CreateTextureFromSurface(renderer, graphic);
@@ -200,7 +200,7 @@ void render_graphic(std::string path, int x, int y, bool centered, bool scaled, 
 		SDL_Rect dest = { x, y, graphic->w, graphic->h };
 
 		if (centered)
-				dest = { ((WINDOW_WIDTH / (2 + scaled_factor)) - (graphic->w / 2)), y, graphic->w, graphic->h };
+				dest = { ((WINDOW_WIDTH / (2 + (int)scaled_factor)) - (graphic->w / 2)), y, graphic->w, graphic->h };
 
 		SDL_Rect src = { 0, 0, graphic->w, graphic->h };
 
@@ -222,6 +222,15 @@ void render_graphic(std::string path, int x, int y, bool centered, bool scaled, 
 void render_title_screen(double delta_time)
 {
 		render_graphic(LOGO_PATH.c_str(), 0, 20, true, true, 2);
+
+		sprite_sheet->drawSprite(renderer, CRIMSON_SHADOW, WINDOW_WIDTH / 2 - 192, 325);
+		sprite_sheet->drawSprite(renderer, SPIDER, WINDOW_WIDTH/2 - 128, 325);
+		sprite_sheet->drawSprite(renderer, LURCHER, WINDOW_WIDTH / 2 - 64, 325);
+		sprite_sheet->drawSprite(renderer, PLAYER, WINDOW_WIDTH / 2, 325);
+		sprite_sheet->drawSprite(renderer, CRAB, WINDOW_WIDTH / 2 + 64, 325);
+		sprite_sheet->drawSprite(renderer, FIRE_WALKER, WINDOW_WIDTH / 2 + 128, 325);		
+		sprite_sheet->drawSprite(renderer, MANTIS, WINDOW_WIDTH / 2 + 192, 325);
+
 		render_graphic(START_GAME_PATH.c_str(), 0, 200, true, true, 2);
 		render_graphic(CREDITS_PATH.c_str(), 0, 300, true, true, 2);
 }

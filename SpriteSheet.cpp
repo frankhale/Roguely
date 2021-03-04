@@ -62,6 +62,7 @@ SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int s
 		sprites[CRIMSON_SHADOW] = { sprite_width * 2, 2 * sprite_height, sprite_width, sprite_height };
 		sprites[WALL_WITH_GRASS_1] = { sprite_width * 3, 2 * sprite_height, sprite_width, sprite_height };
 		sprites[WALL_WITH_GRASS_2] = { sprite_width * 4, 2 * sprite_height, sprite_width, sprite_height };
+		sprites[MANTIS] = { sprite_width * 6, 3 * sprite_height, sprite_width, sprite_height };
 }
 
 void SpriteSheet::drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y)
