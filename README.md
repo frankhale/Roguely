@@ -1,6 +1,8 @@
-# SDL2 Roguelike (needs new name)
+# Roguely
 
-A port of my BlazorRoguelike to SDL2 and C++
+![Roguely Logo](assets/roguely-logo.png)
+
+A simple Roguelike in SDL and C++
 
 ## Status
 
@@ -85,4 +87,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-2 March 2021
+3 March 2021
