@@ -4,6 +4,10 @@
 
 A simple Roguelike in SDL and C++
 
+Test level showing off game sprites
+
+![Roguely Logo](screenshots/sprite-sandbox.png)
+
 ## Status
 
 The current map is just a big room with an outer wall and randomly spawned
