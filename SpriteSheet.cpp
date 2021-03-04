@@ -28,7 +28,7 @@
 
 SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int sh)
 {
-		SDL_Surface* game_tileset = IMG_Load(path);
+		auto game_tileset = IMG_Load(path);
 		auto t_color = SDL_MapRGB(game_tileset->format, 0, 0, 0);
 		SDL_SetColorKey(game_tileset, SDL_TRUE, t_color);
 

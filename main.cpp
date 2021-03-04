@@ -1,6 +1,6 @@
 /*
 * main.cpp
-* 
+*
 * MIT License
 *
 * Copyright (c) 2021 Frank Hale
@@ -42,9 +42,12 @@ const int SPRITE_WIDTH = 32;
 const int SPRITE_HEIGHT = 32;
 const bool MUSIC = true;
 
-const std::string WINDOW_TITLE = "Simple SDL2 based Roguelike";
+const std::string WINDOW_TITLE = "Roguely - A simple Roguelike in SDL and C++";
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
-const std::string GAME_TILESET_PATH = "assets/roguelike.png";
+const std::string LOGO_PATH = "assets/roguely-logo.png";
+const std::string START_GAME_PATH = "assets/press-space-bar-to-play.png";
+const std::string CREDITS_PATH = "assets/credits.png";
+const std::string TILESET_PATH = "assets/roguelike.png";
 const std::string FONT_PATH = "assets/VT323-Regular.ttf";
 const std::string MUSIC_PATH = "assets/ExitExitProper.mp3";
 
@@ -62,6 +65,8 @@ std::shared_ptr<Text> text_small = nullptr;
 std::ostringstream player_health_text;
 std::ostringstream player_score_text;
 std::ostringstream enemies_killed_text;
+
+bool game_started = false;
 
 // ref: https://gamedev.stackexchange.com/a/163508/18014
 struct Timer
@@ -132,15 +137,6 @@ int init_sdl(std::string window_title)
 		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
 		SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-		if (MUSIC)
-		{
-				Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
-				mix_music = Mix_LoadMUS(MUSIC_PATH.c_str());
-				Mix_Volume(-1, 3);
-				Mix_VolumeMusic(3);
-				Mix_PlayMusic(mix_music, 1);
-		}
-
 		return 0;
 }
 
@@ -160,16 +156,30 @@ void tear_down_sdl()
 		SDL_Quit();
 }
 
+void play_soundtrack()
+{
+		Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
+		mix_music = Mix_LoadMUS(MUSIC_PATH.c_str());
+		Mix_Volume(-1, 3);
+		Mix_VolumeMusic(3);
+		Mix_PlayMusic(mix_music, 1);
+}
+
 void init_game()
 {
 		game = std::make_shared<Game>();
-		sprite_sheet = std::make_shared<SpriteSheet>(renderer, GAME_TILESET_PATH.c_str(), SPRITE_WIDTH, SPRITE_HEIGHT);
+		sprite_sheet = std::make_shared<SpriteSheet>(renderer, TILESET_PATH.c_str(), SPRITE_WIDTH, SPRITE_HEIGHT);
 		text_medium = std::make_shared<Text>();
 		text_medium->LoadFont(FONT_PATH.c_str(), 40);
 		text_large = std::make_shared<Text>();
 		text_large->LoadFont(FONT_PATH.c_str(), 63);
 		text_small = std::make_shared<Text>();
 		text_small->LoadFont(FONT_PATH.c_str(), 26);
+
+		if (MUSIC)
+		{
+				play_soundtrack();
+		}
 }
 
 int calculate_health_bar_width(int health, int starting_health, int health_bar_max_width)
@@ -180,6 +190,40 @@ int calculate_health_bar_width(int health, int starting_health, int health_bar_m
 				hw = ((health * (100 / starting_health)) * health_bar_max_width) / 100;
 
 		return hw;
+}
+
+void render_graphic(std::string path, int x, int y, bool centered, bool scaled, int scaled_factor)
+{
+		auto graphic = IMG_Load(path.c_str());
+		auto graphic_texture = SDL_CreateTextureFromSurface(renderer, graphic);
+
+		SDL_Rect dest = { x, y, graphic->w, graphic->h };
+
+		if (centered)
+				dest = { ((WINDOW_WIDTH / (2 + scaled_factor)) - (graphic->w / 2)), y, graphic->w, graphic->h };
+
+		SDL_Rect src = { 0, 0, graphic->w, graphic->h };
+
+		if (scaled)
+		{
+				SDL_RenderSetScale(renderer, scaled_factor, scaled_factor);
+				SDL_RenderCopy(renderer, graphic_texture, &src, &dest);
+				SDL_RenderSetScale(renderer, 1, 1);
+		}
+		else
+		{
+				SDL_RenderCopy(renderer, graphic_texture, &src, &dest);
+		}
+
+		SDL_FreeSurface(graphic);
+		SDL_DestroyTexture(graphic_texture);
+}
+
+void render_title_screen(double delta_time)
+{
+		render_graphic(LOGO_PATH.c_str(), 0, 20, true, true, 2);
+		render_graphic(START_GAME_PATH.c_str(), 0, 200, true, true, 2);
+		render_graphic(CREDITS_PATH.c_str(), 0, 300, true, true, 2);
 }
 
 void render_game(double delta_time)
@@ -367,7 +411,7 @@ void render_game(double delta_time)
 
 int main(int argc, char* args[])
 {
-		// ref: https://gamedev.stackexchange.com/a/163508/18014
+		// Timer code from : https://gamedev.stackexchange.com/a/163508/18014
 		const int UPDATE_FREQUENCY{ 60 };
 		const float CYCLE_TIME{ 1.0f / UPDATE_FREQUENCY };
 		static Timer system_timer;
@@ -416,6 +460,10 @@ int main(int argc, char* args[])
 								{
 										game->MovePlayerRight();
 								}
+								else if (e.key.keysym.sym == SDLK_SPACE)
+								{
+										game_started = true;										
+								}
 								break;
 						}
 				}
@@ -431,13 +479,20 @@ int main(int argc, char* args[])
 				static Timer logic_timer;
 
 				while (std::isgreater(accumulated_seconds, CYCLE_TIME))
-				{						
-						accumulated_seconds = -CYCLE_TIME;					
+				{
+						accumulated_seconds = -CYCLE_TIME;
 						logic_timer.tick();
 						animation_timer.tick();
 
-						game->HandleLogicTimer(logic_timer.elapsed_seconds);
-						render_game(animation_timer.elapsed_seconds);
+						if (!game_started)
+						{
+								render_title_screen(animation_timer.elapsed_seconds);
+						}
+						else
+						{
+								game->HandleLogicTimer(logic_timer.elapsed_seconds);
+								render_game(animation_timer.elapsed_seconds);
+						}
 
 						SDL_RenderPresent(renderer);
 				}

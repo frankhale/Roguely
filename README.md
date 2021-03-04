@@ -10,6 +10,8 @@ Test level showing off game sprites
 
 ## Status
 
+NOTE: This is a work in progress...
+
 The current map is just a big room with an outer wall and randomly spawned
 walls inside. Enemies spawn, move around and you can attack them to increase
 your score. You can pick up health gems and coins. Dead enemies spawn a
@@ -23,9 +25,13 @@ export the tileset as a PNG which is used in the game.
 
 ## Screenshots
 
+Title Screen:
+
+![Title Screen](screenshots/title-screen.png)
+
 Combat Text:
 
-![Combat Text](screenshots/combat_text.png)
+![Combat Text](screenshots/combat-text.png)
 
 Current Gameplay:
 
@@ -60,12 +66,12 @@ You can grab the required libraries (I'm using 64bit) from here: [https://www.li
 I have put the 64 bit SDL2 Visual Studio lib/header files in the following
 location:
 
-![SDL2 Library Location](screenshots/required_libraries.png)
+![SDL2 Library Location](screenshots/required-libraries.png)
 
 You'll need to copy the library DLLs to the root of the project folder (eg.
 right where the source code is).
 
-![SDL2 Required DLLs](screenshots/required_dlls.png)
+![SDL2 Required DLLs](screenshots/required-dlls.png)
 
 If you set up your environment like this then you should be able to build
 without touching the build settings. If you have trouble let me know and I'll
