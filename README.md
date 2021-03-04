@@ -35,9 +35,11 @@ Combat Text:
 
 Current Gameplay:
 
-![New](screenshots/fourth.png)
+![New](screenshots/fifth.png)
 
 Older gameplay showing how it evolved:
+
+![Old](screenshots/fourth.png)
 
 ![Old](screenshots/third.png)
 
