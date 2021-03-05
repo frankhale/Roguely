@@ -24,7 +24,7 @@
 * SOFTWARE.
 */
 
-#include "Game.h"
+#include "Game.hpp"
 
 Game::Game()
 {

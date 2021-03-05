@@ -24,7 +24,7 @@
 * SOFTWARE.
 */
 
-#include "SpriteSheet.h"
+#include "SpriteSheet.hpp"
 
 SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int sh)
 {

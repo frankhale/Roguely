@@ -1,5 +1,5 @@
 /*
-* SpriteSheet.h
+* SpriteSheet.hpp
 *
 * MIT License
 *
@@ -30,7 +30,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
-#include "Common.h"
+#include "Common.hpp"
 
 const int NUM_SPRITES = 25;
 

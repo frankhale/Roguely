@@ -32,9 +32,9 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 
-#include "SpriteSheet.h"
-#include "Text.h"
-#include "Game.h"
+#include "SpriteSheet.hpp"
+#include "Text.hpp"
+#include "Game.hpp"
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 768;
@@ -256,7 +256,7 @@ void render_win_or_death_screen(double delta_time)
 		enemies_killed_text << "Total Enemies Killed: " << game->GetPlayerEnemiesKilled();
 		text_large->DrawText(renderer, 20, 70, enemies_killed_text.str().c_str());
 
-		text_medium->DrawText(renderer, WINDOW_WIDTH / 2 - text_extents.width / 2 - 250, WINDOW_HEIGHT - 100, "Press the space bar to quit to the title screen...");
+		text_medium->DrawText(renderer, WINDOW_WIDTH / 2 - text_extents.width / 2 - 250, WINDOW_HEIGHT - 100, "Press the space bar to return to the title screen...");
 }
 
 void render_game(double delta_time)
@@ -439,6 +439,8 @@ int main(int argc, char* args[])
 		}
 
 		init_game();
+
+		int mouse_wheel_y_increment = 0;
 
 		bool keep_window_open = true;
 		while (keep_window_open)

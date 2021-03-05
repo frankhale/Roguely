@@ -1,5 +1,5 @@
 /*
-* Text.h
+* Common.hpp
 *
 * MIT License
 *
@@ -26,30 +26,8 @@
 
 #pragma once
 
-#include <iostream>
-#include <SDL.h>
-#include <SDL_ttf.h>
-
-struct TextExtents
+struct Point
 {
-		int width, height;
+		int x = 0;
+		int y = 0;
 };
-
-class Text
-{
-public:
-		Text();		
-
-		int LoadFont(const char* path, int ptsize);
-		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text);
-		void DrawText(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color);
-		TextExtents GetTextExtents(const char* text);
-
-private:
-		TTF_Font* font;
-		SDL_Texture* text_texture;
-
-		SDL_Color text_color = { 0xFF, 0xFF, 0xFF, 0xFF };
-		SDL_Color text_background_color = { 0x00, 0x00, 0x00, 0xFF };
-};
-

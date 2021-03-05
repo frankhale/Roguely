@@ -1,5 +1,5 @@
 /*
-* Game.h
+* Game.hpp
 *
 * MIT License
 *
@@ -36,8 +36,8 @@
 #include <cstdlib> 
 #include <ctime>
 
-#include "Common.h"
-#include "Player.h"
+#include "Common.hpp"
+#include "Player.hpp"
 
 const int MAP_WIDTH = 75;
 const int MAP_HEIGHT = 75;
