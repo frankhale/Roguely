@@ -35,34 +35,38 @@ Game::Game()
 		view_port_width = VIEW_PORT_WIDTH;
 		view_port_height = VIEW_PORT_HEIGHT;
 
-		map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
-		light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
+		//map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
+		//light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
 
-		player = std::make_shared<Player>(60, 2);
+		map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();
+		light_map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();		
 
-		UpdatePlayerViewPortPoints(player->X(), player->Y());
+		map = init_cellular_automata();		
+		perform_cellular_automaton(map, 10);
+				
+		player = std::make_shared<Player>(60, 2);		
 
-		for (int height = 0; height < MAP_HEIGHT; height++)
-		{
-				for (int width = 0; width < MAP_WIDTH; width++)
-				{
-						if (height == 0 || width == 0 || height == MAP_HEIGHT - 1 || width == MAP_WIDTH - 1)
-						{
-								map[height][width] = 0;
-						}
-						else
-						{
-								if ((std::rand() % 100) <= 5 && height != player->Y() && width != player->X())
-								{
-										map[height][width] = 0;
-								}
-								else
-								{
-										map[height][width] = 9;
-								}
-						}
-				}
-		}
+		//for (int height = 0; height < MAP_HEIGHT; height++)
+		//{
+		//		for (int width = 0; width < MAP_WIDTH; width++)
+		//		{
+		//				if (height == 0 || width == 0 || height == MAP_HEIGHT - 1 || width == MAP_WIDTH - 1)
+		//				{
+		//						map[height][width] = 0;
+		//				}
+		//				else
+		//				{
+		//						if ((std::rand() % 100) <= 5 && height != player->Y() && width != player->X())
+		//						{
+		//								map[height][width] = 0;
+		//						}
+		//						else
+		//						{
+		//								map[height][width] = 9;
+		//						}
+		//				}
+		//		}
+		//}
 
 		win_lose_message.str(" ");
 		enemy_stats_info.str(" ");
@@ -94,6 +98,10 @@ Game::Game()
 				nullptr,
 				100
 		};
+
+		auto player_point = GenerateRandomPoint();
+		player->Point(player_point.x, player_point.y);
+		UpdatePlayerViewPortPoints(player->X(), player->Y());
 
 		RB_FOV();
 }
@@ -142,10 +150,10 @@ bool Game::IsTilePlayerTile(int x, int y, MovementDirection dir)
 
 bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId)
 {
-		return !(dir == MovementDirection::Up && map[y - 1][x] == tileId ||
-				dir == MovementDirection::Down && map[y + 1][x] == tileId ||
-				dir == MovementDirection::Left && map[y][x - 1] == tileId ||
-				dir == MovementDirection::Right && map[y][x + 1] == tileId);
+		return !(dir == MovementDirection::Up && (*map)[y - 1][x] == tileId ||
+				dir == MovementDirection::Down && (*map)[y + 1][x] == tileId ||
+				dir == MovementDirection::Left && (*map)[y][x - 1] == tileId ||
+				dir == MovementDirection::Right && (*map)[y][x + 1] == tileId);
 }
 
 bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
@@ -288,7 +296,7 @@ void Game::UpdateAfterPlayerMoved()
 
 bool Game::IsXYBlocked(int x, int y)
 {
-		return (map[y][x] == 0 ||
+		return ((*map)[y][x] == 0 ||
 				player->X() == x ||
 				player->Y() == y ||
 				(!(IsEntityLocationTraversable(x, y, coins) ||
@@ -560,7 +568,7 @@ void Game::RB_FOV()
 		{
 				for (int c = 0; c < MAP_WIDTH; c++)
 				{
-						light_map[r][c] = 0;
+						(*light_map)[r][c] = 0;
 				}
 		}
 
@@ -574,9 +582,9 @@ void Game::RB_FOV()
 
 				for (int j = 0; j < 40; j++)
 				{
-						light_map[(int)oy][(int)ox] = 2;
+						(*light_map)[(int)oy][(int)ox] = 2;
 
-						if (map[(int)oy][(int)ox] == 0) // if tile is a wall
+						if ((*map)[(int)oy][(int)ox] == 0) // if tile is a wall
 								break;
 
 						ox += x;

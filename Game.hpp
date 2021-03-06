@@ -38,12 +38,7 @@
 
 #include "Common.hpp"
 #include "Player.hpp"
-
-const int MAP_WIDTH = 75;
-const int MAP_HEIGHT = 75;
-
-const int VIEW_PORT_WIDTH = 20;
-const int VIEW_PORT_HEIGHT = 12;
+#include "LevelGeneration.hpp"
 
 enum class MovementDirection
 {
@@ -216,8 +211,11 @@ private:
 		std::shared_ptr<Player> player;
 
 		int view_port_x, view_port_y, view_port_width, view_port_height;
-		int map[MAP_HEIGHT][MAP_WIDTH];
-		int light_map[MAP_HEIGHT][MAP_WIDTH];
+		/*int map[MAP_HEIGHT][MAP_WIDTH];
+		int light_map[MAP_HEIGHT][MAP_WIDTH];*/
+
+		std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map;
+		std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> light_map;
 
 		const int COIN_VALUE = 50;
 		const int HEALTH_GEM_VALUE = 25;

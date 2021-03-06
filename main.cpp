@@ -24,6 +24,8 @@
 * SOFTWARE.
 */
 
+#include <array>
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <SDL.h>
@@ -32,15 +34,11 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 
+#include "Common.hpp"
+#include "Game.hpp"
 #include "SpriteSheet.hpp"
 #include "Text.hpp"
-#include "Game.hpp"
-
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 768;
-const int SPRITE_WIDTH = 32;
-const int SPRITE_HEIGHT = 32;
-const bool MUSIC = true;
+//#include "LevelGeneration.hpp"
 
 const std::string WINDOW_TITLE = "Roguely - A simple Roguelike in SDL and C++";
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
@@ -68,22 +66,6 @@ std::ostringstream enemies_killed_text;
 
 bool game_started = false;
 bool dead = false;
-
-// ref: https://gamedev.stackexchange.com/a/163508/18014
-struct Timer
-{
-		Uint64 previous_ticks{};
-		float elapsed_seconds{};
-
-		void tick()
-		{
-				const Uint64 current_ticks{ SDL_GetPerformanceCounter() };
-				const Uint64 delta{ current_ticks - previous_ticks };
-				previous_ticks = current_ticks;
-				static const Uint64 TICKS_PER_SECOND{ SDL_GetPerformanceFrequency() };
-				elapsed_seconds = delta / static_cast<float>(TICKS_PER_SECOND);
-		}
-};
 
 int init_sdl(std::string window_title)
 {
@@ -168,6 +150,8 @@ void play_soundtrack()
 
 void init_game()
 {
+		std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
 		game = std::make_shared<Game>();
 		sprite_sheet = std::make_shared<SpriteSheet>(renderer, TILESET_PATH.c_str(), SPRITE_WIDTH, SPRITE_HEIGHT);
 		text_medium = std::make_shared<Text>();
@@ -270,9 +254,9 @@ void render_game(double delta_time)
 						int dx = (c * SPRITE_WIDTH) - (game->GetViewPortX() * SPRITE_WIDTH);
 						int dy = (r * SPRITE_HEIGHT) - (game->GetViewPortY() * SPRITE_HEIGHT);
 
-						if (game->LightMap()[r][c] == 2)
+						if ((*game->LightMap())[r][c] == 2)
 						{
-								sprite_sheet->drawSprite(renderer, game->Map()[r][c], dx, dy);
+								sprite_sheet->drawSprite(renderer, (*game->Map())[r][c], dx, dy);
 
 								for (auto& elem : **game->GetCoins())
 								{
@@ -425,6 +409,31 @@ void render_game(double delta_time)
 		combat_log_render += delta_time;
 }
 
+//void render_sandbox(double delta_time, std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map)
+//{
+//		for (int r = 0; r < MAP_HEIGHT; r++)
+//		{
+//				for (int c = 0; c < MAP_WIDTH; c++)
+//				{
+//						int dx = (c * 5) + (WINDOW_WIDTH / 2) - (MAP_WIDTH * 2 + 75);
+//						int dy = (r * 5) + (WINDOW_HEIGHT / 2) - (MAP_HEIGHT * 2 + 75);
+//
+//						SDL_Rect rect = { dx, dy, 5, 5 };
+//
+//						if ((*map)[c][r] == 0)
+//						{
+//								SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+//								SDL_RenderFillRect(renderer, &rect);
+//						}
+//						else if ((*map)[c][r] == 1)
+//						{
+//								SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+//								SDL_RenderDrawRect(renderer, &rect);
+//						}
+//				}
+//		}
+//}
+
 int main(int argc, char* args[])
 {
 		// Timer code from : https://gamedev.stackexchange.com/a/163508/18014
@@ -439,8 +448,6 @@ int main(int argc, char* args[])
 		}
 
 		init_game();
-
-		int mouse_wheel_y_increment = 0;
 
 		bool keep_window_open = true;
 		while (keep_window_open)
@@ -479,18 +486,21 @@ int main(int argc, char* args[])
 										game->MovePlayerRight();
 								}
 								else if (e.key.keysym.sym == SDLK_SPACE)
-								{
+								{										
 										if (dead)
 										{
 												dead = false;
 												game_started = false;
 												reset_game();
 										}
-										else
+										else if (!game_started)
 										{
 												game_started = true;
 										}
 
+										//auto m = init_cellular_automata();
+										//the_map = m;
+										//perform_cellular_automaton(the_map, 10);
 								}
 								break;
 						}
@@ -526,6 +536,9 @@ int main(int argc, char* args[])
 								game->HandleLogicTimer(logic_timer.elapsed_seconds);
 								render_game(animation_timer.elapsed_seconds);
 						}
+
+						// Testing cellular automata generation
+						//render_sandbox(renderer, animation_timer.elapsed_seconds);
 
 						SDL_RenderPresent(renderer);
 				}

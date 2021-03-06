@@ -1,5 +1,5 @@
 /*
-* Player.hpp
+* LevelGeneration.hpp
 *
 * MIT License
 *
@@ -26,31 +26,11 @@
 
 #pragma once
 
-class Player
-{
-public:
-		Player(int starting_health, int starting_attack);
+#include <array>
+#include <iostream>
 
-		int GetStartingHealth() const { return starting_health; }
-		int GetHealth() const { return health; }
-		int GetScore() const { return score; }
-		int GetAttack() const { return attack; }
-		int GetEnemiesKilled() const { return enemies_killed; }
+#include "Common.hpp"
 
-		void SetHealth(int h) { health = h; }
-		void SetScore(int s) { score = s; }
-		void SetAttack(int a) { attack = a; }
-		void SetEnemiesKilled(int k) { enemies_killed = k; }
-
-		int X() const { return x; }
-		int Y() const { return y; }
-		void X(int _x) { x = _x; }
-		void Y(int _y) { y = _y; }
-		void Point(int _x, int _y) { x = _x; y = _y; }
-
-private:
-
-		int starting_health, health, score, attack, enemies_killed;
-		int x, y;
-};
-
+int get_neighbor_wall_count(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map, int x, int y);
+void perform_cellular_automaton(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map, int passes);
+std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> init_cellular_automata();

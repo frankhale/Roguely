@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="LevelGeneration.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SpriteSheet.cpp" />
@@ -28,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="Game.hpp" />
+    <ClInclude Include="LevelGeneration.hpp" />
     <ClInclude Include="Player.hpp" />
     <ClInclude Include="sol\config.hpp" />
     <ClInclude Include="sol\forward.hpp" />
