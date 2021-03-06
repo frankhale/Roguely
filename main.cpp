@@ -214,6 +214,7 @@ void render_title_screen(double delta_time)
 {
 		render_graphic(LOGO_PATH.c_str(), 0, 20, true, true, 2);
 
+		sprite_sheet->drawSprite(renderer, ORANGE_BLOB, WINDOW_WIDTH / 2 - 256, 325);
 		sprite_sheet->drawSprite(renderer, CRIMSON_SHADOW, WINDOW_WIDTH / 2 - 192, 325);
 		sprite_sheet->drawSprite(renderer, SPIDER, WINDOW_WIDTH / 2 - 128, 325);
 		sprite_sheet->drawSprite(renderer, LURCHER, WINDOW_WIDTH / 2 - 64, 325);
@@ -221,6 +222,7 @@ void render_title_screen(double delta_time)
 		sprite_sheet->drawSprite(renderer, CRAB, WINDOW_WIDTH / 2 + 64, 325);
 		sprite_sheet->drawSprite(renderer, FIRE_WALKER, WINDOW_WIDTH / 2 + 128, 325);
 		sprite_sheet->drawSprite(renderer, MANTIS, WINDOW_WIDTH / 2 + 192, 325);
+		sprite_sheet->drawSprite(renderer, PURPLE_BLOB, WINDOW_WIDTH / 2 + 256, 325);
 
 		render_graphic(START_GAME_PATH.c_str(), 0, 215, true, true, 2);
 		render_graphic(CREDITS_PATH.c_str(), 0, 300, true, true, 2);
@@ -283,11 +285,13 @@ void render_game(double delta_time)
 										{
 												int enemy_id = 0;
 
-												if (elem.id == 50) enemy_id = SPIDER;
-												else if (elem.id == 51)enemy_id = LURCHER;
-												else if (elem.id == 52)enemy_id = CRAB;
-												else if (elem.id == 53)enemy_id = BUG;
-												else if (elem.id == 54)enemy_id = FIRE_WALKER;
+												if (elem.id == (int)EntitySubType::Spider) enemy_id = SPIDER;
+												else if (elem.id == (int)EntitySubType::Lurcher)enemy_id = LURCHER;
+												else if (elem.id == (int)EntitySubType::Crab)enemy_id = CRAB;
+												else if (elem.id == (int)EntitySubType::Bug)enemy_id = BUG;
+												else if (elem.id == (int)EntitySubType::Fire_Walker)enemy_id = FIRE_WALKER;
+												else if (elem.id == (int)EntitySubType::Crimson_Shadow)enemy_id = CRIMSON_SHADOW;
+												else if (elem.id == (int)EntitySubType::Purple_Blob)enemy_id = PURPLE_BLOB;
 
 												auto enemy_stat_component = game->find_component<StatComponent>(elem.components);
 

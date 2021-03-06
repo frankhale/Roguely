@@ -59,13 +59,16 @@ Game::Game()
 		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, EntitySubType::Coin);
 		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, EntitySubType::Health_Gem);
 
-		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 5;
+		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 7;
 
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Spider);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Lurcher);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Crab);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Bug);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Fire_Walker);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Crimson_Shadow);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Purple_Blob);
+		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Orange_Blob);
 
 		golden_candle = {
 				GenerateRandomPoint(),
@@ -323,6 +326,9 @@ void Game::SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType e
 				else if (entitySubType == EntitySubType::Crab) { health = 40; attack = 2; }
 				else if (entitySubType == EntitySubType::Bug) { health = 50; attack = 2; }
 				else if (entitySubType == EntitySubType::Fire_Walker) { health = 75; attack = 4; }
+				else if (entitySubType == EntitySubType::Crimson_Shadow) { health = 85; attack = 5; }
+				else if (entitySubType == EntitySubType::Purple_Blob) { health = 95; attack = 6; }
+				else if (entitySubType == EntitySubType::Orange_Blob) { health = 100; attack = 7; }
 
 				components->push_back(std::make_shared<StatComponent>(health, attack));
 		}

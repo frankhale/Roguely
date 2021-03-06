@@ -32,7 +32,10 @@
 
 #include "Common.hpp"
 
-const int NUM_SPRITES = 25;
+// FIXME: Defining new sprites is a pain in the ass and makes no sense, need to
+//			  fix this!
+
+const int NUM_SPRITES = 27;
 
 enum Sprites {
 		WALL = 0,
@@ -59,7 +62,9 @@ enum Sprites {
 		CRIMSON_SHADOW = 21,
 		WALL_WITH_GRASS_1 = 22,
 		WALL_WITH_GRASS_2 = 23,
-		MANTIS = 24
+		MANTIS = 24,
+		PURPLE_BLOB = 25,
+		ORANGE_BLOB = 26
 };
 
 struct MetaSprite

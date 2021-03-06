@@ -63,7 +63,10 @@ enum class EntitySubType
 		Lurcher = 51,
 		Crab = 52,
 		Bug = 53,
-		Fire_Walker = 54
+		Fire_Walker = 54,
+		Crimson_Shadow = 55,
+		Purple_Blob = 56,
+		Orange_Blob = 57
 };
 
 enum class WhoAmI

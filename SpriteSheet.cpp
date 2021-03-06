@@ -56,13 +56,16 @@ SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int s
 		sprites[DOOR] = { 15 * sprite_width, 0, sprite_width, sprite_height };
 		sprites[WALL_SECRET_DOOR] = { 0, 1 * sprite_height, sprite_width, sprite_height };
 		sprites[BUG] = { sprite_width * 1, 1 * sprite_height, sprite_width, sprite_height };
-		sprites[FIRE_WALKER] = { 5 * sprite_width, sprite_height, sprite_width, sprite_height };
+		sprites[FIRE_WALKER] = { sprite_width * 5, sprite_height, sprite_width, sprite_height };
 		sprites[HIDDEN] = { sprite_width * 2, 1 * sprite_height, sprite_width, sprite_height };
-		sprites[HEART] = { 0, 3 * sprite_height, sprite_width, sprite_height };
-		sprites[CRIMSON_SHADOW] = { sprite_width * 2, 2 * sprite_height, sprite_width, sprite_height };
-		sprites[WALL_WITH_GRASS_1] = { sprite_width * 3, 2 * sprite_height, sprite_width, sprite_height };
-		sprites[WALL_WITH_GRASS_2] = { sprite_width * 4, 2 * sprite_height, sprite_width, sprite_height };
-		sprites[MANTIS] = { sprite_width * 6, 3 * sprite_height, sprite_width, sprite_height };
+		sprites[HEART] = { 0, sprite_height * 3, sprite_width, sprite_height };
+		sprites[CRIMSON_SHADOW] = { sprite_width * 2, sprite_height * 2, sprite_width, sprite_height };
+		sprites[WALL_WITH_GRASS_1] = { sprite_width * 3, sprite_height * 2, sprite_width, sprite_height };
+		sprites[WALL_WITH_GRASS_2] = { sprite_width * 4, sprite_height * 2, sprite_width, sprite_height };
+		sprites[MANTIS] = { sprite_width * 6, sprite_height * 3, sprite_width, sprite_height };
+		sprites[PURPLE_BLOB] = { sprite_width * 13, sprite_height * 3, sprite_width, sprite_height };
+		sprites[PURPLE_BLOB] = { sprite_width * 13, sprite_height * 3, sprite_width, sprite_height };
+		sprites[ORANGE_BLOB] = { 0, sprite_height * 4, sprite_width, sprite_height };
 }
 
 void SpriteSheet::drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y)
