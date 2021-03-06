@@ -292,6 +292,7 @@ void render_game(double delta_time)
 												else if (elem.id == (int)EntitySubType::Fire_Walker)enemy_id = FIRE_WALKER;
 												else if (elem.id == (int)EntitySubType::Crimson_Shadow)enemy_id = CRIMSON_SHADOW;
 												else if (elem.id == (int)EntitySubType::Purple_Blob)enemy_id = PURPLE_BLOB;
+												else if (elem.id == (int)EntitySubType::Orange_Blob)enemy_id = ORANGE_BLOB;
 
 												auto enemy_stat_component = game->find_component<StatComponent>(elem.components);
 
