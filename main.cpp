@@ -418,23 +418,22 @@ void render_mini_map(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP
 						int dx = c + (WINDOW_WIDTH - 150);
 						int dy = r + 10;
 
-						if ((*map)[c][r] == 0)
+						if ((*map)[r][c] == 0)
 						{
 								SDL_SetRenderDrawColor(renderer, 255, 255, 255, 225);
 								SDL_RenderDrawPoint(renderer, dx, dy);
 						}
-						else if ((*map)[c][r] == 1)
+						else if ((*map)[r][c] == 9)
 						{
-								SDL_SetRenderDrawColor(renderer, 0, 0, 0, 225);
+								SDL_SetRenderDrawColor(renderer, 0, 0, 0, 128);
 								SDL_RenderDrawPoint(renderer, dx, dy);
 						}
 
-						if (c == player_position.x && r == player_position.y)
+						if (dx == player_position.x + (WINDOW_WIDTH - 150) && dy == player_position.y + 10)
 						{
-								SDL_Rect rect = { dx - 2, dy - 2, 5, 5 };
-
+								SDL_Rect player_rect = { dx - 3, dy - 3, 6, 6 };
 								SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-								SDL_RenderFillRect(renderer, &rect);
+								SDL_RenderFillRect(renderer, &player_rect);
 						}
 				}
 		}
