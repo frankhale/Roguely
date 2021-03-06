@@ -420,7 +420,7 @@ void render_mini_map(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP
 
 						if ((*map)[r][c] == 0)
 						{
-								SDL_SetRenderDrawColor(renderer, 255, 255, 255, 225);
+								SDL_SetRenderDrawColor(renderer, 255, 255, 255, 128);
 								SDL_RenderDrawPoint(renderer, dx, dy);
 						}
 						else if ((*map)[r][c] == 9)

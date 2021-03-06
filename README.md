@@ -35,9 +35,13 @@ Combat Text:
 
 Current Gameplay:
 
-![New](screenshots/fifth.png)
+We have cellular automata level generation and a minimap now
+
+![New](screenshots/sixth.png)
 
 Older gameplay showing how it evolved:
+
+![Old](screenshots/fifth.png)
 
 ![Old](screenshots/fourth.png)
 
@@ -79,6 +83,14 @@ If you set up your environment like this then you should be able to build
 without touching the build settings. If you have trouble let me know and I'll
 try to help.
 
+Additionally Lua is part of the build process but is currently not being used.
+The build expects that there is a 64 bit Lua library available to statically
+link with the game. I don't want to remove this as I plan to use Lua
+(along with Sol3) very soon.
+
+![Lua](screenshots/lua.png)
+
+![Lua](screenshots/lua2.png)
 ## License
 
 MIT
@@ -99,4 +111,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-3 March 2021
+5 March 2021
