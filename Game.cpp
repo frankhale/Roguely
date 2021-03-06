@@ -35,38 +35,13 @@ Game::Game()
 		view_port_width = VIEW_PORT_WIDTH;
 		view_port_height = VIEW_PORT_HEIGHT;
 
-		//map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
-		//light_map[MAP_HEIGHT - 1][MAP_WIDTH - 1] = {};
-
 		map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();
-		light_map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();		
+		light_map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();
 
-		map = init_cellular_automata();		
+		map = init_cellular_automata();
 		perform_cellular_automaton(map, 10);
-				
-		player = std::make_shared<Player>(60, 2);		
 
-		//for (int height = 0; height < MAP_HEIGHT; height++)
-		//{
-		//		for (int width = 0; width < MAP_WIDTH; width++)
-		//		{
-		//				if (height == 0 || width == 0 || height == MAP_HEIGHT - 1 || width == MAP_WIDTH - 1)
-		//				{
-		//						map[height][width] = 0;
-		//				}
-		//				else
-		//				{
-		//						if ((std::rand() % 100) <= 5 && height != player->Y() && width != player->X())
-		//						{
-		//								map[height][width] = 0;
-		//						}
-		//						else
-		//						{
-		//								map[height][width] = 9;
-		//						}
-		//				}
-		//		}
-		//}
+		player = std::make_shared<Player>(60, 2);
 
 		win_lose_message.str(" ");
 		enemy_stats_info.str(" ");

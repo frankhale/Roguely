@@ -160,6 +160,7 @@ public:
 		auto GetPlayerScore() const { return player->GetScore(); }
 		auto GetPlayerX() const { return player->X(); }
 		auto GetPlayerY() const { return player->Y(); }
+		Point GetPlayerPoint() const { return { player->X(), player->Y() }; };
 		auto GetViewPortX() const { return view_port_x; }
 		auto GetViewPortY() const { return view_port_y; }
 		auto GetViewPortWidth() const { return view_port_width; }
@@ -184,6 +185,7 @@ public:
 		auto GetBonus() const { return &bonus; }
 		auto GetGoldenCandle() const { return golden_candle; }
 		auto GetCombatLog() const { return combat_log; }
+		auto GetMap() const { return map; }
 
 		void SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType);
 		void SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y);
@@ -211,8 +213,6 @@ private:
 		std::shared_ptr<Player> player;
 
 		int view_port_x, view_port_y, view_port_width, view_port_height;
-		/*int map[MAP_HEIGHT][MAP_WIDTH];
-		int light_map[MAP_HEIGHT][MAP_WIDTH];*/
 
 		std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map;
 		std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> light_map;

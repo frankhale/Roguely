@@ -409,6 +409,37 @@ void render_game(double delta_time)
 		combat_log_render += delta_time;
 }
 
+void render_mini_map(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map, Point player_position)
+{
+		for (int r = 0; r < MAP_HEIGHT; r++)
+		{
+				for (int c = 0; c < MAP_WIDTH; c++)
+				{
+						int dx = c + (WINDOW_WIDTH - 150);
+						int dy = r + 10;
+
+						if ((*map)[c][r] == 0)
+						{
+								SDL_SetRenderDrawColor(renderer, 255, 255, 255, 225);
+								SDL_RenderDrawPoint(renderer, dx, dy);
+						}
+						else if ((*map)[c][r] == 1)
+						{
+								SDL_SetRenderDrawColor(renderer, 0, 0, 0, 225);
+								SDL_RenderDrawPoint(renderer, dx, dy);
+						}
+
+						if (c == player_position.x && r == player_position.y)
+						{
+								SDL_Rect rect = { dx - 2, dy - 2, 5, 5 };
+
+								SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+								SDL_RenderFillRect(renderer, &rect);
+						}
+				}
+		}
+}
+
 //void render_sandbox(double delta_time, std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map)
 //{
 //		for (int r = 0; r < MAP_HEIGHT; r++)
@@ -486,7 +517,7 @@ int main(int argc, char* args[])
 										game->MovePlayerRight();
 								}
 								else if (e.key.keysym.sym == SDLK_SPACE)
-								{										
+								{
 										if (dead)
 										{
 												dead = false;
@@ -535,6 +566,7 @@ int main(int argc, char* args[])
 						{
 								game->HandleLogicTimer(logic_timer.elapsed_seconds);
 								render_game(animation_timer.elapsed_seconds);
+								render_mini_map(game->GetMap(), game->GetPlayerPoint());
 						}
 
 						// Testing cellular automata generation
