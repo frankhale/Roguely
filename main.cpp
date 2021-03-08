@@ -34,11 +34,9 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 
-#include "Common.hpp"
 #include "Game.hpp"
 #include "SpriteSheet.hpp"
 #include "Text.hpp"
-//#include "LevelGeneration.hpp"
 
 const std::string WINDOW_TITLE = "Roguely - A simple Roguelike in SDL and C++";
 const std::string WINDOW_ICON_PATH = "assets/icon.png";
@@ -262,8 +260,8 @@ void render_game(double delta_time)
 
 								for (auto& elem : **game->GetCoins())
 								{
-										if (elem.point.x == c &&
-												elem.point.y == r)
+										if (elem->point().x == c &&
+												elem->point().y == r)
 										{
 												sprite_sheet->drawSprite(renderer, COIN, dx, dy);
 										}
@@ -271,8 +269,8 @@ void render_game(double delta_time)
 
 								for (auto& elem : **game->GetHealthGems())
 								{
-										if (elem.point.x == c &&
-												elem.point.y == r)
+										if (elem->point().x == c &&
+												elem->point().y == r)
 										{
 												sprite_sheet->drawSprite(renderer, HEALTH_GEM, dx, dy);
 										}
@@ -280,21 +278,21 @@ void render_game(double delta_time)
 
 								for (auto& elem : **game->GetEnemies())
 								{
-										if (elem.point.x == c &&
-												elem.point.y == r)
+										if (elem->point().x == c &&
+												elem->point().y == r)
 										{
 												int enemy_id = 0;
 
-												if (elem.id == (int)EntitySubType::Spider) enemy_id = SPIDER;
-												else if (elem.id == (int)EntitySubType::Lurcher)enemy_id = LURCHER;
-												else if (elem.id == (int)EntitySubType::Crab)enemy_id = CRAB;
-												else if (elem.id == (int)EntitySubType::Bug)enemy_id = BUG;
-												else if (elem.id == (int)EntitySubType::Fire_Walker)enemy_id = FIRE_WALKER;
-												else if (elem.id == (int)EntitySubType::Crimson_Shadow)enemy_id = CRIMSON_SHADOW;
-												else if (elem.id == (int)EntitySubType::Purple_Blob)enemy_id = PURPLE_BLOB;
-												else if (elem.id == (int)EntitySubType::Orange_Blob)enemy_id = ORANGE_BLOB;
+												if (elem->id() == (int)EntitySubType::Spider) enemy_id = SPIDER;
+												else if (elem->id() == (int)EntitySubType::Lurcher)enemy_id = LURCHER;
+												else if (elem->id() == (int)EntitySubType::Crab)enemy_id = CRAB;
+												else if (elem->id() == (int)EntitySubType::Bug)enemy_id = BUG;
+												else if (elem->id() == (int)EntitySubType::Fire_Walker)enemy_id = FIRE_WALKER;
+												else if (elem->id() == (int)EntitySubType::Crimson_Shadow)enemy_id = CRIMSON_SHADOW;
+												else if (elem->id() == (int)EntitySubType::Purple_Blob)enemy_id = PURPLE_BLOB;
+												else if (elem->id() == (int)EntitySubType::Orange_Blob)enemy_id = ORANGE_BLOB;
 
-												auto enemy_stat_component = game->find_component<StatComponent>(elem.components);
+												auto enemy_stat_component = elem->find_component<StatComponent>();												
 
 												if (enemy_stat_component != nullptr)
 												{
@@ -311,8 +309,8 @@ void render_game(double delta_time)
 
 								for (auto& elem : **game->GetTreasureChests())
 								{
-										if (elem.point.x == c &&
-												elem.point.y == r)
+										if (elem->point().x == c &&
+												elem->point().y == r)
 										{
 												sprite_sheet->drawSprite(renderer, TREASURE_CHEST, dx, dy);
 										}
@@ -320,8 +318,8 @@ void render_game(double delta_time)
 
 								for (auto& elem : **game->GetBonus())
 								{
-										if (elem.point.x == c &&
-												elem.point.y == r)
+										if (elem->point().x == c &&
+												elem->point().y == r)
 										{
 												// TODO: Bonus can be anything but right now it's only attack gems
 												sprite_sheet->drawSprite(renderer, ATTACK_BONUS_GEM, dx, dy);
@@ -329,7 +327,7 @@ void render_game(double delta_time)
 								}
 
 								auto golden_candle = game->GetGoldenCandle();
-								if (golden_candle.point.x == c && golden_candle.point.y == r)
+								if (golden_candle->point().x == c && golden_candle->point().y == r)
 								{
 										sprite_sheet->drawSprite(renderer, GOLDEN_CANDLE, dx, dy);
 								}
@@ -444,31 +442,6 @@ void render_mini_map(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP
 		}
 }
 
-//void render_sandbox(double delta_time, std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map)
-//{
-//		for (int r = 0; r < MAP_HEIGHT; r++)
-//		{
-//				for (int c = 0; c < MAP_WIDTH; c++)
-//				{
-//						int dx = (c * 5) + (WINDOW_WIDTH / 2) - (MAP_WIDTH * 2 + 75);
-//						int dy = (r * 5) + (WINDOW_HEIGHT / 2) - (MAP_HEIGHT * 2 + 75);
-//
-//						SDL_Rect rect = { dx, dy, 5, 5 };
-//
-//						if ((*map)[c][r] == 0)
-//						{
-//								SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-//								SDL_RenderFillRect(renderer, &rect);
-//						}
-//						else if ((*map)[c][r] == 1)
-//						{
-//								SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
-//								SDL_RenderDrawRect(renderer, &rect);
-//						}
-//				}
-//		}
-//}
-
 int main(int argc, char* args[])
 {
 		// Timer code from : https://gamedev.stackexchange.com/a/163508/18014
@@ -532,10 +505,6 @@ int main(int argc, char* args[])
 										{
 												game_started = true;
 										}
-
-										//auto m = init_cellular_automata();
-										//the_map = m;
-										//perform_cellular_automaton(the_map, 10);
 								}
 								break;
 						}
@@ -572,9 +541,6 @@ int main(int argc, char* args[])
 								render_game(animation_timer.elapsed_seconds);
 								render_mini_map(game->GetMap(), game->GetPlayerPoint());
 						}
-
-						// Testing cellular automata generation
-						//render_sandbox(renderer, animation_timer.elapsed_seconds);
 
 						SDL_RenderPresent(renderer);
 				}

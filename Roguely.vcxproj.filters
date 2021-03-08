@@ -7,6 +7,7 @@
     <ClCompile Include="SpriteSheet.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="LevelGeneration.cpp" />
+    <ClCompile Include="Entity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp" />
@@ -24,6 +25,7 @@
       <Filter>sol</Filter>
     </ClInclude>
     <ClInclude Include="LevelGeneration.hpp" />
+    <ClInclude Include="Entity.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sol">

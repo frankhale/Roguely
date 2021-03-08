@@ -1,5 +1,5 @@
 /*
-* Common.hpp
+* Entity.cpp
 *
 * MIT License
 *
@@ -24,55 +24,12 @@
 * SOFTWARE.
 */
 
-#pragma once
+#include "Entity.hpp"
 
-#include <iostream>
-#include <vector>
-
-#include <SDL.h>
-
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 768;
-const int MAP_WIDTH = 125;
-const int MAP_HEIGHT = 125;
-const int VIEW_PORT_WIDTH = 20;
-const int VIEW_PORT_HEIGHT = 12;
-const int SPRITE_WIDTH = 32;
-const int SPRITE_HEIGHT = 32;
-const bool MUSIC = false;
-
-enum class MovementDirection
+Entity::Entity(int id, Point point, EntityType entityType)
 {
-		Left,
-		Right,
-		Up,
-		Down
-};
-
-enum class WhoAmI
-{
-		Player,
-		Enemy
-};
-
-struct Point
-{
-		int x = 0;
-		int y = 0;
-};
-
-// ref: https://gamedev.stackexchange.com/a/163508/18014
-struct Timer
-{
-		Uint64 previous_ticks{};
-		float elapsed_seconds{};
-
-		void tick()
-		{
-				const Uint64 current_ticks{ SDL_GetPerformanceCounter() };
-				const Uint64 delta{ current_ticks - previous_ticks };
-				previous_ticks = current_ticks;
-				static const Uint64 TICKS_PER_SECOND{ SDL_GetPerformanceFrequency() };
-				elapsed_seconds = delta / static_cast<float>(TICKS_PER_SECOND);
-		}
-};
+		_id = id;
+		_point = point;
+		_entityType = entityType;
+		components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+}

@@ -48,11 +48,11 @@ Game::Game()
 		player_combat_info.str(" ");
 		enemy_combat_info.str(" ");
 
-		coins = std::make_shared<std::vector<Entity>>();
-		health_gems = std::make_shared<std::vector<Entity>>();
-		enemies = std::make_shared<std::vector<Entity>>();
-		treasure_chests = std::make_shared<std::vector<Entity>>();
-		bonus = std::make_shared<std::vector<Entity>>();
+		coins = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
+		health_gems = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
+		enemies = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
+		treasure_chests = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
+		bonus = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
 
 		combat_log = std::make_shared<std::queue<std::shared_ptr<CombatLog>>>();
 
@@ -70,12 +70,7 @@ Game::Game()
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Purple_Blob);
 		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Orange_Blob);
 
-		golden_candle = {
-				GenerateRandomPoint(),
-				EntityType::Pickup,
-				nullptr,
-				100
-		};
+		golden_candle = std::make_shared<Entity>(100, GenerateRandomPoint(), EntityType::Pickup);
 
 		auto player_point = GenerateRandomPoint();
 		player->Point(player_point.x, player_point.y);
@@ -84,25 +79,25 @@ Game::Game()
 		RB_FOV();
 }
 
-bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities)
+bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entities)
 {
-		return !(std::any_of(entities->begin(), entities->end(), [&](const Entity& elem) { return elem.point.x == x && elem.point.y == y; }));
+		return !(std::any_of(entities->begin(), entities->end(), [&](std::shared_ptr<Entity> elem) { return elem->point().x == x && elem->point().y == y; }));
 }
 
-auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<Entity>> entities, WhoAmI whoAmI, MovementDirection dir)
+auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entities, WhoAmI whoAmI, MovementDirection dir)
 {
 		for (const auto& e : *entities)
 		{
-				if ((dir == MovementDirection::Up && e.point.y == y - 1 && e.point.x == x) ||
-						(dir == MovementDirection::Down && e.point.y == y + 1 && e.point.x == x) ||
-						(dir == MovementDirection::Left && e.point.y == y && e.point.x == x - 1) ||
-						(dir == MovementDirection::Right && e.point.y == y && e.point.x == x + 1))
+				if ((dir == MovementDirection::Up && e->point().y == y - 1 && e->point().x == x) ||
+						(dir == MovementDirection::Down && e->point().y == y + 1 && e->point().x == x) ||
+						(dir == MovementDirection::Left && e->point().y == y && e->point().x == x - 1) ||
+						(dir == MovementDirection::Right && e->point().y == y && e->point().x == x + 1))
 				{
-						if (e.entityType == EntityType::Enemy || whoAmI == WhoAmI::Enemy)
+						if (e->entityType() == EntityType::Enemy || whoAmI == WhoAmI::Enemy)
 						{
 								TileWalkableInfo twi{
 										false,
-										{ e.point.x, e.point.y }
+										{ e->point().x, e->point().y }
 								};
 
 								return std::make_shared<TileWalkableInfo>(twi);
@@ -207,11 +202,11 @@ void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
 		view_port_height = view_port_y + (VIEW_PORT_HEIGHT * 2);
 }
 
-void Game::UpdateCollection(std::shared_ptr<std::vector<Entity>> entities, std::function<void()> fn)
+void Game::UpdateCollection(std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entities, std::function<void()> fn)
 {
 		entities->erase(std::remove_if(entities->begin(), entities->end(),
-				[&](Entity e) {
-						if (e.point.x == player->X() && e.point.y == player->Y())
+				[&](std::shared_ptr<Entity> e) {
+						if (e->point().x == player->X() && e->point().y == player->Y())
 						{
 								fn();
 								return true;
@@ -261,7 +256,7 @@ void Game::UpdateAfterPlayerMoved()
 						player->SetAttack(player->GetAttack() + 1);
 				});
 
-		if (golden_candle.point.x == player->X() && golden_candle.point.y == player->Y())
+		if (golden_candle->point().x == player->X() && golden_candle->point().y == player->Y())
 		{
 				player->SetScore(player->GetScore() + 10000);
 				win_lose_message << "YOU WIN!!!";
@@ -281,7 +276,7 @@ bool Game::IsXYBlocked(int x, int y)
 						IsEntityLocationTraversable(x, y, health_gems) ||
 						IsEntityLocationTraversable(x, y, bonus) ||
 						IsEntityLocationTraversable(x, y, enemies) ||
-						(x == golden_candle.point.x && y == golden_candle.point.y))));
+						(x == golden_candle->point().x && y == golden_candle->point().y))));
 }
 
 Point Game::GenerateRandomPoint()
@@ -313,7 +308,7 @@ Point Game::GetOpenPointForXY(int x, int y)
 		return GenerateRandomPoint();
 }
 
-void Game::SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y)
+void Game::SpawnEntity(std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y)
 {
 		auto components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
 
@@ -335,16 +330,13 @@ void Game::SpawnEntity(std::shared_ptr<std::vector<Entity>> entity, EntityType e
 
 		components->push_back(std::make_shared<EntitySubTypeComponent>(entitySubType));
 
-		entity->push_back(
-				{
-						{ x, y },
-						entityType,
-						components,
-						static_cast<int>(entitySubType)
-				});
+		Point p = { x, y };
+		auto  e = std::make_shared<Entity>(static_cast<int>(entitySubType), p, entityType);
+		e->AddComponents(components);
+		entity->push_back(e);
 }
 
-void Game::SpawnEntities(std::shared_ptr<std::vector<Entity>> entity, int num, EntityType entityType, EntitySubType entitySubType)
+void Game::SpawnEntities(std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entity, int num, EntityType entityType, EntitySubType entitySubType)
 {
 		for (int i = 0; i < num; i++)
 		{
@@ -360,26 +352,26 @@ void Game::MoveEnemies()
 				if (std::rand() % 100 + 1 >= 40) continue;
 
 				int direction = std::rand() % 4;
-				Point loc = { enemy.point.x, enemy.point.y };
+				Point loc = { enemy->point().x, enemy->point().y };
 
-				if (direction == 0 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Up, WhoAmI::Enemy))
+				if (direction == 0 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Up, WhoAmI::Enemy))
 				{
 						loc.y -= 1;
 				}
-				else if (direction == 1 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Down, WhoAmI::Enemy))
+				else if (direction == 1 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Down, WhoAmI::Enemy))
 				{
 						loc.y += 1;
 				}
-				else if (direction == 2 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Left, WhoAmI::Enemy))
+				else if (direction == 2 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Left, WhoAmI::Enemy))
 				{
 						loc.x -= 1;
 				}
-				else if (direction == 3 && IsTileWalkable(enemy.point.x, enemy.point.y, MovementDirection::Right, WhoAmI::Enemy))
+				else if (direction == 3 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Right, WhoAmI::Enemy))
 				{
 						loc.x += 1;
 				}
 
-				enemy.point = { loc.x, loc.y };
+				enemy->SetPoint({ loc.x, loc.y });
 		}
 }
 
@@ -389,29 +381,6 @@ void Game::ClearInfo()
 		enemy_stats_info.str("");
 		player_combat_info.str("");
 		enemy_combat_info.str("");
-}
-
-template<typename T>
-std::shared_ptr<T> Game::find_component(std::shared_ptr<std::vector<std::shared_ptr<Component>>> components)
-{
-		auto found_component = std::find_if(components->begin(), components->end(),
-				[](std::shared_ptr<Component> c) {
-						return std::dynamic_pointer_cast<T>(c) != nullptr;
-				});
-
-		std::shared_ptr<T> t_component = nullptr;
-
-		if (*found_component != nullptr)
-		{
-				t_component = std::dynamic_pointer_cast<T>(*found_component);
-
-				if (t_component != nullptr)
-				{
-						return t_component;
-				}
-		}
-
-		return nullptr;
 }
 
 void Game::AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatMultiplier combat_multiplier, int damage)
@@ -439,12 +408,12 @@ void Game::InitiateAttackSequence(int x, int y)
 		ClearInfo();
 
 		auto enemy = std::find_if(enemies->begin(), enemies->end(),
-				[&](Entity e) {
-						return e.point.x == x && e.point.y == y;
+				[&](const std::shared_ptr<Entity> &e) {
+						return e->point().x == x && e->point().y == y;
 				});
 
-		auto enemy_stat_component = find_component<StatComponent>(enemy->components);
-
+		auto enemy_stat_component = (*enemy)->find_component<StatComponent>();
+		
 		if (enemy_stat_component != nullptr)
 		{
 				auto player_critical_strike = std::rand() % 100 <= 20;
@@ -460,7 +429,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 
-						AddCombatLog(WhoAmI::Player, { enemy->point.x, enemy->point.y }, AttackType::Critical, CombatMultiplier::Plus, damage);
+						AddCombatLog(WhoAmI::Player, { (*enemy)->point().x, (*enemy)->point().y }, AttackType::Critical, CombatMultiplier::Plus, damage);
 				}
 				else
 				{
@@ -472,7 +441,7 @@ void Game::InitiateAttackSequence(int x, int y)
 						player_combat_info << "Player attacks for " << damage << " damage!!!";
 						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
 
-						AddCombatLog(WhoAmI::Player, { enemy->point.x, enemy->point.y }, AttackType::Normal, CombatMultiplier::Plus, damage);
+						AddCombatLog(WhoAmI::Player, { (*enemy)->point().x, (*enemy)->point().y }, AttackType::Normal, CombatMultiplier::Plus, damage);
 				}
 
 				if (enemy_critical_strike)
@@ -505,24 +474,20 @@ void Game::InitiateAttackSequence(int x, int y)
 						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
 						player->SetScore(player->GetScore() + 25);
 
-						auto enemy_sub_type_component = find_component<EntitySubTypeComponent>(enemy->components);
+						auto enemy_sub_type_component = (*enemy)->find_component<EntitySubTypeComponent>();						
 
 						if (enemy_sub_type_component != nullptr && enemy_sub_type_component->GetEntitySubType() == EntitySubType::Fire_Walker)
 						{
-								auto pos = GetOpenPointForXY(enemy->point.x, enemy->point.y);
+								auto pos = GetOpenPointForXY((*enemy)->point().x, (*enemy)->point().y);
 								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, pos.x, pos.y);
 						}
 
-						treasure_chests->push_back({
-								{ enemy->point.x, enemy->point.y },
-								EntityType::Pickup,
-								nullptr,
-								20
-								});
-
+						Point tc_point = { (*enemy)->point().x, (*enemy)->point().y };
+						treasure_chests->push_back(std::make_shared<Entity>(20, tc_point, EntityType::Pickup));
+						
 						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
-								[&](Entity e) {
-										return e.point.x == enemy->point.x && e.point.y == enemy->point.y;
+								[&](std::shared_ptr<Entity> e) {
+										return e->point().x == (*enemy)->point().x && e->point().y == (*enemy)->point().y;
 								}),
 								enemies->end());
 
