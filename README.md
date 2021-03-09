@@ -12,10 +12,31 @@ Test level showing off game sprites
 
 NOTE: This is a work in progress...
 
-The current map is just a big room with an outer wall and randomly spawned
-walls inside. Enemies spawn, move around and you can attack them to increase
-your score. You can pick up health gems and coins. Dead enemies spawn a
-treasure chest with a chance to increase health and score. If you kill a `fire walker` he will spawn a treasure chest and an attack gem which increases your attack power. Look for the golden candle and if you collect it you will win the game.
+The map is using simple cellular automata to generate it. Each time you run the
+game you'll get a new map. Enemies spawn, move around and you can attack them to
+increase your score. You can pick up health gems and coins. Dead enemies spawn a
+treasure chest with a chance to increase health and score. If you kill a
+`fire walker` he will spawn a treasure chest and an attack gem which increases
+your attack power. Look for the golden candle and if you collect it you will
+win the game.
+
+## Next Steps
+
+Before the code gets too messy, here is a list of things planned.
+
+- Refactor current code so we can:
+  - Integrate Lua
+  - Finish ECS system
+  - Move all in game objects (including player) to entities
+  - Remove hard coded entity references that we have now
+  - Optimize rendering pipeline
+  - Expand the title screen to add a screen to document how the game is played
+    and who the enemies are as well as what the objectives are.
+
+In order to get there we have to figure out just how much Lua integration we'll
+have and what that API will look like. The C++ side should provide the
+foundation for the game but decisions about the game content should be exposed
+from Lua. This is going to start shaping up over the next few weeks.
 
 ## Tileset
 
@@ -112,4 +133,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-5 March 2021
+8 March 2021
