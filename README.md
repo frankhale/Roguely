@@ -24,6 +24,7 @@ win the game.
 
 Before the code gets too messy, here is a list of things planned.
 
+- Switch from manual dependency configuration to `vcpkg`
 - Refactor current code so we can:
   - Integrate Lua
   - Finish ECS system
@@ -133,4 +134,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-8 March 2021
+9 March 2021
