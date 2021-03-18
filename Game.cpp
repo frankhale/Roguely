@@ -1,557 +1,573 @@
-/*
-* Game.cpp
-*
-* MIT License
-*
-* Copyright (c) 2021 Frank Hale
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*/
+#include "Game.h"
 
-#include "Game.hpp"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
-Game::Game()
+namespace roguely::game
 {
-		std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-		view_port_x = 0;
-		view_port_y = 0;
-		view_port_width = VIEW_PORT_WIDTH;
-		view_port_height = VIEW_PORT_HEIGHT;
-
-		map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();
-		light_map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();
-
-		map = init_cellular_automata();
-		perform_cellular_automaton(map, 10);
-
-		player = std::make_shared<Player>(60, 2);
-
-		win_lose_message.str(" ");
-		enemy_stats_info.str(" ");
-		player_combat_info.str(" ");
-		enemy_combat_info.str(" ");
-
-		coins = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
-		health_gems = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
-		enemies = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
-		treasure_chests = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
-		bonus = std::make_shared<std::vector<std::shared_ptr<Entity>>>();
-
-		combat_log = std::make_shared<std::queue<std::shared_ptr<CombatLog>>>();
-
-		SpawnEntities(coins, NUMBER_OF_COINS_ON_MAP, EntityType::Pickup, EntitySubType::Coin);
-		SpawnEntities(health_gems, NUMBER_OF_HEALTH_GEMS_ON_MAP, EntityType::Pickup, EntitySubType::Health_Gem);
-
-		int num_enemies_for_each_type = NUMBER_OF_ENEMIES_ON_MAP / 7;
-
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Spider);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Lurcher);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Crab);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Bug);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Fire_Walker);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Crimson_Shadow);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Purple_Blob);
-		SpawnEntities(enemies, num_enemies_for_each_type, EntityType::Enemy, EntitySubType::Orange_Blob);
-
-		golden_candle = std::make_shared<Entity>(100, GenerateRandomPoint(), EntityType::Pickup);
-
-		auto player_point = GenerateRandomPoint();
-		player->Point(player_point.x, player_point.y);
-		UpdatePlayerViewPortPoints(player->X(), player->Y());
-
-		RB_FOV();
-}
-
-bool Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entities)
-{
-		return !(std::any_of(entities->begin(), entities->end(), [&](std::shared_ptr<Entity> elem) { return elem->point().x == x && elem->point().y == y; }));
-}
-
-auto Game::IsEntityLocationTraversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entities, WhoAmI whoAmI, MovementDirection dir)
-{
-		for (const auto& e : *entities)
+		Game::Game()
 		{
-				if ((dir == MovementDirection::Up && e->point().y == y - 1 && e->point().x == x) ||
-						(dir == MovementDirection::Down && e->point().y == y + 1 && e->point().x == x) ||
-						(dir == MovementDirection::Left && e->point().y == y && e->point().x == x - 1) ||
-						(dir == MovementDirection::Right && e->point().y == y && e->point().x == x + 1))
-				{
-						if (e->entityType() == EntityType::Enemy || whoAmI == WhoAmI::Enemy)
-						{
-								TileWalkableInfo twi{
-										false,
-										{ e->point().x, e->point().y }
-								};
+				maps = std::make_unique<std::vector<std::shared_ptr<roguely::common::Map>>>();
+				entity_groups = std::make_unique<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+		}
 
-								return std::make_shared<TileWalkableInfo>(twi);
+		void Game::generate_map_for_testing()
+		{
+				auto map = roguely::level_generation::init_cellular_automata(100, 40);
+				roguely::level_generation::perform_cellular_automaton(map, 100, 40, 10);
+
+				for (int row = 0; row < 40; row++)
+				{
+						for (int column = 0; column < 100; column++)
+						{
+								if ((*map)(row, column) == 0) {
+										std::cout << "#";
+								}
+								else if ((*map)(row, column) == 9) {
+										std::cout << ".";
+								}
 						}
+
+						std::cout << std::endl;
 				}
 		}
 
-		TileWalkableInfo twi{
-				true,
-				{ x, y }
-		};
-
-		return std::make_shared<TileWalkableInfo>(twi);
-}
-
-bool Game::IsTilePlayerTile(int x, int y, MovementDirection dir)
-{
-		return ((dir == MovementDirection::Up && player->Y() == y - 1 && player->X() == x) ||
-				(dir == MovementDirection::Down && player->Y() == y + 1 && player->X() == x) ||
-				(dir == MovementDirection::Left && player->Y() == y && player->X() == x - 1) ||
-				(dir == MovementDirection::Right && player->Y() == y && player->X() == x + 1));
-}
-
-bool Game::IsTileOnMapTraversable(int x, int y, MovementDirection dir, int tileId)
-{
-		return !(dir == MovementDirection::Up && (*map)[y - 1][x] == tileId ||
-				dir == MovementDirection::Down && (*map)[y + 1][x] == tileId ||
-				dir == MovementDirection::Left && (*map)[y][x - 1] == tileId ||
-				dir == MovementDirection::Right && (*map)[y][x + 1] == tileId);
-}
-
-bool Game::IsTileWalkable(int x, int y, MovementDirection dir, WhoAmI whoAmI)
-{
-		auto is_player = player->X() == x && player->Y() == y;
-
-		if (IsTilePlayerTile(x, y, dir)) return false;
-
-		auto enemy = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
-
-		if (!enemy->walkable && is_player)
-				InitiateAttackSequence(enemy->point.x, enemy->point.y);
-
-		auto coins_traversable = IsEntityLocationTraversable(x, y, coins, whoAmI, dir);
-		auto health_gems_traversable = IsEntityLocationTraversable(x, y, health_gems, whoAmI, dir);
-		auto enemies_traversable = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
-
-		return IsTileOnMapTraversable(x, y, dir, 0 /* Wall */) &&
-				coins_traversable->walkable &&
-				health_gems_traversable->walkable &&
-				enemies_traversable->walkable &&
-				enemy->walkable;
-}
-
-void Game::MovePlayerLeft()
-{
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Left, WhoAmI::Player)) return;
-
-		player->X(player->X() - 1);
-		UpdatePlayerViewPortPoints(player->X(), player->Y());
-		UpdateAfterPlayerMoved();
-};
-
-void Game::MovePlayerRight()
-{
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Right, WhoAmI::Player)) return;
-
-		player->X(player->X() + 1);
-		UpdatePlayerViewPortPoints(player->X(), player->Y());
-		UpdateAfterPlayerMoved();
-};
-
-void Game::MovePlayerDown()
-{
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Down, WhoAmI::Player)) return;
-
-		player->Y(player->Y() + 1);
-		UpdatePlayerViewPortPoints(player->X(), player->Y());
-		UpdateAfterPlayerMoved();
-};
-
-void Game::MovePlayerUp()
-{
-		if (!IsTileWalkable(player->X(), player->Y(), MovementDirection::Up, WhoAmI::Player)) return;
-
-		player->Y(player->Y() - 1);
-		UpdatePlayerViewPortPoints(player->X(), player->Y());
-		UpdateAfterPlayerMoved();
-};
-
-void Game::UpdatePlayerViewPortPoints(int playerX, int playerY)
-{
-		view_port_x = playerX - VIEW_PORT_WIDTH;
-		view_port_y = playerY - VIEW_PORT_HEIGHT;
-
-		if (view_port_x < 0) view_port_x = std::max(0, view_port_x);
-		if (view_port_x > (MAP_WIDTH - (VIEW_PORT_WIDTH * 2))) view_port_x = (MAP_WIDTH - (VIEW_PORT_WIDTH * 2));
-
-		if (view_port_y < 0) view_port_y = std::max(0, view_port_y);
-		if (view_port_y > (MAP_HEIGHT - (VIEW_PORT_HEIGHT * 2))) view_port_y = (MAP_HEIGHT - (VIEW_PORT_HEIGHT * 2));
-
-		view_port_width = view_port_x + (VIEW_PORT_WIDTH * 2);
-		view_port_height = view_port_y + (VIEW_PORT_HEIGHT * 2);
-}
-
-void Game::UpdateCollection(std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entities, std::function<void()> fn)
-{
-		entities->erase(std::remove_if(entities->begin(), entities->end(),
-				[&](std::shared_ptr<Entity> e) {
-						if (e->point().x == player->X() && e->point().y == player->Y())
-						{
-								fn();
-								return true;
-						}
-						return false;
-				}), entities->end());
-}
-
-void Game::UpdateAfterPlayerMoved()
-{
-		UpdateCollection(coins,
-				[&]() {
-						player->SetScore(player->GetScore() + COIN_VALUE);
-				});
-
-		UpdateCollection(health_gems,
-				[&]() {
-						auto ph = player->GetHealth();
-						if (ph < 100)
-						{
-								auto h = ph + HEALTH_GEM_VALUE;
-								if (h > 100) h = 100;
-								player->SetHealth(h);
-						}
-				});
-
-		UpdateCollection(treasure_chests,
-				[&]() {
-						auto health_recovery_chance = std::rand() % 100 <= 20;
-						auto extra_score_change = std::rand() % 100 <= 15;
-
-						if (health_recovery_chance)
-						{
-								player->SetHealth(player->GetHealth() + 40);
-						}
-
-						if (extra_score_change)
-						{
-								player->SetScore(player->GetScore() + 50);
-						}
-
-						player->SetScore(player->GetScore() + 25);
-				});
-
-		UpdateCollection(bonus,
-				[&]() {
-						player->SetAttack(player->GetAttack() + 1);
-				});
-
-		if (golden_candle->point().x == player->X() && golden_candle->point().y == player->Y())
+		void Game::switch_map(std::string name)
 		{
-				player->SetScore(player->GetScore() + 10000);
-				win_lose_message << "YOU WIN!!!";
-		}
+				auto map = std::find_if(maps->begin(), maps->end(),
+						[&](const std::shared_ptr<roguely::common::Map>& m) {
+								return m->name == name;
+						});
 
-		MoveEnemies();
-
-		RB_FOV();
-}
-
-bool Game::IsXYBlocked(int x, int y)
-{
-		return ((*map)[y][x] == 0 ||
-				player->X() == x ||
-				player->Y() == y ||
-				(!(IsEntityLocationTraversable(x, y, coins) ||
-						IsEntityLocationTraversable(x, y, health_gems) ||
-						IsEntityLocationTraversable(x, y, bonus) ||
-						IsEntityLocationTraversable(x, y, enemies) ||
-						(x == golden_candle->point().x && y == golden_candle->point().y))));
-}
-
-Point Game::GenerateRandomPoint()
-{
-		int c = 0;
-		int r = 0;
-
-		do
-		{
-				c = std::rand() % (MAP_WIDTH - 1);
-				r = std::rand() % (MAP_HEIGHT - 1);
-		} while (IsXYBlocked(c, r));
-
-		return { c, r };
-}
-
-Point Game::GetOpenPointForXY(int x, int y)
-{
-		int left = x - 1;
-		int right = x + 1;
-		int up = y - 1;
-		int down = y + 1;
-
-		if (!IsXYBlocked(left, y)) return { left, y };
-		else if (!IsXYBlocked(right, y)) return { right, y };
-		else if (!IsXYBlocked(x, up)) return { x, up };
-		else if (!IsXYBlocked(x, down)) return { x, down };
-
-		return GenerateRandomPoint();
-}
-
-void Game::SpawnEntity(std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entity, EntityType entityType, EntitySubType entitySubType, int x, int y)
-{
-		auto components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
-
-		if (entityType == EntityType::Enemy)
-		{
-				int health, attack;
-
-				if (entitySubType == EntitySubType::Spider) { health = 20; attack = 1; }
-				else if (entitySubType == EntitySubType::Lurcher) { health = 30; attack = 2; }
-				else if (entitySubType == EntitySubType::Crab) { health = 40; attack = 2; }
-				else if (entitySubType == EntitySubType::Bug) { health = 50; attack = 2; }
-				else if (entitySubType == EntitySubType::Fire_Walker) { health = 75; attack = 4; }
-				else if (entitySubType == EntitySubType::Crimson_Shadow) { health = 85; attack = 5; }
-				else if (entitySubType == EntitySubType::Purple_Blob) { health = 95; attack = 6; }
-				else if (entitySubType == EntitySubType::Orange_Blob) { health = 100; attack = 7; }
-
-				components->push_back(std::make_shared<StatComponent>(health, attack));
-		}
-
-		components->push_back(std::make_shared<EntitySubTypeComponent>(entitySubType));
-
-		Point p = { x, y };
-		auto  e = std::make_shared<Entity>(static_cast<int>(entitySubType), p, entityType);
-		e->AddComponents(components);
-		entity->push_back(e);
-}
-
-void Game::SpawnEntities(std::shared_ptr<std::vector<std::shared_ptr<Entity>>> entity, int num, EntityType entityType, EntitySubType entitySubType)
-{
-		for (int i = 0; i < num; i++)
-		{
-				auto p = GenerateRandomPoint();
-				SpawnEntity(entity, entityType, entitySubType, p.x, p.y);
-		};
-}
-
-void Game::MoveEnemies()
-{
-		for (auto& enemy : *enemies)
-		{
-				if (std::rand() % 100 + 1 >= 40) continue;
-
-				int direction = std::rand() % 4;
-				Point loc = { enemy->point().x, enemy->point().y };
-
-				if (direction == 0 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Up, WhoAmI::Enemy))
-				{
-						loc.y -= 1;
-				}
-				else if (direction == 1 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Down, WhoAmI::Enemy))
-				{
-						loc.y += 1;
-				}
-				else if (direction == 2 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Left, WhoAmI::Enemy))
-				{
-						loc.x -= 1;
-				}
-				else if (direction == 3 && IsTileWalkable(enemy->point().x, enemy->point().y, MovementDirection::Right, WhoAmI::Enemy))
-				{
-						loc.x += 1;
-				}
-
-				enemy->SetPoint({ loc.x, loc.y });
-		}
-}
-
-void Game::ClearInfo()
-{
-		win_lose_message.str("");
-		enemy_stats_info.str("");
-		player_combat_info.str("");
-		enemy_combat_info.str("");
-}
-
-void Game::AddCombatLog(WhoAmI who, Point point, AttackType attack_type, CombatMultiplier combat_multiplier, int damage)
-{
-		std::ostringstream message;
-
-		if (combat_multiplier == CombatMultiplier::Plus)
-				message << "+";
-		else if (combat_multiplier == CombatMultiplier::Minus)
-				message << "-";
-
-		message << damage;
-
-		auto log = std::make_shared<CombatLog>();
-		log->who = who;
-		log->point = { point.x, point.y };
-		log->attack_type = attack_type;
-		log->message = message.str();
-
-		combat_log->push(log);
-}
-
-void Game::InitiateAttackSequence(int x, int y)
-{
-		ClearInfo();
-
-		auto enemy = std::find_if(enemies->begin(), enemies->end(),
-				[&](const std::shared_ptr<Entity> &e) {
-						return e->point().x == x && e->point().y == y;
-				});
-
-		auto enemy_stat_component = (*enemy)->find_component<StatComponent>();
-		
-		if (enemy_stat_component != nullptr)
-		{
-				auto player_critical_strike = std::rand() % 100 <= 20;
-				auto enemy_critical_strike = std::rand() % 100 <= 20;
-
-				if (player_critical_strike)
-				{
-						player_combat_info.str("");
-
-						auto damage = player->GetAttack() + (std::rand() % 5 + 1) * 2;
-						auto enemy_health = enemy_stat_component->GetHealth() - damage;
-						enemy_stat_component->SetHealth(enemy_health);
-						player_combat_info << "Player CRITICALLY STRIKES for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
-
-						AddCombatLog(WhoAmI::Player, { (*enemy)->point().x, (*enemy)->point().y }, AttackType::Critical, CombatMultiplier::Plus, damage);
-				}
-				else
-				{
-						player_combat_info.str("");
-
-						auto damage = player->GetAttack() + (std::rand() % 5 + 1);
-						auto enemy_health = enemy_stat_component->GetHealth() - damage;
-						enemy_stat_component->SetHealth(enemy_health);
-						player_combat_info << "Player attacks for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
-
-						AddCombatLog(WhoAmI::Player, { (*enemy)->point().x, (*enemy)->point().y }, AttackType::Normal, CombatMultiplier::Plus, damage);
-				}
-
-				if (enemy_critical_strike)
-				{
-						enemy_stats_info.str("");
-
-						auto damage = enemy_stat_component->GetAttack() + (std::rand() % 5 + 1) * 2;
-						player->SetHealth(player->GetHealth() - damage);
-						enemy_combat_info << "Enemy CRITICALLY STRIKES for " << damage << " damage!!!";
-						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
-
-						AddCombatLog(WhoAmI::Enemy, { player->X(), player->Y() }, AttackType::Critical, CombatMultiplier::Minus, damage);
-				}
-				else
-				{
-						enemy_stats_info.str("");
-
-						auto damage = enemy_stat_component->GetAttack() + (std::rand() % 5 + 1);
-						player->SetHealth(player->GetHealth() - damage);
-						enemy_combat_info << "Enemy attacks for " << damage << " damage";
-						enemy_stats_info << "Enemy Health: " << enemy_stat_component->GetHealth() << " | Attack: " << enemy_stat_component->GetAttack();
-
-						AddCombatLog(WhoAmI::Enemy, { player->X(), player->Y() }, AttackType::Normal, CombatMultiplier::Minus, damage);
-				}
-
-				if (enemy_stat_component->GetHealth() <= 0)
-				{
-						ClearInfo();
-
-						player->SetEnemiesKilled(player->GetEnemiesKilled() + 1);
-						player->SetScore(player->GetScore() + 25);
-
-						auto enemy_sub_type_component = (*enemy)->find_component<EntitySubTypeComponent>();						
-
-						if (enemy_sub_type_component != nullptr && enemy_sub_type_component->GetEntitySubType() == EntitySubType::Fire_Walker)
-						{
-								auto pos = GetOpenPointForXY((*enemy)->point().x, (*enemy)->point().y);
-								SpawnEntity(bonus, EntityType::Pickup, EntitySubType::Attack_Gem, pos.x, pos.y);
-						}
-
-						Point tc_point = { (*enemy)->point().x, (*enemy)->point().y };
-						treasure_chests->push_back(std::make_shared<Entity>(20, tc_point, EntityType::Pickup));
-						
-						enemies->erase(std::remove_if(enemies->begin(), enemies->end(),
-								[&](std::shared_ptr<Entity> e) {
-										return e->point().x == (*enemy)->point().x && e->point().y == (*enemy)->point().y;
-								}),
-								enemies->end());
-
-						ClearQueue<std::shared_ptr<CombatLog>>(*combat_log);
-				}
-
-				if (player->GetHealth() <= 0)
-				{
-						ClearInfo();
-
-						player->SetHealth(0);
-						win_lose_message << "You ded son!";
-				}
-		}
-}
-
-// Taken from http://www.roguebasin.com/index.php?title=Eligloscode
-// Modified to fit in my game
-void Game::RB_FOV()
-{
-		float x = 0, y = 0;
-
-		for (int r = 0; r < MAP_HEIGHT; r++)
-		{
-				for (int c = 0; c < MAP_WIDTH; c++)
-				{
-						(*light_map)[r][c] = 0;
+				if (map != maps->end()) {
+						current_map = *map;
 				}
 		}
 
-		for (int i = 0; i < 360; i++)
+		std::shared_ptr<roguely::common::Map> Game::get_map(std::string name)
 		{
-				x = (float)std::cos(i * 0.01745f);
-				y = (float)std::sin(i * 0.01745f);
+				auto map = std::find_if(maps->begin(), maps->end(),
+						[&](const std::shared_ptr<roguely::common::Map>& m) {
+								return m->name == name;
+						});
 
-				float ox = (float)player->X() + 0.5f;
-				float oy = (float)player->Y() + 0.5f;
+				if (map != maps->end()) {
+						return *map;
+				}
 
-				for (int j = 0; j < 40; j++)
+				return nullptr;
+		}
+
+		std::shared_ptr<roguely::ecs::EntityGroup> Game::get_entity_group(std::string name)
+		{
+				auto group = std::find_if(entity_groups->begin(), entity_groups->end(),
+						[&](const std::shared_ptr<roguely::ecs::EntityGroup>& eg) {
+								return eg->name == name;
+						});
+
+				if (group != entity_groups->end()) {
+						return *group;
+				}
+
+				return nullptr;
+		}
+
+		std::shared_ptr<roguely::ecs::Entity> Game::get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id)
+		{
+				auto entity = std::find_if(entity_group->entities->begin(), entity_group->entities->end(),
+						[&](const std::shared_ptr<roguely::ecs::Entity>& m) {
+								return m->get_id() == entity_id;
+						});
+
+				if (entity != entity_group->entities->end())
 				{
-						(*light_map)[(int)oy][(int)ox] = 2;
+						return *entity;
+				}
 
-						if ((*map)[(int)oy][(int)ox] == 0) // if tile is a wall
-								break;
+				return nullptr;
+		}
 
-						ox += x;
-						oy += y;
+		std::shared_ptr<roguely::ecs::EntityGroup> Game::create_entity_group(std::string name)
+		{
+				auto entityGroup = std::make_shared<roguely::ecs::EntityGroup>();
+				entityGroup->name = name;
+				entityGroup->entities = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::Entity>>>();
+				entity_groups->emplace_back(entityGroup);
+				return entityGroup;
+		}
+
+		std::shared_ptr<roguely::ecs::Entity> Game::add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entityGroup, roguely::ecs::EntityType entityType, std::string id, roguely::common::Point point)
+		{
+				auto entity = std::make_shared<roguely::ecs::Entity>(entityGroup, id, point, entityType);
+				entityGroup->entities->emplace_back(entity);
+
+				if (entityType == roguely::ecs::EntityType::Player)
+				{
+						player = entity;
+				}
+
+				return entity;
+		}
+
+		void Game::add_sprite_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string spritesheet_name, int sprite_in_spritesheet_id, std::string sprite_name)
+		{
+				auto sprite_component = std::make_shared<roguely::ecs::SpriteComponent>(spritesheet_name, sprite_in_spritesheet_id, sprite_name);
+				sprite_component->set_component_name("sprite_component");
+				entity->add_component(sprite_component);
+		}
+
+		void Game::add_health_component(std::shared_ptr<roguely::ecs::Entity> entity, int h)
+		{
+				auto health_component = std::make_shared<roguely::ecs::HealthComponent>(h);
+				health_component->set_component_name("health_component");
+				entity->add_component(health_component);
+		}
+
+		void Game::add_stats_component(std::shared_ptr<roguely::ecs::Entity> entity, int a)
+		{
+				auto stats_component = std::make_shared<roguely::ecs::StatsComponent>(a);
+				stats_component->set_component_name("stats_component");
+				entity->add_component(stats_component);
+		}
+
+		void Game::add_score_component(std::shared_ptr<roguely::ecs::Entity> entity, int s)
+		{
+				auto score_component = std::make_shared<roguely::ecs::ScoreComponent>(s);
+				score_component->set_component_name("score_component");
+				entity->add_component(score_component);
+		}
+
+		void Game::add_value_component(std::shared_ptr<roguely::ecs::Entity> entity, int v)
+		{
+				auto value_component = std::make_shared<roguely::ecs::ValueComponent>(v);
+				value_component->set_component_name("value_component");
+				entity->add_component(value_component);
+		}
+
+		void Game::add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items)
+		{
+				auto inventory_component = std::make_shared<roguely::ecs::InventoryComponent>();
+
+				for (auto& item : items)
+				{
+						inventory_component->add_item(item.first, item.second);
+				}
+
+				inventory_component->set_component_name("inventory_component");
+				entity->add_component(inventory_component);
+		}
+
+		void Game::add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props)
+		{
+				auto lua_component = std::make_shared<roguely::ecs::LuaComponent>(n, t, props);
+				std::ostringstream lua_component_name;
+				lua_component_name << "_component";
+				lua_component->set_component_name(lua_component_name.str());
+				entity->add_component(lua_component);
+		}
+
+		std::string Game::generate_uuid()
+		{
+				boost::uuids::random_generator gen;
+				boost::uuids::uuid id = gen();
+				return boost::uuids::to_string(id);
+		}
+
+		bool Game::is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir)
+		{
+				return ((dir == roguely::common::MovementDirection::Up && player->y() == y - 1 && player->x() == x) ||
+						(dir == roguely::common::MovementDirection::Down && player->y() == y + 1 && player->x() == x) ||
+						(dir == roguely::common::MovementDirection::Left && player->y() == y && player->x() == x - 1) ||
+						(dir == roguely::common::MovementDirection::Right && player->y() == y && player->x() == x + 1));
+		}
+
+		auto Game::is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir)
+		{
+				for (const auto& e : *entities)
+				{
+						if ((dir == roguely::common::MovementDirection::Up && e->y() == y - 1 && e->x() == x) ||
+								(dir == roguely::common::MovementDirection::Down && e->y() == y + 1 && e->x() == x) ||
+								(dir == roguely::common::MovementDirection::Left && e->y() == y && e->x() == x - 1) ||
+								(dir == roguely::common::MovementDirection::Right && e->y() == y && e->x() == x + 1))
+						{
+								if (e->get_entity_type() == roguely::ecs::EntityType::Enemy || whoAmI == roguely::common::WhoAmI::Enemy)
+								{
+										TileWalkableInfo twi{
+												false,
+												{ e->x(), e->y() },
+												e->get_entity_type()
+										};
+
+										return std::make_shared<TileWalkableInfo>(twi);
+								}
+						}
+				}
+
+				// if we get this far its not any of our other entities, most likely open ground
+				TileWalkableInfo twi{
+						true,
+						{ x, y },
+						roguely::ecs::EntityType::Ground /* treat everything as ground if its traversable */
 				};
-		};
-}
 
-void Game::HandleLogicTimer(double delta_time)
-{
-		static double health_regen = .0f;
-
-		if (health_regen >= 2 && player->GetHealth() < player->GetStartingHealth())
-		{
-				if (player->GetHealth() < player->GetStartingHealth() - 5)
-						AddPlayerHealth(5);
-				else
-						SetPlayerHealth(player->GetStartingHealth());
-
-				health_regen = .0f;
+				return std::make_shared<TileWalkableInfo>(twi);
 		}
 
-		health_regen += delta_time;
+		bool Game::is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId)
+		{
+				if (current_map->map == nullptr) return false;
+
+				// TODO: Some checks with fail for instance anything at the edges. We need to account for this!
+
+				return !(dir == roguely::common::MovementDirection::Up && (*current_map->map)((size_t)y - 1, x) == tileId ||
+						dir == roguely::common::MovementDirection::Down && (*current_map->map)((size_t)y + 1, x) == tileId ||
+						dir == roguely::common::MovementDirection::Left && (*current_map->map)(y, (size_t)x - 1) == tileId ||
+						dir == roguely::common::MovementDirection::Right && (*current_map->map)(y, (size_t)x + 1) == tileId);
+		}
+
+		TileWalkableInfo Game::is_tile_walkable(int x, int y, roguely::common::MovementDirection dir, roguely::common::WhoAmI whoAmI, std::vector<std::string> entity_groups_to_check)
+		{
+				bool walkable = false;
+				auto is_player = player->x() == x && player->y() == y;
+
+				// for enemy movement
+				if (is_tile_player_tile(x, y, dir)) {
+						return { false, { x, y }, roguely::ecs::EntityType::Player };
+				};
+
+				for (auto& egtc : entity_groups_to_check)
+				{
+						auto group = std::find_if(entity_groups->begin(), entity_groups->end(),
+								[&](const auto& eg) {
+										return eg->name == egtc;
+								});
+
+						walkable = is_tile_on_map_traversable(x, y, dir, 0 /* Wall */);
+
+						if (!walkable) {
+								return { false, { x, y }, roguely::ecs::EntityType::Wall };
+						}
+
+						if (group != entity_groups->end())
+						{
+								auto walkableInfo = is_entity_location_traversable(x, y, (*group)->entities, whoAmI, dir);
+
+								if (!walkableInfo->walkable) {
+										return *walkableInfo;
+								}
+						}
+
+						//auto enemy = is_entity_location_traversable(x, y, enemies, whoAmI, dir);
+
+						//if (!enemy->walkable && is_player)
+						//		InitiateAttackSequence(enemy->point.x, enemy->point.y);
+
+						//auto coins_traversable = IsEntityLocationTraversable(x, y, coins, whoAmI, dir);
+						//auto health_gems_traversable = IsEntityLocationTraversable(x, y, health_gems, whoAmI, dir);
+						//auto enemies_traversable = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
+
+						//return IsTileOnMapTraversable(x, y, dir, 0 /* Wall */) &&
+						//		coins_traversable->walkable &&
+						//		health_gems_traversable->walkable &&
+						//		enemies_traversable->walkable &&
+						//		enemy->walkable;
+				}
+
+				return {};
+		}
+
+		bool Game::is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check)
+		{
+				if (current_map->map == nullptr) return true;
+
+				bool blocked = true;
+
+				auto px = player->x();
+				auto py = player->y();
+				auto map_value = (*current_map->map)(y, x);
+
+				if ((*current_map->map)(y, x) == 0 ||
+						player->x() == x || player->y() == y)
+						return true;
+
+				for (auto& egtc : entity_groups_to_check)
+				{
+						auto group = get_entity_group(egtc);
+
+						if (group != nullptr) {
+								blocked = false;
+
+								/*if (is_entity_location_traversable(x, y, group->entities))
+								{
+										blocked = false;
+								}
+								else
+								{
+										blocked = true;
+								}*/
+						}
+				}
+
+				return blocked;
+		}
+
+		roguely::common::Point Game::generate_random_point(std::vector<std::string> entity_groups_to_check)
+		{
+				if (current_map->map == nullptr) return {};
+
+				int c = 0;
+				int r = 0;
+
+				do
+				{
+						c = std::rand() % (current_map->width - 1);
+						r = std::rand() % (current_map->height - 1);
+				} while (is_xy_blocked(c, r, entity_groups_to_check));
+
+				return { c, r };
+		}
+
+		roguely::common::Point Game::get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check)
+		{
+				int left = x - 1;
+				int right = x + 1;
+				int up = y - 1;
+				int down = y + 1;
+
+				if (!is_xy_blocked(left, y, entity_groups_to_check)) return { left, y };
+				else if (!is_xy_blocked(right, y, entity_groups_to_check)) return { right, y };
+				else if (!is_xy_blocked(x, up, entity_groups_to_check)) return { x, up };
+				else if (!is_xy_blocked(x, down, entity_groups_to_check)) return { x, down };
+
+				return generate_random_point(entity_groups_to_check);
+		}
+
+		void Game::update_player_viewport_points()
+		{
+				view_port_x = player->x() - view_port_width;
+				view_port_y = player->y() - view_port_height;
+
+				if (view_port_x < 0) view_port_x = std::max(0, view_port_x);
+				if (view_port_x > (current_map->width - (view_port_width * 2))) view_port_x = (current_map->width - (view_port_width * 2));
+
+				if (view_port_y < 0) view_port_y = std::max(0, view_port_y);
+				if (view_port_y > (current_map->height - (view_port_height * 2))) view_port_y = (current_map->height - (view_port_height * 2));
+
+				view_port_width = view_port_x + (view_port_width * 2);
+				view_port_height = view_port_y + (view_port_height * 2);
+		}
+
+		void Game::update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y)
+		{
+				if (entity_id == "player" || player->get_id() == entity_id)
+						player->set_point({ x, y });
+				else
+				{
+						auto entity_group = get_entity_group(entity_group_name);
+
+						if (entity_group != nullptr)
+						{
+								auto entity = get_entity(entity_group, entity_id);
+
+								if (entity != nullptr)
+										entity->set_point({ x, y });
+						}
+				}
+		}
+
+		int Game::get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key)
+		{
+				int result = -1;
+
+				if (component->get_component_name() == "score_component")
+				{
+						auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(component);
+						if (sc != nullptr)
+						{
+								result = sc->get_score();
+						}
+				}
+				else if (component->get_component_name() == "health_component")
+				{
+						auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(component);
+						if (hc != nullptr)
+						{
+								result = hc->get_health();
+						}
+				}
+				else if (component->get_component_name() == "stats_component")
+				{
+						auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(component);
+						if (sc != nullptr)
+						{
+								result = sc->get_attack();
+						}
+				}
+
+				return result;
+		}
+
+		int Game::get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key)
+		{
+				int result = -1;
+
+				if (entity_id == "player" || player->get_id() == entity_id)
+				{
+						auto component = player->find_component_by_name(component_name);
+
+						if (component != nullptr)
+								result = get_component_value(component, key);
+						else
+						{
+								auto entity_group = get_entity_group(entity_group_name);
+
+								if (entity_group != nullptr)
+								{
+										auto entity = get_entity(entity_group, entity_id);
+
+										if (entity != nullptr)
+										{
+												auto component = entity->find_component_by_name(component_name);
+
+												if (component != nullptr)
+														result = get_component_value(component, key);
+										}
+								}
+						}
+				}
+
+				return result;
+		}
+
+		bool Game::set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value)
+		{
+				bool did_update = false;
+
+				if (component->get_component_name() == "score_component") {
+						auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(component);
+						if (sc != nullptr)
+						{
+								sc->update_score(value);
+								did_update = true;
+						}
+				}
+				else if (component->get_component_name() == "health_component") {
+						auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(component);
+						if (hc != nullptr)
+						{
+								hc->set_health(value);
+								did_update = true;
+						}
+				}
+				else if (component->get_component_name() == "stats_component") {
+						auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(component);
+						if (sc != nullptr)
+						{
+								sc->set_attack(value);
+								did_update = true;
+						}
+				}
+
+				return did_update;
+		}
+
+		std::shared_ptr<roguely::ecs::Entity> Game::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value)
+		{
+				if (entity_id == "player" || player->get_id() == entity_id)
+				{
+						auto component = player->find_component_by_name(component_name);
+
+						if (component != nullptr)
+						{
+								auto did_update = set_component_value(component, key, value);
+
+								if (did_update)
+										return player;
+						}
+				}
+				else
+				{
+						auto entity_group = get_entity_group(entity_group_name);
+
+						if (entity_group != nullptr)
+						{
+								auto entity = get_entity(entity_group, entity_id);
+
+								if (entity != nullptr)
+								{
+										auto component = entity->find_component_by_name(component_name);
+
+										if (component != nullptr)
+										{
+												auto did_update = set_component_value(component, key, value);
+
+												if (did_update)
+														return player;
+										}
+								}
+						}
+				}
+
+				return nullptr;
+		}
+
+		std::shared_ptr<roguely::ecs::Entity> Game::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value)
+		{
+				if (component_name != "inventory_component") return nullptr;
+
+				if (entity_id == "player" || player->get_id() == entity_id)
+				{
+						auto component = player->find_component_by_name(component_name);
+
+						if (component != nullptr)
+						{
+								auto ic = std::dynamic_pointer_cast<std::shared_ptr<roguely::ecs::InventoryComponent>>(component);
+								if (ic != nullptr)
+								{
+										(*ic)->upsert_item(value);
+										return player;
+								}
+						}
+				}
+
+				return nullptr;
+		}
+
+		// Taken from http://www.roguebasin.com/index.php?title=Eligloscode
+		// Modified to fit in my game
+		void Game::rb_fov()
+		{
+				float x = 0, y = 0;
+
+				current_map->light_map = std::make_shared<boost::numeric::ublas::matrix<int>>(current_map->height, current_map->width);
+
+				//for (int r = 0; r < current_map->height; r++)
+				//{
+				//		for (int c = 0; c < current_map->width; c++)
+				//		{
+				//				//(*light_map)[r][c] = 0;
+				//		}
+				//}
+
+				for (int i = 0; i < 360; i++)
+				{
+						x = (float)std::cos(i * 0.01745f);
+						y = (float)std::sin(i * 0.01745f);
+
+						float ox = (float)player->x() + 0.5f;
+						float oy = (float)player->y() + 0.5f;
+
+						for (int j = 0; j < 40; j++)
+						{
+								(*current_map->light_map)((int)oy, (int)ox) = 2;
+
+								if ((*current_map->map)((int)oy, (int)ox) == 0) // if tile is a wall
+										break;
+
+								ox += x;
+								oy += y;
+						};
+				};
+		}
 }

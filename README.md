@@ -1,5 +1,7 @@
 # Roguely
 
+**NOTE**: THERE IS MAJOR WORK GOING ON HERE AND IT'S NOT FINISHED...
+
 ![Roguely Logo](assets/roguely-logo.png)
 
 A simple Roguelike in SDL and C++
@@ -134,4 +136,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-9 March 2021
+17 March 2021

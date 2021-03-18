@@ -24,73 +24,75 @@
 * SOFTWARE.
 */
 
-#include "LevelGeneration.hpp"
-
+#include "LevelGeneration.h"
 #include <cstdlib>
 
-int get_neighbor_wall_count(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map, int x, int y)
+namespace roguely::level_generation
 {
-		int wall_count = 0;
-
-		for (int row = y - 1; row <= y + 1; row++)
+		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y)
 		{
-				for (int col = x - 1; col <= x + 1; col++)
+				int wall_count = 0;
+
+				for (int row = y - 1; row <= y + 1; row++)
 				{
-						if (row >= 1 && col >= 1 && row < MAP_HEIGHT - 1 && col < MAP_WIDTH - 1)
+						for (int col = x - 1; col <= x + 1; col++)
 						{
-								if ((*map)[row][col] == 0)
-										wall_count++;
-						}
-						else
-						{
-								wall_count++;
-						}
-				}
-		}
-
-		return wall_count;
-}
-
-void perform_cellular_automaton(std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> map, int passes)
-{
-		for (int p = 0; p < passes; p++)
-		{
-				auto temp_map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>() = map;
-
-				for (int rows = 0; rows < MAP_HEIGHT; rows++)
-				{
-						for (int columns = 0; columns < MAP_WIDTH; columns++)
-						{
-								auto neighbor_wall_count = get_neighbor_wall_count(temp_map, columns, rows);
-
-								if (neighbor_wall_count > 4)
-										(*map)[rows][columns] = 0;
+								if (row >= 1 && col >= 1 && row < map_height - 1 && col < map_width - 1)
+								{
+										if ((*map)(row,col) == 0)
+												wall_count++;
+								}
 								else
-										(*map)[rows][columns] = 9;
+								{
+										wall_count++;
+								}
 						}
 				}
+
+				return wall_count;
 		}
-}
 
-std::shared_ptr<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>> init_cellular_automata()
-{
-		auto starting_map = std::make_shared<std::array<std::array<int, MAP_HEIGHT>, MAP_WIDTH>>();
-
-		for (int r = 0; r < MAP_HEIGHT; r++)
+		void perform_cellular_automaton(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int passes)
 		{
-				for (int c = 0; c < MAP_WIDTH; c++)
+				for (int p = 0; p < passes; p++)
 				{
-						auto z = std::rand() % 100 + 1;
-						if (z > 48)
+						auto temp_map = std::make_shared<boost::numeric::ublas::matrix<int>>() = map;
+
+						for (int rows = 0; rows < map_height; rows++)
 						{
-								(*starting_map)[r][c] = 9;
-						}
-						else
-						{
-								(*starting_map)[r][c] = 0;
+								for (int columns = 0; columns < map_width; columns++)
+								{
+										auto neighbor_wall_count = get_neighbor_wall_count(temp_map, map_width, map_height, columns, rows);
+
+										if (neighbor_wall_count > 4)
+												(*map)(rows,columns) = 0;
+										else
+												(*map)(rows,columns) = 9;
+								}
 						}
 				}
 		}
 
-		return starting_map;
+		std::shared_ptr<boost::numeric::ublas::matrix<int>> init_cellular_automata(int map_width, int map_height)
+		{
+				auto map = std::make_shared<boost::numeric::ublas::matrix<int>>(map_height, map_width);
+
+				for (int r = 0; r < map_height; ++r)
+				{
+						for (int c = 0; c < map_width; ++c)
+						{								
+								auto z = std::rand() % 100 + 1;
+								if (z > 48)
+								{
+										(*map)(r, c) = 9;
+								}
+								else
+								{
+										(*map)(r, c) = 0;
+								}
+						}
+				}
+
+				return map;
+		}
 }

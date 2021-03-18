@@ -1,5 +1,5 @@
 /*
-* Common.hpp
+* Text.h
 *
 * MIT License
 *
@@ -26,53 +26,30 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
+#include "Common.h"
 
-#include <SDL.h>
-
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 768;
-const int MAP_WIDTH = 125;
-const int MAP_HEIGHT = 125;
-const int VIEW_PORT_WIDTH = 20;
-const int VIEW_PORT_HEIGHT = 12;
-const int SPRITE_WIDTH = 32;
-const int SPRITE_HEIGHT = 32;
-const bool MUSIC = false;
-
-enum class MovementDirection
+namespace roguely::common
 {
-		Left,
-		Right,
-		Up,
-		Down
-};
-
-enum class WhoAmI
-{
-		Player,
-		Enemy
-};
-
-struct Point
-{
-		int x = 0;
-		int y = 0;
-};
-
-// ref: https://gamedev.stackexchange.com/a/163508/18014
-struct Timer
-{
-		Uint64 previous_ticks{};
-		float elapsed_seconds{};
-
-		void tick()
+		struct TextExtents
 		{
-				const Uint64 current_ticks{ SDL_GetPerformanceCounter() };
-				const Uint64 delta{ current_ticks - previous_ticks };
-				previous_ticks = current_ticks;
-				static const Uint64 TICKS_PER_SECOND{ SDL_GetPerformanceFrequency() };
-				elapsed_seconds = delta / static_cast<float>(TICKS_PER_SECOND);
-		}
-};
+				int width, height;
+		};
+
+		class Text
+		{
+		public:
+				Text();
+
+				int load_font(const char* path, int ptsize);
+				void draw_text(SDL_Renderer* renderer, int x, int y, const char* text);
+				void draw_text(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color);
+				TextExtents get_text_extents(const char* text);
+
+		private:
+				TTF_Font* font;
+				SDL_Texture* text_texture;
+
+				SDL_Color text_color = { 0xFF, 0xFF, 0xFF, 0xFF };
+				SDL_Color text_background_color = { 0x00, 0x00, 0x00, 0xFF };
+		};
+}

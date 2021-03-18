@@ -1,5 +1,5 @@
 /*
-* Player.cpp
+* SpriteSheet.h
 *
 * MIT License
 *
@@ -24,15 +24,33 @@
 * SOFTWARE.
 */
 
-#include "Player.hpp"
+#pragma once
 
-Player::Player(int starting_health, int starting_attack)
+#include "Common.h"
+
+namespace roguely::sprites
 {
-		x = 10;
-		y = 10;
-		score = 0;
-		enemies_killed = 0;
-		this->starting_health = starting_health;
-		health = starting_health;
-		attack = starting_attack;
+		class SpriteSheet
+		{
+		public:
+				SpriteSheet(SDL_Renderer* renderer, std::string n, std::string p, int sw, int sh);
+				~SpriteSheet();
+
+				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y);
+				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height);				
+
+				SDL_Texture* get_spritesheet_texture() const { return spritesheet_texture; }
+
+				auto get_name() const { return name; }
+
+				sol::table get_sprites_as_lua_table(sol::this_state s);
+
+		private:
+				std::string name;
+				std::string path;
+				int sprite_width = 0;
+				int sprite_height = 0;
+				std::unique_ptr<std::vector<std::shared_ptr<SDL_Rect>>> sprites = nullptr;
+				SDL_Texture* spritesheet_texture = nullptr;
+		};
 }
