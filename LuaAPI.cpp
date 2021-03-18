@@ -417,13 +417,13 @@ bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, s
 }
 
 void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s)
-{
-		//bool did_update = false;
+{		
 		sol::state_view lua(s);
+		std::shared_ptr<roguely::ecs::Entity> entity{};
 
 		if (value.get_type() == sol::type::number)
 		{
-				game->set_component_value(entity_group_name, entity_id, component_name, key, value.as<int>());
+				entity = game->set_component_value(entity_group_name, entity_id, component_name, key, value.as<int>());
 		}
 		else if (value.get_type() == sol::type::table)
 		{
@@ -432,28 +432,65 @@ void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string 
 						if (kvp.first.get_type() == sol::type::string && kvp.second.get_type() == sol::type::number)
 						{
 								std::pair p{ kvp.first.as<std::string>(), kvp.second.as<int>() };
-								game->set_component_value(entity_group_name, entity_id, component_name, key, p);
+								entity = game->set_component_value(entity_group_name, entity_id, component_name, key, p);
 						}
 				}
 		}
 
-		// we'll put this code here to convert an entity_group to a Lua table but we may need to use this in other places and can move it to
-		// it's own function later if necessary.
-		sol::table entity_group_table = lua.create_table();
-		auto lua_update = lua["_update"];
+		if (entity != nullptr) {
+				sol::table entity_group_table = lua.create_table();
+				auto lua_update = lua["_update"];
 
-		if (lua_update.valid() && lua_update.get_type() == sol::type::function)
-		{
-				// find the entity id
-				// convert the entity and it's components to a lua table
-				/*auto entity_group = game->get_entity_group(entity_group_name);
-				if (entity_group != nullptr) {
-						auto entity = game->get_entity(entity_group, entity_id);
-						if (entity != nullptr)
+				// The Lua table should have the follwing format:
+				//
+				// {
+				//			"Entity Group" = {
+				//					"Entity Type" = {
+				//							"Entity Id" = {			
+				//									"point = { x = 1, y = 1 },
+				//									"components = {
+				//											"score_component" = {},
+				//											"health_component" = {},
+				//											"stats_component" = {},
+				//											"lua_components" = {}
+				//									}
+				//							}
+				//					}
+				//			}
+				// }				
+				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+				{
+						// This is a bit silly and we need to think the best way to interact with the ECS from Lua but
+						// still maintain some provided components
+						auto component = entity->find_component_by_name(component_name);
+
+						if (component != nullptr)
 						{
-								for(auto& c : entity->)
+								if (component->get_component_name() == "score_component") {
+										auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(component);
+										if (sc != nullptr)
+										{
+
+										}
+								}
+								else if (component->get_component_name() == "health_component") {
+										auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(component);
+										if (hc != nullptr)
+										{
+
+										}
+								}
+								else if (component->get_component_name() == "stats_component") {
+										auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(component);
+										if (sc != nullptr)
+										{
+
+										}
+								}
+								else if (component->get_component_name() == "lua_component")
+								{ }
 						}
-				}*/
+				}
 		}
 }
 

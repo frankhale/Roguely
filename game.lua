@@ -24,7 +24,7 @@ Game = {
 Entities = {}
 Sprite_Info = {}
 Test_Map = {}
-Test_Score = -1
+Test_Score = 0
 
 function _init()
 	Sprite_Info = add_sprite_sheet("game-sprites", "assets/roguelike.png", 32, 32)
@@ -45,7 +45,7 @@ function _init()
 		}
 	})
 
--- add_entity("coins", "coin", 1, 1, {
+	-- add_entity("coins", "coin", 1, 1, {
 	-- 	value_component = {
 	-- 		value = 10
 	-- 	}
@@ -85,11 +85,6 @@ function _init()
 end
 
 function _update(event, data)
-	-- play_sound("coin")
-	-- play_sound("pickup")
-	-- play_sound("combat")
-	-- play_sound("death")
-
 	if(event == "key_event") then
 		if data["key"] == "up" then
 			play_sound("coin")
