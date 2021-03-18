@@ -79,11 +79,11 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 		else if (entityType == "ground") e_type = roguely::ecs::EntityType::Ground;
 		else if (entityType == "wall") e_type = roguely::ecs::EntityType::Wall;
 
-		std::cout << "entityGroup = " << entityGroup
-				<< " | entityType = " << entityType
-				<< " | x = " << x
-				<< " | y = " << y
-				<< std::endl;
+		//std::cout << "entityGroup = " << entityGroup
+		//		<< " | entityType = " << entityType
+		//		<< " | x = " << x
+		//		<< " | y = " << y
+		//		<< std::endl;
 
 		auto entity_group = game->get_entity_group(entityGroup);
 
@@ -353,7 +353,7 @@ sol::table get_random_point(std::shared_ptr<roguely::game::Game> game, sol::tabl
 		{
 				if (eg.second.get_type() == sol::type::string)
 				{
-						std::cout << eg.second.as<std::string>() << std::endl;
+						//std::cout << eg.second.as<std::string>() << std::endl;
 						entity_groups.push_back(eg.second.as<std::string>());
 				}
 		}
@@ -376,8 +376,8 @@ bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, s
 		{
 				if (eg.second.get_type() == sol::type::string)
 				{
-						std::cout << "is_tile_walkable" << std::endl;
-						std::cout << eg.second.as<std::string>() << std::endl;
+						//std::cout << "is_tile_walkable" << std::endl;
+						//std::cout << eg.second.as<std::string>() << std::endl;
 						entity_groups.push_back(eg.second.as<std::string>());
 				}
 		}
@@ -391,8 +391,6 @@ bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, s
 		else if (who == "enemy") { who_am_i = roguely::common::WhoAmI::Enemy; }
 
 		auto result = game->is_tile_walkable(x, y, movement_direction, who_am_i, entity_groups);
-
-		// TODO: We should return the struct as a table
 
 		return result.walkable;
 }

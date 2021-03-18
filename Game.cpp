@@ -105,7 +105,7 @@ namespace roguely::game
 				{
 						player_id = id;
 						player = entity;
-						
+
 				}
 
 				entityGroup->entities->emplace_back(entity);
@@ -260,21 +260,6 @@ namespace roguely::game
 										return *walkableInfo;
 								}
 						}
-
-						//auto enemy = is_entity_location_traversable(x, y, enemies, whoAmI, dir);
-
-						//if (!enemy->walkable && is_player)
-						//		InitiateAttackSequence(enemy->point.x, enemy->point.y);
-
-						//auto coins_traversable = IsEntityLocationTraversable(x, y, coins, whoAmI, dir);
-						//auto health_gems_traversable = IsEntityLocationTraversable(x, y, health_gems, whoAmI, dir);
-						//auto enemies_traversable = IsEntityLocationTraversable(x, y, enemies, whoAmI, dir);
-
-						//return IsTileOnMapTraversable(x, y, dir, 0 /* Wall */) &&
-						//		coins_traversable->walkable &&
-						//		health_gems_traversable->walkable &&
-						//		enemies_traversable->walkable &&
-						//		enemy->walkable;
 				}
 
 				return {};
@@ -303,7 +288,7 @@ namespace roguely::game
 								{
 										blocked = false;
 										break;
-								}								
+								}
 						}
 				}
 
@@ -343,17 +328,17 @@ namespace roguely::game
 
 		void Game::update_player_viewport_points()
 		{
-				std::cout << "current_map->width = " << current_map->width
-						<< ", current_map->height = " << current_map->height
-						<< std::endl;
+				//std::cout << "current_map->width = " << current_map->width
+				//		<< ", current_map->height = " << current_map->height
+				//		<< std::endl;
 
-				std::cout << "view_port_x = " << view_port_x
-						<< ", view_port_y = " << view_port_y
-						<< std::endl;
+				//std::cout << "view_port_x = " << view_port_x
+				//		<< ", view_port_y = " << view_port_y
+				//		<< std::endl;
 
-				std::cout << "view_port_width = " << view_port_width
-						<< ", view_port_height = " << view_port_height
-						<< std::endl;
+				//std::cout << "view_port_width = " << view_port_width
+				//		<< ", view_port_height = " << view_port_height
+				//		<< std::endl;
 
 				//std::cout << "player is (" << player->x() << ", " << player->y() << ")" << std::endl;
 
