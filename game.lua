@@ -118,17 +118,24 @@ function _update(event, data)
 		--play_sound("pickup")
 		--play_sound("combat")
 
-		--print_view_port()
+		--set_component_value("common", "player", "score_component", "score", 100);
 
 		if data["key"] == "up" then
-			--set_component_value("common", "player", "score_component", "score", 100);
-			update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] - 1)
+			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "up", "player", { "common" })) then
+				update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] - 1)
+			end
 		 elseif data["key"] == "down" then
-			update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] + 1)
+			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "down", "player", { "common" })) then
+				update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] + 1)
+			end
 		 elseif data["key"] == "left" then
-			update_entity_position("common", "player", Player_Pos["x"] - 1, Player_Pos["y"])
+			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "left", "player", { "common" })) then
+				update_entity_position("common", "player", Player_Pos["x"] - 1, Player_Pos["y"])
+			end
 		 elseif data["key"] == "right" then
-			update_entity_position("common", "player", Player_Pos["x"] + 1, Player_Pos["y"])
+			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "right", "player", { "common" })) then
+				update_entity_position("common", "player", Player_Pos["x"] + 1, Player_Pos["y"])
+			end
 		end
 	elseif (event == "entity_event") then
 
@@ -173,7 +180,7 @@ function _render(delta_time)
 
 			draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-			if(Player_Pos["x"] == c and Player_Pos["y"] == r) then
+			if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
 				draw_sprite("game-sprites", 3, dx, dy)
 			end
 		end

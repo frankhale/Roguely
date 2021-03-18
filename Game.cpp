@@ -256,7 +256,7 @@ namespace roguely::game
 						{
 								auto walkableInfo = is_entity_location_traversable(x, y, (*group)->entities, whoAmI, dir);
 
-								if (!walkableInfo->walkable) {
+								if (walkableInfo->walkable) {
 										return *walkableInfo;
 								}
 						}
@@ -299,16 +299,11 @@ namespace roguely::game
 						auto group = get_entity_group(egtc);
 
 						if (group != nullptr) {
-								blocked = false;
-
-								/*if (is_entity_location_traversable(x, y, group->entities))
+								if (is_entity_location_traversable(x, y, group->entities))
 								{
 										blocked = false;
-								}
-								else
-								{
-										blocked = true;
-								}*/
+										break;
+								}								
 						}
 				}
 
