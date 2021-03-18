@@ -318,7 +318,6 @@ int main(int argc, char* argv[])
 								
 								tick(logic_timer.elapsed_seconds, lua.lua_state());
 
-								//SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 								SDL_RenderClear(renderer);
 
 								render(animation_timer.elapsed_seconds, lua.lua_state());

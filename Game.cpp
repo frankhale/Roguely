@@ -269,7 +269,7 @@ namespace roguely::game
 		{
 				if (current_map->map == nullptr) return true;
 
-				bool blocked = true;
+				bool blocked = false;
 
 				auto px = player->x();
 				auto py = player->y();
@@ -378,6 +378,7 @@ namespace roguely::game
 						//				  << std::endl;
 
 						update_player_viewport_points();
+						rb_fov();
 						entity = player;
 				}
 				else

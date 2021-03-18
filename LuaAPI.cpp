@@ -64,20 +64,19 @@ void play_sound(std::shared_ptr<std::vector<roguely::common::Sound>> sounds, std
 		}
 }
 
-std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string entityGroup, std::string entityType, int x, int y, sol::table components_table)
+std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table)
 {
 		auto e_id = game->generate_uuid();
 		roguely::common::Point e_p = { x, y };
 		roguely::ecs::EntityType e_type{};
 
-		// Don't @ me bruh!
-		if (entityType == "player") e_type = roguely::ecs::EntityType::Player;
-		else if (entityType == "enemy") e_type = roguely::ecs::EntityType::Enemy;
-		else if (entityType == "npc") e_type = roguely::ecs::EntityType::NPC;
-		else if (entityType == "item") e_type = roguely::ecs::EntityType::Item;
-		else if (entityType == "interactable") e_type = roguely::ecs::EntityType::Interactable;
-		else if (entityType == "ground") e_type = roguely::ecs::EntityType::Ground;
-		else if (entityType == "wall") e_type = roguely::ecs::EntityType::Wall;
+		if (entity_type == "player") e_type = roguely::ecs::EntityType::Player;
+		else if (entity_type == "enemy") e_type = roguely::ecs::EntityType::Enemy;
+		else if (entity_type == "npc") e_type = roguely::ecs::EntityType::NPC;
+		else if (entity_type == "item") e_type = roguely::ecs::EntityType::Item;
+		else if (entity_type == "interactable") e_type = roguely::ecs::EntityType::Interactable;
+		else if (entity_type == "ground") e_type = roguely::ecs::EntityType::Ground;
+		else if (entity_type == "wall") e_type = roguely::ecs::EntityType::Wall;
 
 		//std::cout << "entityGroup = " << entityGroup
 		//		<< " | entityType = " << entityType
@@ -85,11 +84,11 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 		//		<< " | y = " << y
 		//		<< std::endl;
 
-		auto entity_group = game->get_entity_group(entityGroup);
+		auto entity_group = game->get_entity_group(entity_group_name);
 
 		if (entity_group == nullptr)
 		{
-				entity_group = game->create_entity_group(entityGroup);
+				entity_group = game->create_entity_group(entity_group_name);
 		}
 
 		if (entity_group != nullptr) {
@@ -250,6 +249,27 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 		return e_id;
 }
 
+std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, sol::table components_table)
+{
+		auto entity_groups = game->get_entity_group_names();
+		auto random_point = game->generate_random_point(entity_groups);
+		return add_entity(game, entity_group_name, entity_type, random_point.x, random_point.y, components_table);
+}
+
+sol::table add_entities(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
+{
+		sol::state_view lua(s);
+		sol::table entity_ids_table = lua.create_table();
+
+		for (int i = 0; i < num; i++)
+		{
+				auto id = add_entity(game, entity_group_name, entity_type, components_table);
+				entity_ids_table.set(id);
+		}
+
+		return entity_ids_table;
+}
+
 sol::table get_test_map(sol::this_state s)
 {
 		sol::state_view lua(s);
@@ -301,7 +321,7 @@ sol::table get_map(std::shared_ptr<roguely::game::Game> game, std::string name, 
 				return lua.create_table();
 		}
 
-		auto m = light ? map->light_map: map->map;
+		auto m = light ? map->light_map : map->map;
 
 		sol::table map_table = lua.create_table();
 
@@ -490,7 +510,7 @@ void emit_lua_update_for_entities(std::shared_ptr<roguely::ecs::Entity> entity, 
 }
 
 void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s)
-{		
+{
 		std::shared_ptr<roguely::ecs::Entity> entity{};
 
 		if (value.get_type() == sol::type::number)
@@ -510,14 +530,6 @@ void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string 
 		}
 
 		emit_lua_update_for_entities(entity, s);
-}
-
-void spawn_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entity, std::string entityType, int x, int y)
-{
-}
-
-void spawn_entities(std::shared_ptr<roguely::game::Game> game, std::string entity_group, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entity, std::string entityType, int num)
-{
 }
 
 void init_lua(sol::this_state s)
@@ -573,8 +585,30 @@ void test_render(SDL_Renderer*& renderer)
 		SDL_RenderDrawRect(renderer, &rect);
 }
 
+sol::table get_entity_group_points(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, sol::this_state s)
+{
+		sol::state_view lua(s);
+		sol::table entity_group_table = lua.create_table();
+
+		auto entity_group = game->get_entity_group(entity_group_name);
+
+		if (entity_group != nullptr)
+		{
+				for (auto& e : *entity_group->entities)
+				{
+						sol::table point_table = lua.create_table_with(
+								"x", e->x(),
+								"y", e->y()
+						);
+						entity_group_table.set(e->get_id(), point_table);
+				}
+		}
+
+		return entity_group_table;
+}
+
 void init_lua_apis(SDL_Renderer*& renderer,
-		std::shared_ptr<roguely::game::Game> &game,
+		std::shared_ptr<roguely::game::Game>& game,
 		std::shared_ptr<std::vector<roguely::common::Sound>> sounds,
 		std::shared_ptr<roguely::common::Text> text_large,
 		std::shared_ptr<roguely::common::Text> text_medium,
@@ -619,8 +653,16 @@ void init_lua_apis(SDL_Renderer*& renderer,
 				game->generate_map(name, map_width, map_height);
 				});
 
-		lua.set_function("add_entity", [&](std::string entityGroup, std::string entityType, int x, int y, sol::table components_table) {
-				return add_entity(game, entityGroup, entityType, x, y, components_table);
+		lua.set_function("add_entity", [&](std::string entity_group, std::string entity_type, int x, int y, sol::table components_table) {
+				return add_entity(game, entity_group, entity_type, x, y, components_table);
+				});
+
+		lua.set_function("add_entities", [&](std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s) {
+				// FIXME: this relies on a map to be generated so we can generate x,y's that are not on walls. 
+				// If script writer tries to do this before a map has been generated then we will crash.
+				// Need to handle this!
+				
+				return add_entities(game, entity_group_name, entity_type, components_table, num, s);
 				});
 
 		lua.set_function("get_component_value", [&](std::string entity_group_name, std::string entity_id, std::string component_name, std::string key) {
@@ -665,7 +707,7 @@ void init_lua_apis(SDL_Renderer*& renderer,
 
 		lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
 				auto entity = game->update_entity_position(entity_group_name, entity_id, x, y);
-				if(entity != nullptr)
+				if (entity != nullptr)
 						return emit_lua_update_for_entities(entity, s);
 				});
 
@@ -692,6 +734,10 @@ void init_lua_apis(SDL_Renderer*& renderer,
 		lua.set_function("fov", [&]() {
 				game->rb_fov();
 				lua["_update"]("light_map");
+				});
+
+		lua.set_function("get_entity_group_points", [&](std::string entity_group_name, sol::this_state s) {
+				return get_entity_group_points(game, entity_group_name, s);
 				});
 
 		init_lua(lua.lua_state());

@@ -29,6 +29,10 @@ Player_Pos = {
 function _init()
 	Sprite_Info = add_sprite_sheet("game-sprites", "assets/roguelike.png", 32, 32)
 
+	Sprite_Info["player_sprite_id"] = 3
+	Sprite_Info["hidden_sprite_id"] = 18
+	Sprite_Info["coin_sprite_id"] = 14
+
 	Player_Id = add_entity("common", "player", Player_Pos["x"], Player_Pos["y"], {
 		sprite_component = {
 			name = "player",
@@ -48,9 +52,16 @@ function _init()
 	generate_map("main", Game["map_width"], Game["map_height"])
 	switch_map("main")
 
+	Coin_Ids = add_entities("rewards", "item", {
+		value_component = {
+			value = "25"
+		}
+	}, 100)
+
+	Rewards_Points = get_entity_group_points("rewards")
+
 	Player_Pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"])
-	fov()
 
 	Game_Map = get_map("main", false)
 	Game_Light_Map = get_map("main", true)
@@ -95,13 +106,18 @@ function _render(delta_time)
 			if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
+
+				for rpk, rpv in pairs(Rewards_Points) do
+					if(rpv["x"] == (c-1) and rpv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["coin_sprite_id"], dx, dy)
+					end
+				end
+
 				if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
-					draw_sprite("game-sprites", 3, dx, dy)
+					draw_sprite("game-sprites", Sprite_Info["player_sprite_id"], dx, dy)
 				end
 			else
-				-- index for visible on light map = 2
-				-- sprite index for hidden = 19
-				draw_sprite("game-sprites", 18, dx, dy)
+				draw_sprite("game-sprites", Sprite_Info["hidden_sprite_id"] , dx, dy)
 			end
 		end
 	end

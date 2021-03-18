@@ -126,6 +126,13 @@ namespace roguely::game
 						view_port_height = vph; 
 				}
 
+				std::vector<std::string> get_entity_group_names() 
+				{
+						std::vector<std::string> results{};
+						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
+						return results;
+				}
+
 		private:
 				int view_port_x = 0;
 				int view_port_y = 0;
