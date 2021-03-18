@@ -21,8 +21,6 @@ Game = {
 	}
 }
 
-Sprite_Info = {}
-Game_Map = {}
 Player_Pos = {
 	x = 10,
 	y = 10
@@ -52,8 +50,10 @@ function _init()
 
 	Player_Pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"])
+	fov()
 
-	Game_Map = get_map("main")
+	Game_Map = get_map("main", false)
+	Game_Light_Map = get_map("main", true)
 end
 
 function _update(event, data)
@@ -79,7 +79,10 @@ function _update(event, data)
 		if (data["player"] ~= nil) then
 			Player_Pos["x"] = data["player"][Player_Id]["point"]["x"]
 			Player_Pos["y"] = data["player"][Player_Id]["point"]["y"]
+			fov()
 		end
+	elseif (event == "light_map") then
+		Game_Light_Map = get_map("main", true)
 	end
 end
 
@@ -89,10 +92,16 @@ function _render(delta_time)
 			local dx = ((c-1) * 32) - (get_view_port_x() * 32)
 			local dy = ((r-1) * 32) - (get_view_port_y() * 32)
 
-			draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
+			if(Game_Light_Map[r][c] == 2) then
+				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-			if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
-				draw_sprite("game-sprites", 3, dx, dy)
+				if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
+					draw_sprite("game-sprites", 3, dx, dy)
+				end
+			else
+				-- index for visible on light map = 2
+				-- sprite index for hidden = 19
+				draw_sprite("game-sprites", 18, dx, dy)
 			end
 		end
 	end

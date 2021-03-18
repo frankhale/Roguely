@@ -135,8 +135,7 @@ namespace roguely::game
 				int VIEW_PORT_WIDTH = 0;
 				int VIEW_PORT_HEIGHT = 0;
 
-				std::shared_ptr<roguely::common::Map> current_map{};
-				std::shared_ptr<roguely::common::Map> light_map{};
+				std::shared_ptr<roguely::common::Map> current_map{};				
 				std::shared_ptr<roguely::ecs::Entity> player{};				
 				std::string player_id{};
 

@@ -563,13 +563,13 @@ namespace roguely::game
 
 				current_map->light_map = std::make_shared<boost::numeric::ublas::matrix<int>>(current_map->height, current_map->width);
 
-				//for (int r = 0; r < current_map->height; r++)
-				//{
-				//		for (int c = 0; c < current_map->width; c++)
-				//		{
-				//				//(*light_map)[r][c] = 0;
-				//		}
-				//}
+				for (int r = 0; r < current_map->height; r++)
+				{
+						for (int c = 0; c < current_map->width; c++)
+						{
+								(*current_map->light_map)(r,c) = 0;
+						}
+				}
 
 				for (int i = 0; i < 360; i++)
 				{

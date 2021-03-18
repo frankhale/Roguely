@@ -286,7 +286,7 @@ sol::table get_test_map(sol::this_state s)
 		return map_table;
 }
 
-sol::table get_map(std::shared_ptr<roguely::game::Game> game, std::string name, sol::this_state s)
+sol::table get_map(std::shared_ptr<roguely::game::Game> game, std::string name, bool light, sol::this_state s)
 {
 		sol::state_view lua(s);
 
@@ -301,7 +301,7 @@ sol::table get_map(std::shared_ptr<roguely::game::Game> game, std::string name, 
 				return lua.create_table();
 		}
 
-		auto m = map->map;
+		auto m = light ? map->light_map: map->map;
 
 		sol::table map_table = lua.create_table();
 
@@ -395,7 +395,7 @@ bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, s
 		return result.walkable;
 }
 
-void emit_lua_update(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
+void emit_lua_update_for_entities(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
 {
 		sol::state_view lua(s);
 
@@ -509,7 +509,7 @@ void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string 
 				}
 		}
 
-		emit_lua_update(entity, s);
+		emit_lua_update_for_entities(entity, s);
 }
 
 void spawn_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entity, std::string entityType, int x, int y)
@@ -635,8 +635,8 @@ void init_lua_apis(SDL_Renderer*& renderer,
 				game->switch_map(name);
 				});
 
-		lua.set_function("get_map", [&](std::string name, sol::this_state s) {
-				return get_map(game, name, s);
+		lua.set_function("get_map", [&](std::string name, bool light, sol::this_state s) {
+				return get_map(game, name, light, s);
 				});
 
 		lua.set_function("generate_random_point", [&](sol::table entity_groups_to_check, sol::this_state s) {
@@ -666,7 +666,7 @@ void init_lua_apis(SDL_Renderer*& renderer,
 		lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
 				auto entity = game->update_entity_position(entity_group_name, entity_id, x, y);
 				if(entity != nullptr)
-						return emit_lua_update(entity, s);
+						return emit_lua_update_for_entities(entity, s);
 				});
 
 		lua.set_function("get_view_port_x", [&]() {
@@ -687,6 +687,11 @@ void init_lua_apis(SDL_Renderer*& renderer,
 
 		lua.set_function("update_player_viewport_points", [&]() {
 				game->update_player_viewport_points();
+				});
+
+		lua.set_function("fov", [&]() {
+				game->rb_fov();
+				lua["_update"]("light_map");
 				});
 
 		init_lua(lua.lua_state());

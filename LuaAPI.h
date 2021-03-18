@@ -17,7 +17,7 @@ void draw_point(SDL_Renderer* renderer, int x, int y);
 void draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
 void draw_filled_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
 sol::table get_test_map(sol::this_state s);
-sol::table get_map(std::shared_ptr<roguely::game::Game> game, std::string name, sol::this_state s);
+sol::table get_map(std::shared_ptr<roguely::game::Game> game, std::string name, bool light, sol::this_state s);
 sol::table get_random_point(std::shared_ptr<roguely::game::Game> game, sol::table entity_groups_to_check, sol::this_state s);
 bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check);
 void spawn_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entity, std::string entityType, int x, int y);
