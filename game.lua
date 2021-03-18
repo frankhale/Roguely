@@ -97,6 +97,30 @@ function _update(event, data)
 	end
 end
 
+function render_mini_map()
+	for r = 1, Game["map_height"] do
+		for c = 1, Game["map_width"] do
+			local dx = (c - 1) + (Game["window_width"] - 150)
+			local dy = (r - 1) + 10
+
+			if (Game_Map[r][c] == 0) then
+				set_draw_color(255,255,255,128)
+				draw_point(dx, dy)
+			elseif (Game_Map[r][c] == 9) then
+				set_draw_color(0,0,0,128)
+				draw_point(dx, dy)
+			end
+
+			if (dx == Player_Pos["x"] + (Game["window_width"] - 150) and dy == Player_Pos["y"] + 10) then
+				set_draw_color(255,0,0,255)
+				draw_filled_rect(dx - 3, dy - 3, 6, 6)
+			end
+		end
+	end
+
+	set_draw_color(0,0,0,255)
+end
+
 function _render(delta_time)
 	for r = 1, get_view_port_height() do
 		for c = 1, get_view_port_width() do
@@ -105,7 +129,6 @@ function _render(delta_time)
 
 			if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
-
 
 				for rpk, rpv in pairs(Rewards_Points) do
 					if(rpv["x"] == (c-1) and rpv["y"] == (r-1)) then
@@ -121,6 +144,8 @@ function _render(delta_time)
 			end
 		end
 	end
+
+	render_mini_map()
 end
 
 function _tick(delta_time)
