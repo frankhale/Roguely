@@ -77,7 +77,7 @@ namespace roguely::game
 				void add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items);
 				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props);
 
-				void update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
+				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
 				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
 				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
 				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value);

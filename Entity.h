@@ -175,6 +175,9 @@ namespace roguely::ecs
 		{
 		public:
 				LuaComponent(std::string n, std::string t, sol::table props) { name = n; type = t; properties = props; }
+				auto get_name() const { return name; }
+				auto get_type() const { return type; }
+				auto get_properties() const { return properties; }
 
 		private:
 				std::string name;
@@ -243,6 +246,7 @@ namespace roguely::ecs
 				void set_point(roguely::common::Point p) { _point.x = p.x; _point.y = p.y; }
 				void add_component(std::shared_ptr<Component> c) { components->emplace_back(c); }
 				void add_components(std::unique_ptr<std::vector<std::shared_ptr<Component>>> c) { components->insert(components->end(), c->begin(), c->end()); }
+				void for_each_component(std::function<void(std::shared_ptr<Component>&)> fc) { for (auto& c : *components) fc(c); }
 
 		private:
 				std::shared_ptr<EntityGroup> _entityGroup{};

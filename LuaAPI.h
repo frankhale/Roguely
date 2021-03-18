@@ -10,7 +10,7 @@ sol::table add_sprite_sheet(SDL_Renderer* renderer, std::shared_ptr<std::vector<
 void draw_sprite(SDL_Renderer* renderer, std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets, std::string name, int sprite_id, int x, int y);
 void draw_text(SDL_Renderer* renderer, std::shared_ptr<roguely::common::Text> text, std::string t, int x, int y);
 void play_sound(std::shared_ptr<std::vector<roguely::common::Sound>> sounds, std::string name);
-void add_entity(std::shared_ptr<roguely::game::Game> game, std::string entityGroup, std::string entityType, int x, int y, sol::table components_table);
+std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string entityGroup, std::string entityType, int x, int y, sol::table components_table);
 void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
 void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a);
 void draw_point(SDL_Renderer* renderer, int x, int y);

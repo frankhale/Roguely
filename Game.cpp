@@ -358,10 +358,15 @@ namespace roguely::game
 				view_port_height = view_port_y + (view_port_height * 2);
 		}
 
-		void Game::update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y)
+		std::shared_ptr<roguely::ecs::Entity> Game::update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y)
 		{
+				std::shared_ptr<roguely::ecs::Entity> entity{};
+
 				if (entity_id == "player" || player->get_id() == entity_id)
+				{
 						player->set_point({ x, y });
+						entity = player;
+				}
 				else
 				{
 						auto entity_group = get_entity_group(entity_group_name);
@@ -370,10 +375,14 @@ namespace roguely::game
 						{
 								auto entity = get_entity(entity_group, entity_id);
 
-								if (entity != nullptr)
+								if (entity != nullptr) {
 										entity->set_point({ x, y });
+										entity = entity;
+								}
 						}
 				}
+
+				return entity;
 		}
 
 		int Game::get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key)

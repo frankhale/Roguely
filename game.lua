@@ -23,13 +23,17 @@ Game = {
 
 Entities = {}
 Sprite_Info = {}
-Test_Map = {}
-Test_Score = 0
+Game_Map = {}
+Player_Id = ""
+Player_Pos = {
+	x = 10,
+	y = 10
+}
 
 function _init()
 	Sprite_Info = add_sprite_sheet("game-sprites", "assets/roguelike.png", 32, 32)
 
-	add_entity("common", "player", 10, 10, {
+	Player_Id = add_entity("common", "player", Player_Pos["x"], Player_Pos["y"], {
 		sprite_component = {
 			name = "player",
 			spritesheet_name = "game-sprites",
@@ -44,6 +48,8 @@ function _init()
 			}
 		}
 	})
+
+	print("Player Id: " .. Player_Id)
 
 	-- add_entity("coins", "coin", 1, 1, {
 	-- 	value_component = {
@@ -63,18 +69,20 @@ function _init()
 
 	local sp_info = get_sprite_info("game-sprites")
 
-	-- We have to generate a map or things will blow up for sure!
-	generate_map("main", 100, 40)
+	print("map_height = " .. Game["map_height"])
+	print("map_width = " .. Game["map_width"])
+
+	generate_map("main", Game["map_width"], Game["map_height"])
 	switch_map("main")
 
 	--local w = is_tile_walkable(10, 10, "left", "player", { "common" })
 	--print(w)
 
-	local point = generate_random_point({ "common" })
-	print("x = " .. point.x .. " | y = " .. point.y)
+	--local point = generate_random_point({ "common" })
+	--print("x = " .. point.x .. " | y = " .. point.y)
 
-	Test_Map = get_test_map()
-	--Test_Map = get_map("main")
+	--Game_Map = get_test_map()
+	Game_Map = get_map("main")
 
 	-- set_component_value("common", "player", "score_component", "score", 100);
 	-- Test_Score = get_component_value("common", "player", "score_component", "score")
@@ -86,37 +94,81 @@ end
 
 function _update(event, data)
 	if(event == "key_event") then
+		--play_sound("death")
+		--play_sound("coin")
+		--play_sound("pickup")
+		--play_sound("combat")
+
 		if data["key"] == "up" then
-			play_sound("coin")
+			--set_component_value("common", "player", "score_component", "score", 100);
+			update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] - 1)
 		 elseif data["key"] == "down" then
-			play_sound("pickup")
+			update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] + 1)
 		 elseif data["key"] == "left" then
-			play_sound("combat")
+			update_entity_position("common", "player", Player_Pos["x"] - 1, Player_Pos["y"])
 		 elseif data["key"] == "right" then
-			play_sound("death")
+			update_entity_position("common", "player", Player_Pos["x"] + 1, Player_Pos["y"])
 		end
 	elseif (event == "entity_event") then
-		-- do something
+
+		-- local lengthNum = 0
+		-- for k, v in pairs(data) do -- for every key in the table with a corresponding non-nil value
+		-- lengthNum = lengthNum + 1
+		-- end
+		-- print("DATA length: " .. lengthNum)
+		-- --["score_component"]["score"]
+
+		--  for k, v in pairs(data) do -- for every key in the table with a corresponding non-nil value
+		-- 	print("key :" .. k)
+		-- 	print(data[k])
+
+		-- 	for k1, v1 in pairs(data[k]) do -- for every key in the table with a corresponding non-nil value
+		-- 		print("key1 :" .. k1)
+		-- 		print(data[k][k1])
+
+		-- 		for k2, v2 in pairs(data[k][k1]) do -- for every key in the table with a corresponding non-nil value
+		-- 		 	print("key2 :" .. k2)
+		-- 		 	print(data[k][k1][k2])
+		-- 		 end
+		-- 	end
+		-- end
+
+		if (data["player"] ~= nil) then
+			Player_Pos["x"] = data["player"][Player_Id]["point"]["x"]
+			Player_Pos["y"] = data["player"][Player_Id]["point"]["y"]
+
+			print("player x = " .. Player_Pos["x"])
+			print("player y = " .. Player_Pos["y"])
+			--print("player score: " .. data["player"][Player_Id]["components"]["score_component"]["score"])
+		end
 	end
 end
 
 function _render(delta_time)
-	draw_text("Hello world from Lua", "large", 10, 10)
-	draw_text("C++ and Lua are a great match!!!", "medium", 10, 60)
+	--draw_text("Hello world from Lua", "large", 10, 10)
+	--draw_text("C++ and Lua are a great match!!!", "medium", 10, 60)
 
 	-- draw_text("Player Score: " .. Test_Score, "small", 500, 20)
 
-	-- for r = 1, 100 do
-	-- 	for c = 1, 40 do
-	-- 		draw_sprite("game-sprites", Test_Map[r][c], (c - 1) * 32, (r - 1) * 32)
-	-- 	end
-	-- end
+	-- for (int r = 0; r < game->GetViewPortHeight(); r++)
+	-- {
+	-- for (int c = 0; c < game->GetViewPortWidth(); c++)
+	-- {
+	-- int dx = (c * SPRITE_WIDTH) - (game->GetViewPortX() * SPRITE_WIDTH);
+	-- int dy = (r * SPRITE_HEIGHT) - (game->GetViewPortY() * SPRITE_HEIGHT);
 
-	for r = 1, 10 do
-		for c = 1, 10 do
-	 		draw_sprite("game-sprites", Test_Map[r][c], (c - 1) * 32 + 10, (r - 1) * 32 + 120)
-	 	end
-	 end
+	for r = 1, Game["view_port_height"] do
+		for c = 1, Game["view_port_width"] do
+			--local dx = (c * 32) - ()
+			draw_sprite("game-sprites", Game_Map[r][c], (c - 1) * 32, (r - 1) * 32)
+		end
+	end
+
+	-- for r = 1, 10 do
+	-- 	for c = 1, 10 do
+	--  		draw_sprite("game-sprites", Game_Map[r][c], (c - 1) * 32 + 10, (r - 1) * 32 + 120)
+	--  	end
+	-- end
 
 	-- local x_counter = 0
 	-- local y_counter = 0

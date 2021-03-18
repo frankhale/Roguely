@@ -227,8 +227,8 @@ int main(int argc, char* argv[])
 		static roguely::common::Timer logic_timer;
 
 		sol::state lua;
-		lua.open_libraries(sol::lib::base);
-
+		lua.open_libraries(sol::lib::base, sol::lib::debug);
+		
 		auto game_script = lua.load_file("game.lua");
 
 		if (game_script.valid())
