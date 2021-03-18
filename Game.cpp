@@ -8,8 +8,8 @@ namespace roguely::game
 {
 		Game::Game()
 		{
-				maps = std::make_unique<std::vector<std::shared_ptr<roguely::common::Map>>>();
-				entity_groups = std::make_unique<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+				maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
+				entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
 		}
 
 		void Game::generate_map_for_testing()
@@ -97,15 +97,18 @@ namespace roguely::game
 				return entityGroup;
 		}
 
-		std::shared_ptr<roguely::ecs::Entity> Game::add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entityGroup, roguely::ecs::EntityType entityType, std::string id, roguely::common::Point point)
+		std::shared_ptr<roguely::ecs::Entity> Game::add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entityGroup, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point)
 		{
-				auto entity = std::make_shared<roguely::ecs::Entity>(entityGroup, id, point, entityType);
-				entityGroup->entities->emplace_back(entity);
+				auto entity = std::make_shared<roguely::ecs::Entity>(entityGroup, id, point, entity_type);
 
-				if (entityType == roguely::ecs::EntityType::Player)
+				if (entity_type == roguely::ecs::EntityType::Player)
 				{
+						player_id = id;
 						player = entity;
+						
 				}
+
+				entityGroup->entities->emplace_back(entity);
 
 				return entity;
 		}
@@ -345,17 +348,31 @@ namespace roguely::game
 
 		void Game::update_player_viewport_points()
 		{
-				view_port_x = player->x() - view_port_width;
-				view_port_y = player->y() - view_port_height;
+				std::cout << "current_map->width = " << current_map->width
+						<< ", current_map->height = " << current_map->height
+						<< std::endl;
+
+				std::cout << "view_port_x = " << view_port_x
+						<< ", view_port_y = " << view_port_y
+						<< std::endl;
+
+				std::cout << "view_port_width = " << view_port_width
+						<< ", view_port_height = " << view_port_height
+						<< std::endl;
+
+				//std::cout << "player is (" << player->x() << ", " << player->y() << ")" << std::endl;
+
+				view_port_x = player->x() - VIEW_PORT_WIDTH;
+				view_port_y = player->y() - VIEW_PORT_HEIGHT;
 
 				if (view_port_x < 0) view_port_x = std::max(0, view_port_x);
-				if (view_port_x > (current_map->width - (view_port_width * 2))) view_port_x = (current_map->width - (view_port_width * 2));
+				if (view_port_x > (current_map->width - (VIEW_PORT_WIDTH * 2))) view_port_x = (current_map->width - (VIEW_PORT_WIDTH * 2));
 
 				if (view_port_y < 0) view_port_y = std::max(0, view_port_y);
-				if (view_port_y > (current_map->height - (view_port_height * 2))) view_port_y = (current_map->height - (view_port_height * 2));
+				if (view_port_y > (current_map->height - (VIEW_PORT_HEIGHT * 2))) view_port_y = (current_map->height - (VIEW_PORT_HEIGHT * 2));
 
-				view_port_width = view_port_x + (view_port_width * 2);
-				view_port_height = view_port_y + (view_port_height * 2);
+				view_port_width = view_port_x + (VIEW_PORT_WIDTH * 2);
+				view_port_height = view_port_y + (VIEW_PORT_HEIGHT * 2);
 		}
 
 		std::shared_ptr<roguely::ecs::Entity> Game::update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y)
@@ -365,6 +382,22 @@ namespace roguely::game
 				if (entity_id == "player" || player->get_id() == entity_id)
 				{
 						player->set_point({ x, y });
+
+						//std::cout << "set player to ("
+						//		<< x
+						//		<< ", "
+						//		<< y
+						//		<< ")"
+						//		<< std::endl;
+
+						//std::cout << "player is (" 
+						//				  << player->x() 
+						//					<< ", " 
+						//				  << player->y() 
+						//				  << ")" 
+						//				  << std::endl;
+
+						update_player_viewport_points();
 						entity = player;
 				}
 				else
@@ -373,11 +406,10 @@ namespace roguely::game
 
 						if (entity_group != nullptr)
 						{
-								auto entity = get_entity(entity_group, entity_id);
+								entity = get_entity(entity_group, entity_id);
 
 								if (entity != nullptr) {
 										entity->set_point({ x, y });
-										entity = entity;
 								}
 						}
 				}

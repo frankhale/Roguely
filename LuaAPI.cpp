@@ -401,8 +401,6 @@ void emit_lua_update(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_sta
 {
 		sol::state_view lua(s);
 
-		std::cout << "emit_lua_update called" << std::endl;
-
 		// FIXME: THIS NEEDS TO BE IN IT'S OWN FUNCTION!!!
 		if (entity != nullptr) {
 				auto lua_update = lua["_update"];
@@ -578,7 +576,7 @@ void test_render(SDL_Renderer*& renderer)
 }
 
 void init_lua_apis(SDL_Renderer*& renderer,
-		std::shared_ptr<roguely::game::Game> game,
+		std::shared_ptr<roguely::game::Game> &game,
 		std::shared_ptr<std::vector<roguely::common::Sound>> sounds,
 		std::shared_ptr<roguely::common::Text> text_large,
 		std::shared_ptr<roguely::common::Text> text_medium,
@@ -669,7 +667,28 @@ void init_lua_apis(SDL_Renderer*& renderer,
 
 		lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
 				auto entity = game->update_entity_position(entity_group_name, entity_id, x, y);
-				return emit_lua_update(entity, s);
+				if(entity != nullptr)
+						return emit_lua_update(entity, s);
+				});
+
+		lua.set_function("get_view_port_x", [&]() {
+				return game->get_view_port_x();
+				});
+
+		lua.set_function("get_view_port_y", [&]() {
+				return game->get_view_port_y();
+				});
+
+		lua.set_function("get_view_port_width", [&]() {
+				return game->get_view_port_width();
+				});
+
+		lua.set_function("get_view_port_height", [&]() {
+				return game->get_view_port_height();
+				});
+
+		lua.set_function("update_player_viewport_points", [&]() {
+				game->update_player_viewport_points();
 				});
 
 		init_lua(lua.lua_state());

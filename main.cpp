@@ -78,7 +78,7 @@ int init_sdl(sol::table game_config)
 				SDL_WINDOWPOS_CENTERED,
 				SDL_WINDOWPOS_CENTERED,
 				window_width, window_height,
-				SDL_RENDERER_ACCELERATED);
+				SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
 		if (!window)
 		{
@@ -131,11 +131,19 @@ void play_soundtrack(std::string soundtrack_path)
 		Mix_PlayMusic(soundtrack, 1);
 }
 
+// THIS IS ONLY HERE TO MAKE VCPKG INCLUDE MPG123 SO THAT SDL_MIXER WILL WORK
+int __DUMMY_ONLY_HERE_TO_MAKE_VCPKG_INCLUDE_MPG123_FOR_SDL_MIXER__()
+{
+		return mpg123_feature(MPG123_FEATURE_DECODE_LAYER3);
+}
+
 bool check_game_config(sol::table game_config)
 {
 		bool result = true;
 
 		// TODO: Add more checks in here so that we can cover 100% of the config
+
+		__DUMMY_ONLY_HERE_TO_MAKE_VCPKG_INCLUDE_MPG123_FOR_SDL_MIXER__();
 
 		auto title = game_config["window_title"];
 		auto window_width = game_config["window_width"];
@@ -176,6 +184,8 @@ void init_game(sol::table game_config)
 		std::string font_path = game_config["font_path"];
 
 		game = std::make_shared<roguely::game::Game>();
+		game->set_view_port_width(game_config["view_port_width"]);
+		game->set_view_port_height(game_config["view_port_height"]);
 
 		sprite_sheets = std::make_shared<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
 		text_medium = std::make_shared<roguely::common::Text>();
@@ -300,17 +310,17 @@ int main(int argc, char* argv[])
 								}
 						}
 
-						SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-						SDL_RenderClear(renderer);
-
 						if (std::isgreater(accumulated_seconds, CYCLE_TIME))
 						{
 								accumulated_seconds = -CYCLE_TIME;
-
 								animation_timer.tick();
 								logic_timer.tick();
 								
 								tick(logic_timer.elapsed_seconds, lua.lua_state());
+
+								//SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+								SDL_RenderClear(renderer);
+
 								render(animation_timer.elapsed_seconds, lua.lua_state());
 
 								SDL_RenderPresent(renderer);
@@ -329,11 +339,4 @@ int main(int argc, char* argv[])
 		}
 
 		return 0;
-}
-
-
-// THIS IS ONLY HERE TO MAKE VCPKG INCLUDE MPG123 SO THAT SDL_MIXER WILL WORK
-int __DUMMY_ONLY_HERE_TO_MAKE_VCPKG_INCLUDE_MPG123_FOR_SDL_MIXER__()
-{
-		return mpg123_feature(MPG123_FEATURE_DECODE_LAYER3);
 }

@@ -43,6 +43,7 @@ namespace roguely::game
 		{
 		public:
 				Game();
+
 				void generate_map_for_testing();
 				void generate_map(std::string name, int map_width, int map_height)
 				{
@@ -85,7 +86,7 @@ namespace roguely::game
 				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value);
 
 				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
-				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entityGroup, roguely::ecs::EntityType entityType, std::string id, roguely::common::Point point);
+				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
 				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
 				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);
 
@@ -109,17 +110,37 @@ namespace roguely::game
 				void update_player_viewport_points();
 				void rb_fov();
 
+				int get_view_port_x() const { return view_port_x; }
+				int get_view_port_y() const { return view_port_y; }
+				int get_view_port_width() const { return view_port_width; }
+				int get_view_port_height() const { return view_port_height; }
+
+				void set_view_port_width(int vpw) 
+				{ 
+						VIEW_PORT_WIDTH = vpw;
+						view_port_width = vpw; 
+				}
+				void set_view_port_height(int vph) 
+				{ 
+						VIEW_PORT_HEIGHT = vph;
+						view_port_height = vph; 
+				}
+
 		private:
 				int view_port_x = 0;
 				int view_port_y = 0;
 				int view_port_width = 0;
 				int view_port_height = 0;
 
+				int VIEW_PORT_WIDTH = 0;
+				int VIEW_PORT_HEIGHT = 0;
+
 				std::shared_ptr<roguely::common::Map> current_map{};
 				std::shared_ptr<roguely::common::Map> light_map{};
-				std::shared_ptr<roguely::ecs::Entity> player{};
+				std::shared_ptr<roguely::ecs::Entity> player{};				
+				std::string player_id{};
 
-				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
-				std::unique_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
+				std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
+				std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
 		};
 }

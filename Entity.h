@@ -239,11 +239,14 @@ namespace roguely::ecs
 				auto y() const { return _point.y; }
 
 				auto get_point() const { return _point; }
+				void set_point(roguely::common::Point p) {
+						_point = p;
+				}
+
 				auto get_id() const { return _id; }
 				auto get_entity_type() const { return _entityType; }
 				auto get_entity_group() const { return _entityGroup; }
 				void set_entity_group(std::shared_ptr<EntityGroup> entityGroup) { _entityGroup = entityGroup; }
-				void set_point(roguely::common::Point p) { _point.x = p.x; _point.y = p.y; }
 				void add_component(std::shared_ptr<Component> c) { components->emplace_back(c); }
 				void add_components(std::unique_ptr<std::vector<std::shared_ptr<Component>>> c) { components->insert(components->end(), c->begin(), c->end()); }
 				void for_each_component(std::function<void(std::shared_ptr<Component>&)> fc) { for (auto& c : *components) fc(c); }

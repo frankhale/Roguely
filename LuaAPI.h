@@ -30,7 +30,7 @@ void render(float delta_time, sol::this_state s);
 void tick(float delta_time, sol::this_state s);
 
 void init_lua_apis(SDL_Renderer*& renderer,
-		std::shared_ptr<roguely::game::Game> game,
+		std::shared_ptr<roguely::game::Game> &game,
 		std::shared_ptr<std::vector<roguely::common::Sound>> sounds,
 		std::shared_ptr<roguely::common::Text> text_large,
 		std::shared_ptr<roguely::common::Text> text_medium,
