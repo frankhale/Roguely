@@ -39,6 +39,7 @@ function _init()
 	Sprite_Info["crimsonshadow_sprite_id"] = 34
 	Sprite_Info["purpleblob_sprite_id"] = 61
 	Sprite_Info["orangeblob_sprite_id"] = 64
+	Sprite_Info["golden_candle_sprite_id"] = 6
 
 	Player_Id = add_entity("common", "player", Player_Pos["x"], Player_Pos["y"], {
 		sprite_component = {
@@ -67,7 +68,7 @@ function _init()
 
 	add_entities("coins", "item", {
 		value_component = {
-			value = "25"
+			value = 25
 		}
 	}, 100)
 
@@ -106,6 +107,15 @@ function _init()
 		stats_component = { attack = 7 }
 	}, 20)
 
+	add_entities("goldencandle", "item", {
+		value_component = { value = 25000 },
+		lua_component = {
+			name = "win_component",
+			type = "flags",
+			properties = { win = true }
+		}
+	}, 1)
+
 	Coins = get_entity_group_points("coins")
 	Spiders = get_entity_group_points("spiders")
 	Crabs = get_entity_group_points("crabs")
@@ -114,6 +124,7 @@ function _init()
 	CrimsonShadows =  get_entity_group_points("crimsonshadows")
 	PurpleBlobs = get_entity_group_points("purpleblobs")
 	OrangeBlobs = get_entity_group_points("orangeblobs")
+	GoldenCandle = get_entity_group_points("goldencandle")
 
 	Game_Map = get_map("main", false)
 	Game_Light_Map = get_map("main", true)
@@ -227,6 +238,12 @@ function _render(delta_time)
 				for epk, epv in pairs(OrangeBlobs) do
 					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
 						draw_sprite("game-sprites", Sprite_Info["orangeblob_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(GoldenCandle) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["goldencandle_sprite_id"], dx, dy)
 					end
 				end
 
