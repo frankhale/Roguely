@@ -87,6 +87,7 @@ namespace roguely::ecs
 				ScoreComponent(int s) { score = s; }
 				auto get_score() const { return score; }
 				void update_score(int s) { score += s; }
+				void set_score(int s) { score = s; }
 		private:
 				int score = 0;
 		};

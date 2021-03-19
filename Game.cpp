@@ -508,7 +508,7 @@ namespace roguely::game
 						auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(component);
 						if (sc != nullptr)
 						{
-								sc->update_score(value);
+								sc->set_score(value);
 								did_update = true;
 						}
 				}

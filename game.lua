@@ -127,8 +127,16 @@ function _init()
 	}, 1)
 
 	-- for k,v in pairs(Coins) do
-	-- 	--print(Coins[k]["item"]["point"]["x"], Coins[k]["item"]["point"]["y"])
-	-- 	print(v["item"]["point"]["x"], v["item"]["point"]["y"])
+	-- 	--print(k, v)
+	-- 	--print(v["item"])
+
+	-- 	for k1,v1 in pairs(v["item"]) do
+	-- 		--print(k1, v1)
+
+	-- 		for k2,v2 in pairs(v["item"]["components"]) do
+	-- 			print(k2, v2)
+	-- 		end
+	-- 	end
 	-- end
 
 	Game_Map = get_map("main", false)
@@ -154,6 +162,17 @@ function _update(event, data)
 				update_entity_position("common", "player", Player_Pos["x"] + 1, Player_Pos["y"])
 			end
 		end
+
+		if (Coins) then
+			local xy_id = tostring(Player_Pos["x"] .. "_" .. Player_Pos["y"])
+			if (Coins[xy_id]) then
+				set_component_value("common", "player", "score_component", "score",
+					Player["components"]["score_component"]["score"] +
+					Coins[xy_id]["item"]["components"]["value_component"]["value"])
+				remove_entity("coins", Coins[xy_id]["item"]["id"])
+			end
+		end
+
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
 			Player = data["player"]
@@ -161,11 +180,12 @@ function _update(event, data)
 			Player_Pos["x"] = data["player"]["point"]["x"]
 			Player_Pos["y"] = data["player"]["point"]["y"]
 
-			-- TODO: we can check here to see if our position is the same as a coin or other pickup
-
 			fov() -- recalculate FOV
 		else
 			-- Other entities were updated
+			if(data["entity_group_name"] == "coins") then
+				Coins = data["entity_group"]
+			end
 		end
 	elseif (event == "light_map") then
 		Game_Light_Map = get_map("main", true)
