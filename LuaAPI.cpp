@@ -1,3 +1,29 @@
+/*
+* LuaAPI.cpp
+*
+* MIT License
+*
+* Copyright (c) 2021 Frank Hale
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*/
+
 #include "LuaAPI.h"
 
 sol::table get_sprite_info(std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets, std::string name, sol::this_state s)
@@ -27,7 +53,7 @@ sol::table add_sprite_sheet(SDL_Renderer* renderer, std::shared_ptr<std::vector<
 		return get_sprite_info(sprite_sheets, name, s);
 }
 
-void draw_sprite(SDL_Renderer* renderer, std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets, std::string name, int sprite_id, int x, int y)
+void draw_sprite(SDL_Renderer* renderer, std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height)
 {
 		if (!(name.length() > 0)) return;
 
@@ -38,7 +64,7 @@ void draw_sprite(SDL_Renderer* renderer, std::shared_ptr<std::vector<std::shared
 
 		if (sheet != sprite_sheets->end())
 		{
-				(*sheet)->draw_sprite(renderer, sprite_id, x, y);
+				(*sheet)->draw_sprite(renderer, sprite_id, x, y, scaled_width, scaled_height);
 		}
 }
 
@@ -259,15 +285,22 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 sol::table add_entities(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
 {
 		sol::state_view lua(s);
-		sol::table entity_ids_table = lua.create_table();
+		sol::table entity_points_table = lua.create_table();
 
 		for (int i = 0; i < num; i++)
+				add_entity(game, entity_group_name, entity_type, components_table);
+		
+		auto entity_group = game->get_entity_group(entity_group_name);
+		for (auto& e : *entity_group->entities)
 		{
-				auto id = add_entity(game, entity_group_name, entity_type, components_table);
-				entity_ids_table.set(id);
+				sol::table point_table = lua.create_table_with(
+						"x", e->x(),
+						"y", e->y()
+				);
+				entity_points_table.set(e->get_id(), point_table);
 		}
 
-		return entity_ids_table;
+		return entity_points_table;
 }
 
 sol::table get_test_map(sol::this_state s)
@@ -482,6 +515,7 @@ void emit_lua_update_for_entities(std::shared_ptr<roguely::ecs::Entity> entity, 
 												{
 														entity_info_table[entity_type][e_id]["components"]["health_component"] = lua.create_table();
 														entity_info_table[entity_type][e_id]["components"]["health_component"]["health"] = hc->get_health();
+														entity_info_table[entity_type][e_id]["components"]["health_component"]["max_health"] = hc->get_max_health();														
 												}
 										}
 										else if (c->get_component_name() == "stats_component") {
@@ -642,7 +676,11 @@ void init_lua_apis(SDL_Renderer*& renderer,
 				});
 
 		lua.set_function("draw_sprite", [&](std::string name, int sprite_id, int x, int y) {
-				draw_sprite(renderer, sprite_sheets, name, sprite_id, x, y);
+				draw_sprite(renderer, sprite_sheets, name, sprite_id, x, y, 0, 0);
+				});
+
+		lua.set_function("draw_sprite_scaled", [&](std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height) {
+				draw_sprite(renderer, sprite_sheets, name, sprite_id, x, y, scaled_width, scaled_height);
 				});
 
 		lua.set_function("play_sound", [&](std::string name) {

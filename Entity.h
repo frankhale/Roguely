@@ -55,7 +55,7 @@ namespace roguely::ecs
 		class HealthComponent : public Component
 		{
 		public:
-				HealthComponent(int health) { max_health = health; health = health; }
+				HealthComponent(int h) { max_health = h; health = h; }
 
 				int get_health() const { return health; }
 				void set_health(int h) { health = h; }
