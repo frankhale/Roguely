@@ -50,6 +50,13 @@ namespace roguely::game
 						auto map = roguely::level_generation::init_cellular_automata(map_width, map_height);
 						roguely::level_generation::perform_cellular_automaton(map, map_width, map_height, 10);
 
+						maps->erase(std::remove_if(maps->begin(), maps->end(),
+								[&](std::shared_ptr<roguely::common::Map> m) {
+										if (m->name == name) return true;
+										
+										return false;
+								}), maps->end());
+
 						//for (int row = 0; row < 40; row++)
 						//{
 						//		for (int column = 0; column < 100; column++)

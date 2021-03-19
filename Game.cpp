@@ -380,17 +380,17 @@ namespace roguely::game
 
 				//std::cout << "player is (" << player->x() << ", " << player->y() << ")" << std::endl;
 
-				view_port_x = player->x() - VIEW_PORT_WIDTH;
-				view_port_y = player->y() - VIEW_PORT_HEIGHT;
+				view_port_x = player->x() - VIEW_PORT_WIDTH / 2;
+				view_port_y = player->y() - VIEW_PORT_HEIGHT / 2;
 
 				if (view_port_x < 0) view_port_x = std::max(0, view_port_x);
-				if (view_port_x > (current_map->width - (VIEW_PORT_WIDTH * 2))) view_port_x = (current_map->width - (VIEW_PORT_WIDTH * 2));
+				if (view_port_x > (current_map->width - VIEW_PORT_WIDTH)) view_port_x = (current_map->width - VIEW_PORT_WIDTH);
 
 				if (view_port_y < 0) view_port_y = std::max(0, view_port_y);
-				if (view_port_y > (current_map->height - (VIEW_PORT_HEIGHT * 2))) view_port_y = (current_map->height - (VIEW_PORT_HEIGHT * 2));
+				if (view_port_y > (current_map->height - VIEW_PORT_HEIGHT)) view_port_y = (current_map->height - VIEW_PORT_HEIGHT);
 
-				view_port_width = view_port_x + (VIEW_PORT_WIDTH * 2);
-				view_port_height = view_port_y + (VIEW_PORT_HEIGHT * 2);
+				view_port_width = view_port_x + VIEW_PORT_WIDTH;
+				view_port_height = view_port_y + VIEW_PORT_HEIGHT;
 		}
 
 		std::shared_ptr<roguely::ecs::Entity> Game::update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y)
@@ -600,15 +600,15 @@ namespace roguely::game
 		{
 				float x = 0, y = 0;
 
-				current_map->light_map = std::make_shared<boost::numeric::ublas::matrix<int>>(current_map->height, current_map->width);
+				current_map->light_map = std::make_shared<boost::numeric::ublas::matrix<int>>(current_map->height, current_map->width, 0);
 
-				for (int r = 0; r < current_map->height; r++)
+				/*for (int r = 0; r < current_map->height; r++)
 				{
 						for (int c = 0; c < current_map->width; c++)
 						{
 								(*current_map->light_map)(r, c) = 0;
 						}
-				}
+				}*/
 
 				for (int i = 0; i < 360; i++)
 				{

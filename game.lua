@@ -5,8 +5,8 @@ Game = {
 	window_height = 768,
 	map_width = 125,
 	map_height = 125,
-	view_port_width = 20,
-	view_port_height = 12,
+	view_port_width = 40,
+	view_port_height = 24,
 	music = false,
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
@@ -15,6 +15,7 @@ Game = {
 	credit_image_path = "assets/credits.png",
 	sounds = {
 		coin = "assets/sounds/coin.wav",
+		bump = "assets/sounds/bump.wav",
 		combat = "assets/sounds/combat.wav",
 		death = "assets/sounds/death.wav",
 		pickup = "assets/sounds/pickup.wav"
@@ -67,14 +68,14 @@ function _init()
 		}
 	})
 
-	-- Need to generate a map before we can add entities because the x,y
+	-- Need to generate a map before we can call add_entities because the x,y
 	-- of the entities is auto generated so that it won't collide with any
 	-- entity
 	generate_map("main", Game["map_width"], Game["map_height"])
 	switch_map("main")
 
-	Player_Pos = generate_random_point({ "common" })
-	update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"])
+	local pos = generate_random_point({ "common" })
+	update_entity_position("common", "player", pos["x"], pos["y"])
 
 	Coins = add_entities("coins", "item", {
 		value_component = {
@@ -126,19 +127,6 @@ function _init()
 		}
 	}, 1)
 
-	-- for k,v in pairs(Coins) do
-	-- 	--print(k, v)
-	-- 	--print(v["item"])
-
-	-- 	for k1,v1 in pairs(v["item"]) do
-	-- 		--print(k1, v1)
-
-	-- 		for k2,v2 in pairs(v["item"]["components"]) do
-	-- 			print(k2, v2)
-	-- 		end
-	-- 	end
-	-- end
-
 	Game_Map = get_map("main", false)
 	Game_Light_Map = get_map("main", true)
 end
@@ -148,30 +136,43 @@ function _update(event, data)
 		if data["key"] == "up" then
 			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "up", "player", { "common" })) then
 				update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] - 1)
+			else
+				play_sound("bump")
 			end
 		 elseif data["key"] == "down" then
 			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "down", "player", { "common" })) then
 				update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] + 1)
+			else
+				play_sound("bump")
 			end
 		 elseif data["key"] == "left" then
 			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "left", "player", { "common" })) then
 				update_entity_position("common", "player", Player_Pos["x"] - 1, Player_Pos["y"])
+			else
+				play_sound("bump")
 			end
 		 elseif data["key"] == "right" then
 			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "right", "player", { "common" })) then
 				update_entity_position("common", "player", Player_Pos["x"] + 1, Player_Pos["y"])
+			else
+				play_sound("bump")
 			end
+		 elseif data["key"] == "space" then
+			print("generating new map...")
+			generate_map("main", Game["map_width"], Game["map_height"])
+			switch_map("main")
+			Game_Map = get_map("main", false)
 		end
 
-		if (Coins) then
-			local xy_id = tostring(Player_Pos["x"] .. "_" .. Player_Pos["y"])
-			if (Coins[xy_id]) then
-				set_component_value("common", "player", "score_component", "score",
-					Player["components"]["score_component"]["score"] +
-					Coins[xy_id]["item"]["components"]["value_component"]["value"])
-				remove_entity("coins", Coins[xy_id]["item"]["id"])
-			end
-		end
+		--print(get_view_port_width(), get_view_port_height())
+
+		-- if (Coins and Coins[XY_Id]) then
+		-- 	play_sound("coin")
+		-- 	set_component_value("common", "player", "score_component", "score",
+		-- 		Player["components"]["score_component"]["score"] +
+		-- 		Coins[XY_Id]["item"]["components"]["value_component"]["value"])
+		-- 	remove_entity("coins", Coins[XY_Id]["item"]["id"])
+		-- end
 
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
@@ -179,8 +180,7 @@ function _update(event, data)
 			Player_id = data["player"][Player_Id]
 			Player_Pos["x"] = data["player"]["point"]["x"]
 			Player_Pos["y"] = data["player"]["point"]["y"]
-
-			fov() -- recalculate FOV
+			XY_Id = tostring(Player_Pos["x"] .. "_" .. Player_Pos["y"])
 		else
 			-- Other entities were updated
 			if(data["entity_group_name"] == "coins") then
@@ -188,7 +188,7 @@ function _update(event, data)
 			end
 		end
 	elseif (event == "light_map") then
-		Game_Light_Map = get_map("main", true)
+	 	Game_Light_Map = data
 	end
 end
 
@@ -253,7 +253,8 @@ end
 
 function render_entity(entity_group, entity_type, sprite_sheet_name, entity_sprite_id_key, cx, cy, dx, dy)
 	for epk, epv in pairs(entity_group) do
-		if(epv[entity_type]["point"]["x"] == (cx-1) and epv[entity_type]["point"]["y"] == (cy-1)) then
+		if(epv[entity_type]["point"]["x"] == (cx-1) and
+		   epv[entity_type]["point"]["y"] == (cy-1)) then
 			draw_sprite(sprite_sheet_name, Sprite_Info[entity_sprite_id_key], dx, dy)
 		end
 	end
@@ -265,25 +266,25 @@ function _render(delta_time)
 			local dx = ((c-1) * Game_Sprites_Info.width) - (get_view_port_x() * Game_Sprites_Info.width)
 			local dy = ((r-1) * Game_Sprites_Info.height) - (get_view_port_y() * Game_Sprites_Info.height)
 
-			if(Game_Light_Map[r][c] == 2) then
+			--if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-				render_entity(Coins, "item", "game-sprites", "coin_sprite_id", c, r, dx, dy)
-				render_entity(GoldenCandle, "item", "game-sprites", "goldencandle_sprite_id", c, r, dx, dy)
-				render_entity(Spiders, "enemy", "game-sprites", "spider_sprite_id", c, r, dx, dy)
-				render_entity(Crabs, "enemy", "game-sprites", "crab_sprite_id", c, r, dx, dy)
-				render_entity(Bugs, "enemy", "game-sprites", "bug_sprite_id", c, r, dx, dy)
-				render_entity(FireWalkers, "enemy", "game-sprites", "firewalker_sprite_id", c, r, dx, dy)
-				render_entity(CrimsonShadows, "enemy", "game-sprites", "crimsonshadow_sprite_id", c, r, dx, dy)
-				render_entity(PurpleBlobs, "enemy", "game-sprites", "purpleblob_sprite_id", c, r, dx, dy)
-				render_entity(OrangeBlobs, "enemy", "game-sprites", "orangeblob_sprite_id", c, r, dx, dy)
+				-- render_entity(Coins, "item", "game-sprites", "coin_sprite_id", c, r, dx, dy)
+				-- render_entity(GoldenCandle, "item", "game-sprites", "goldencandle_sprite_id", c, r, dx, dy)
+				-- render_entity(Spiders, "enemy", "game-sprites", "spider_sprite_id", c, r, dx, dy)
+				-- render_entity(Crabs, "enemy", "game-sprites", "crab_sprite_id", c, r, dx, dy)
+				-- render_entity(Bugs, "enemy", "game-sprites", "bug_sprite_id", c, r, dx, dy)
+				-- render_entity(FireWalkers, "enemy", "game-sprites", "firewalker_sprite_id", c, r, dx, dy)
+				-- render_entity(CrimsonShadows, "enemy", "game-sprites", "crimsonshadow_sprite_id", c, r, dx, dy)
+				-- render_entity(PurpleBlobs, "enemy", "game-sprites", "purpleblob_sprite_id", c, r, dx, dy)
+				-- render_entity(OrangeBlobs, "enemy", "game-sprites", "orangeblob_sprite_id", c, r, dx, dy)
 
 				if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
 					draw_sprite("game-sprites", Sprite_Info["player_sprite_id"], dx, dy)
 				end
-			else
-				draw_sprite("game-sprites", Sprite_Info["hidden_sprite_id"] , dx, dy)
-			end
+			--else
+			--	draw_sprite("game-sprites", Sprite_Info["hidden_sprite_id"] , dx, dy)
+			--end
 		end
 	end
 
