@@ -56,8 +56,14 @@ function _init()
 		}
 	})
 
+	-- Need to generate a map before we can add entities because the x,y
+	-- of the entities is auto generated so that it won't collide with any
+	-- entity
 	generate_map("main", Game["map_width"], Game["map_height"])
 	switch_map("main")
+
+	Player_Pos = generate_random_point({ "common" })
+	update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"])
 
 	add_entities("coins", "item", {
 		value_component = {
@@ -108,9 +114,6 @@ function _init()
 	CrimsonShadows =  get_entity_group_points("crimsonshadows")
 	PurpleBlobs = get_entity_group_points("purpleblobs")
 	OrangeBlobs = get_entity_group_points("orangeblobs")
-
-	Player_Pos = generate_random_point({ "common" })
-	update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"])
 
 	Game_Map = get_map("main", false)
 	Game_Light_Map = get_map("main", true)

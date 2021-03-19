@@ -267,28 +267,19 @@ namespace roguely::game
 
 		bool Game::is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check)
 		{
+				if (player->x() == x || player->y() == y) return true;
 				if (current_map->map == nullptr) return true;
+				if ((*current_map->map)(y, x) == 0) return true;
 
-				bool blocked = false;
-
-				auto px = player->x();
-				auto py = player->y();
-				auto map_value = (*current_map->map)(y, x);
-
-				if ((*current_map->map)(y, x) == 0 ||
-						player->x() == x || player->y() == y)
-						return true;
+				bool blocked = true;
 
 				for (auto& egtc : entity_groups_to_check)
 				{
 						auto group = get_entity_group(egtc);
-
-						if (group != nullptr) {
-								if (is_entity_location_traversable(x, y, group->entities))
-								{
-										blocked = false;
-										break;
-								}
+						if (group != nullptr && is_entity_location_traversable(x, y, group->entities)) blocked = false;
+						else {
+								blocked = true;
+								break;
 						}
 				}
 
@@ -568,7 +559,7 @@ namespace roguely::game
 				{
 						for (int c = 0; c < current_map->width; c++)
 						{
-								(*current_map->light_map)(r,c) = 0;
+								(*current_map->light_map)(r, c) = 0;
 						}
 				}
 
