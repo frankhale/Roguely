@@ -151,9 +151,14 @@ function _update(event, data)
 		end
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
-			Player_Pos["x"] = data["player"][Player_Id]["point"]["x"]
-			Player_Pos["y"] = data["player"][Player_Id]["point"]["y"]
-			Player = data["player"][Player_Id]
+			Player = data["player"]
+			Player_id = data["player"][Player_Id]
+			Player_Pos["x"] = data["player"]["point"]["x"]
+			Player_Pos["y"] = data["player"]["point"]["y"]
+
+			-- TODO: we can check here to see if our position is the same as a coin or other pickup
+
+
 			fov() -- recalculate FOV
 		end
 	elseif (event == "light_map") then
@@ -229,8 +234,8 @@ function _render(delta_time)
 			if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-				for rpk, rpv in pairs(Coins) do
-					if(rpv["x"] == (c-1) and rpv["y"] == (r-1)) then
+				for cpk, cpv in pairs(Coins) do
+					if(cpv["x"] == (c-1) and cpv["y"] == (r-1)) then
 						draw_sprite("game-sprites", Sprite_Info["coin_sprite_id"], dx, dy)
 					end
 				end

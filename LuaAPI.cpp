@@ -303,6 +303,103 @@ sol::table add_entities(std::shared_ptr<roguely::game::Game> game, std::string e
 		return entity_points_table;
 }
 
+sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
+{
+		sol::state_view lua(s);
+		std::string entity_type{};
+
+		// Don't @ me bruh!
+		if (entity->get_entity_type() == roguely::ecs::EntityType::Player) entity_type = "player";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Enemy) entity_type = "enemy";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::NPC) entity_type = "npc";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Item) entity_type = "item";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Interactable) entity_type = "interactable";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Ground) entity_type = "ground";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Wall) entity_type = "wall";
+
+		auto e_p = entity->get_point();
+		std::string e_id = entity->get_id();
+		sol::table entity_info_table = lua.create_table();
+		entity_info_table[entity_type] = lua.create_table();		
+		entity_info_table[entity_type]["id"] = e_id;		
+		entity_info_table[entity_type]["point"] = lua.create_table();
+		entity_info_table[entity_type]["point"]["x"] = e_p.x;
+		entity_info_table[entity_type]["point"]["y"] = e_p.y;
+		entity_info_table[entity_type]["components"] = lua.create_table();
+
+		entity->for_each_component([&](std::shared_ptr<roguely::ecs::Component> c) {
+				if (c != nullptr)
+				{
+						if (c->get_component_name() == "score_component") {
+								auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
+								if (sc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["score_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["score_component"]["score"] = sc->get_score();
+								}
+						}
+						else if (c->get_component_name() == "health_component") {
+								auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(c);
+								if (hc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["health_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["health_component"]["health"] = hc->get_health();
+										entity_info_table[entity_type]["components"]["health_component"]["max_health"] = hc->get_max_health();
+								}
+						}
+						else if (c->get_component_name() == "stats_component") {
+								auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(c);
+								if (sc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["stats_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["stats_component"]["attack"] = sc->get_attack();
+								}
+						}
+						else if (c->get_component_name() == "lua_component")
+						{
+								auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(c);
+								if (lc != nullptr)
+								{
+										entity_info_table[entity_type]["components"][lc->get_type()] = lua.create_table();
+										entity_info_table[entity_type]["components"][lc->get_type()][lc->get_name()] = lc->get_properties();
+								}
+						}
+				}
+				});
+
+		return entity_info_table;
+}
+
+sol::table convert_entity_group_to_lua_table(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto entity_group = game->get_entity_group(entity_group_name);
+
+		sol::table entity_group_info_table = lua.create_table();
+
+		for (auto& eg : *entity_group->entities) 
+		{
+				entity_group_info_table.set(eg->get_id(), convert_entity_to_lua_table(eg, lua.lua_state()));
+		}
+
+		return entity_group_info_table;
+}
+
+void remove_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_id, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto result = game->remove_entity(entity_group_name, entity_id);
+
+		if (result)
+		{
+				auto lua_update = lua["_update"];
+				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+				{
+						lua_update("entity_event", convert_entity_group_to_lua_table(game, entity_group_name, lua.lua_state()));
+				}
+		}
+}
+
 sol::table get_test_map(sol::this_state s)
 {
 		sol::state_view lua(s);
@@ -448,97 +545,81 @@ bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, s
 		return result.walkable;
 }
 
-void emit_lua_update_for_entities(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
+void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
 {
 		sol::state_view lua(s);
 
-		// FIXME: THIS NEEDS TO BE IN IT'S OWN FUNCTION!!!
 		if (entity != nullptr) {
 				auto lua_update = lua["_update"];
-
-				// The Lua table should have the following format:
-				//
-				// {				
-				//			"Entity Type" = {
-				//					"Entity Id" = {			
-				//							"point = { x = 1, y = 1 },
-				//							"components = {
-				//									"score_component" = {},
-				//									"health_component" = {},
-				//									"stats_component" = {},
-				//									"lua_components" = {}
-				//							}
-				//					}				
-				//			}
-				// }				
+	
 				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
 				{
-						std::string entity_type{};
+						//std::string entity_type{};
 
-						// Don't @ me bruh!
-						if (entity->get_entity_type() == roguely::ecs::EntityType::Player) entity_type = "player";
-						else if (entity->get_entity_type() == roguely::ecs::EntityType::Enemy) entity_type = "enemy";
-						else if (entity->get_entity_type() == roguely::ecs::EntityType::NPC) entity_type = "npc";
-						else if (entity->get_entity_type() == roguely::ecs::EntityType::Item) entity_type = "item";
-						else if (entity->get_entity_type() == roguely::ecs::EntityType::Interactable) entity_type = "interactable";
-						else if (entity->get_entity_type() == roguely::ecs::EntityType::Ground) entity_type = "ground";
-						else if (entity->get_entity_type() == roguely::ecs::EntityType::Wall) entity_type = "wall";
+						//// Don't @ me bruh!
+						//if (entity->get_entity_type() == roguely::ecs::EntityType::Player) entity_type = "player";
+						//else if (entity->get_entity_type() == roguely::ecs::EntityType::Enemy) entity_type = "enemy";
+						//else if (entity->get_entity_type() == roguely::ecs::EntityType::NPC) entity_type = "npc";
+						//else if (entity->get_entity_type() == roguely::ecs::EntityType::Item) entity_type = "item";
+						//else if (entity->get_entity_type() == roguely::ecs::EntityType::Interactable) entity_type = "interactable";
+						//else if (entity->get_entity_type() == roguely::ecs::EntityType::Ground) entity_type = "ground";
+						//else if (entity->get_entity_type() == roguely::ecs::EntityType::Wall) entity_type = "wall";
 
-						std::string e_id = entity->get_id();
+						//std::string e_id = entity->get_id();
 
-						sol::table entity_info_table = lua.create_table();
-						entity_info_table[entity_type] = lua.create_table();
-						entity_info_table[entity_type][e_id] = lua.create_table();
-						entity_info_table[entity_type][e_id]["point"] = lua.create_table();
+						//sol::table entity_info_table = lua.create_table();
+						//entity_info_table[entity_type] = lua.create_table();
+						//entity_info_table[entity_type][e_id] = lua.create_table();
+						//entity_info_table[entity_type][e_id]["point"] = lua.create_table();
 
-						auto e_p = entity->get_point();
+						//auto e_p = entity->get_point();
 
-						entity_info_table[entity_type][e_id]["point"]["x"] = e_p.x;
-						entity_info_table[entity_type][e_id]["point"]["y"] = e_p.y;
+						//entity_info_table[entity_type][e_id]["point"]["x"] = e_p.x;
+						//entity_info_table[entity_type][e_id]["point"]["y"] = e_p.y;
 
-						entity_info_table[entity_type][e_id]["components"] = lua.create_table();
+						//entity_info_table[entity_type][e_id]["components"] = lua.create_table();
 
-						entity->for_each_component([&](std::shared_ptr<roguely::ecs::Component> c) {
-								if (c != nullptr)
-								{
-										if (c->get_component_name() == "score_component") {
-												auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
-												if (sc != nullptr)
-												{
-														entity_info_table[entity_type][e_id]["components"]["score_component"] = lua.create_table();
-														entity_info_table[entity_type][e_id]["components"]["score_component"]["score"] = sc->get_score();
-												}
-										}
-										else if (c->get_component_name() == "health_component") {
-												auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(c);
-												if (hc != nullptr)
-												{
-														entity_info_table[entity_type][e_id]["components"]["health_component"] = lua.create_table();
-														entity_info_table[entity_type][e_id]["components"]["health_component"]["health"] = hc->get_health();
-														entity_info_table[entity_type][e_id]["components"]["health_component"]["max_health"] = hc->get_max_health();														
-												}
-										}
-										else if (c->get_component_name() == "stats_component") {
-												auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(c);
-												if (sc != nullptr)
-												{
-														entity_info_table[entity_type][e_id]["components"]["stats_component"] = lua.create_table();
-														entity_info_table[entity_type][e_id]["components"]["stats_component"]["attack"] = sc->get_attack();
-												}
-										}
-										else if (c->get_component_name() == "lua_component")
-										{
-												auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(c);
-												if (lc != nullptr)
-												{
-														entity_info_table[entity_type][e_id]["components"][lc->get_type()] = lua.create_table();
-														entity_info_table[entity_type][e_id]["components"][lc->get_type()][lc->get_name()] = lc->get_properties();
-												}
-										}
-								}
-								});
+						//entity->for_each_component([&](std::shared_ptr<roguely::ecs::Component> c) {
+						//		if (c != nullptr)
+						//		{
+						//				if (c->get_component_name() == "score_component") {
+						//						auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
+						//						if (sc != nullptr)
+						//						{
+						//								entity_info_table[entity_type][e_id]["components"]["score_component"] = lua.create_table();
+						//								entity_info_table[entity_type][e_id]["components"]["score_component"]["score"] = sc->get_score();
+						//						}
+						//				}
+						//				else if (c->get_component_name() == "health_component") {
+						//						auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(c);
+						//						if (hc != nullptr)
+						//						{
+						//								entity_info_table[entity_type][e_id]["components"]["health_component"] = lua.create_table();
+						//								entity_info_table[entity_type][e_id]["components"]["health_component"]["health"] = hc->get_health();
+						//								entity_info_table[entity_type][e_id]["components"]["health_component"]["max_health"] = hc->get_max_health();														
+						//						}
+						//				}
+						//				else if (c->get_component_name() == "stats_component") {
+						//						auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(c);
+						//						if (sc != nullptr)
+						//						{
+						//								entity_info_table[entity_type][e_id]["components"]["stats_component"] = lua.create_table();
+						//								entity_info_table[entity_type][e_id]["components"]["stats_component"]["attack"] = sc->get_attack();
+						//						}
+						//				}
+						//				else if (c->get_component_name() == "lua_component")
+						//				{
+						//						auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(c);
+						//						if (lc != nullptr)
+						//						{
+						//								entity_info_table[entity_type][e_id]["components"][lc->get_type()] = lua.create_table();
+						//								entity_info_table[entity_type][e_id]["components"][lc->get_type()][lc->get_name()] = lc->get_properties();
+						//						}
+						//				}
+						//		}
+						//		});
 
-						lua_update("entity_event", entity_info_table);
+						lua_update("entity_event", convert_entity_to_lua_table(entity, lua.lua_state()));
 				}
 		}
 }
@@ -563,7 +644,7 @@ void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string 
 				}
 		}
 
-		emit_lua_update_for_entities(entity, s);
+		emit_lua_update_for_entity(entity, s);
 }
 
 void init_lua(sol::this_state s)
@@ -703,6 +784,10 @@ void init_lua_apis(SDL_Renderer*& renderer,
 				return add_entities(game, entity_group_name, entity_type, components_table, num, s);
 				});
 
+		lua.set_function("remove_entity", [&](std::string entity_group_name, std::string entity_id, sol::this_state s) {
+				remove_entity(game, entity_group_name, entity_id, s);
+				});
+
 		lua.set_function("get_component_value", [&](std::string entity_group_name, std::string entity_id, std::string component_name, std::string key) {
 				return game->get_component_value(entity_group_name, entity_id, component_name, key);
 				});
@@ -746,7 +831,7 @@ void init_lua_apis(SDL_Renderer*& renderer,
 		lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
 				auto entity = game->update_entity_position(entity_group_name, entity_id, x, y);
 				if (entity != nullptr)
-						return emit_lua_update_for_entities(entity, s);
+						return emit_lua_update_for_entity(entity, s);
 				});
 
 		lua.set_function("get_view_port_x", [&]() {

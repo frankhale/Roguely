@@ -196,6 +196,27 @@ namespace roguely::game
 				entity->add_component(lua_component);
 		}
 
+		bool Game::remove_entity(std::string entity_group_name, std::string entity_id)
+		{
+				bool result = false;
+				auto entity_group = get_entity_group(entity_group_name);
+
+				if (entity_group != nullptr)
+				{
+						entity_group->entities->erase(std::remove_if(entity_group->entities->begin(), entity_group->entities->end(),
+								[&](std::shared_ptr<roguely::ecs::Entity> e) {
+										if (e->get_id() == entity_id) {
+												result = true;
+												return true;
+										}
+
+										return false;
+								}), entity_group->entities->end());
+				}
+
+				return result;
+		}
+
 		std::string Game::generate_uuid()
 		{
 				boost::uuids::random_generator gen;

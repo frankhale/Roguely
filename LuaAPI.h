@@ -39,6 +39,7 @@ void play_sound(std::shared_ptr<std::vector<roguely::common::Sound>> sounds, std
 std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table);
 std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, sol::table components_table);
 sol::table add_entities(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s);
+void remove_entity(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_id, sol::this_state s);
 void set_component_value(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
 void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a);
 void draw_point(SDL_Renderer* renderer, int x, int y);
