@@ -126,6 +126,11 @@ function _init()
 		}
 	}, 1)
 
+	-- for k,v in pairs(Coins) do
+	-- 	--print(Coins[k]["item"]["point"]["x"], Coins[k]["item"]["point"]["y"])
+	-- 	print(v["item"]["point"]["x"], v["item"]["point"]["y"])
+	-- end
+
 	Game_Map = get_map("main", false)
 	Game_Light_Map = get_map("main", true)
 end
@@ -158,8 +163,9 @@ function _update(event, data)
 
 			-- TODO: we can check here to see if our position is the same as a coin or other pickup
 
-
 			fov() -- recalculate FOV
+		else
+			-- Other entities were updated
 		end
 	elseif (event == "light_map") then
 		Game_Light_Map = get_map("main", true)
@@ -225,6 +231,14 @@ function render_mini_map()
 	set_draw_color(0,0,0,255)
 end
 
+function render_entity(entity_group, entity_type, sprite_sheet_name, entity_sprite_id_key, cx, cy, dx, dy)
+	for epk, epv in pairs(entity_group) do
+		if(epv[entity_type]["point"]["x"] == (cx-1) and epv[entity_type]["point"]["y"] == (cy-1)) then
+			draw_sprite(sprite_sheet_name, Sprite_Info[entity_sprite_id_key], dx, dy)
+		end
+	end
+end
+
 function _render(delta_time)
 	for r = 1, get_view_port_height() do
 		for c = 1, get_view_port_width() do
@@ -234,59 +248,15 @@ function _render(delta_time)
 			if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-				for cpk, cpv in pairs(Coins) do
-					if(cpv["x"] == (c-1) and cpv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["coin_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(Spiders) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["spider_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(Crabs) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["crab_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(Bugs) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["bug_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(FireWalkers) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["firewalker_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(CrimsonShadows) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["crimsonshadow_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(PurpleBlobs) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["purpleblob_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(OrangeBlobs) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["orangeblob_sprite_id"], dx, dy)
-					end
-				end
-
-				for epk, epv in pairs(GoldenCandle) do
-					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
-						draw_sprite("game-sprites", Sprite_Info["goldencandle_sprite_id"], dx, dy)
-					end
-				end
+				render_entity(Coins, "item", "game-sprites", "coin_sprite_id", c, r, dx, dy)
+				render_entity(GoldenCandle, "item", "game-sprites", "goldencandle_sprite_id", c, r, dx, dy)
+				render_entity(Spiders, "enemy", "game-sprites", "spider_sprite_id", c, r, dx, dy)
+				render_entity(Crabs, "enemy", "game-sprites", "crab_sprite_id", c, r, dx, dy)
+				render_entity(Bugs, "enemy", "game-sprites", "bug_sprite_id", c, r, dx, dy)
+				render_entity(FireWalkers, "enemy", "game-sprites", "firewalker_sprite_id", c, r, dx, dy)
+				render_entity(CrimsonShadows, "enemy", "game-sprites", "crimsonshadow_sprite_id", c, r, dx, dy)
+				render_entity(PurpleBlobs, "enemy", "game-sprites", "purpleblob_sprite_id", c, r, dx, dy)
+				render_entity(OrangeBlobs, "enemy", "game-sprites", "orangeblob_sprite_id", c, r, dx, dy)
 
 				if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
 					draw_sprite("game-sprites", Sprite_Info["player_sprite_id"], dx, dy)
