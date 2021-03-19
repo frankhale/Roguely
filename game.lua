@@ -32,6 +32,13 @@ function _init()
 	Sprite_Info["player_sprite_id"] = 3
 	Sprite_Info["hidden_sprite_id"] = 18
 	Sprite_Info["coin_sprite_id"] = 14
+	Sprite_Info["spider_sprite_id"] = 4
+	Sprite_Info["crab_sprite_id"] = 12
+	Sprite_Info["bug_sprite_id"] = 17
+	Sprite_Info["firewalker_sprite_id"] = 21
+	Sprite_Info["crimsonshadow_sprite_id"] = 34
+	Sprite_Info["purpleblob_sprite_id"] = 61
+	Sprite_Info["orangeblob_sprite_id"] = 64
 
 	Player_Id = add_entity("common", "player", Player_Pos["x"], Player_Pos["y"], {
 		sprite_component = {
@@ -52,13 +59,55 @@ function _init()
 	generate_map("main", Game["map_width"], Game["map_height"])
 	switch_map("main")
 
-	Coin_Ids = add_entities("rewards", "item", {
+	add_entities("coins", "item", {
 		value_component = {
 			value = "25"
 		}
 	}, 100)
 
-	Rewards_Points = get_entity_group_points("rewards")
+	add_entities("spiders", "enemy", {
+		health_component = { health = 20 },
+		stats_component = { attack = 1 }
+	}, 100)
+
+	add_entities("crabs", "enemy", {
+		health_component = { health = 30 },
+		stats_component = { attack = 2 }
+	}, 80)
+
+	add_entities("bugs", "enemy", {
+		health_component = { health = 50 },
+		stats_component = { attack = 2 }
+	}, 80)
+
+	add_entities("firewalkers", "enemy", {
+		health_component = { health = 75 },
+		stats_component = { attack = 4 }
+	}, 50)
+
+	add_entities("crimsonshadows", "enemy", {
+		health_component = { health = 85 },
+		stats_component = { attack = 5 }
+	}, 40)
+
+	add_entities("purpleblobs", "enemy", {
+		health_component = { health = 95 },
+		stats_component = { attack = 6 }
+	}, 30)
+
+	add_entities("orangeblobs", "enemy", {
+		health_component = { health = 100 },
+		stats_component = { attack = 7 }
+	}, 20)
+
+	Coins = get_entity_group_points("coins")
+	Spiders = get_entity_group_points("spiders")
+	Crabs = get_entity_group_points("crabs")
+	Bugs =  get_entity_group_points("bugs")
+	FireWalkers = get_entity_group_points("firewalkers")
+	CrimsonShadows =  get_entity_group_points("crimsonshadows")
+	PurpleBlobs = get_entity_group_points("purpleblobs")
+	OrangeBlobs = get_entity_group_points("orangeblobs")
 
 	Player_Pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"])
@@ -130,9 +179,51 @@ function _render(delta_time)
 			if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-				for rpk, rpv in pairs(Rewards_Points) do
+				for rpk, rpv in pairs(Coins) do
 					if(rpv["x"] == (c-1) and rpv["y"] == (r-1)) then
 						draw_sprite("game-sprites", Sprite_Info["coin_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(Spiders) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["spider_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(Crabs) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["crab_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(Bugs) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["bug_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(FireWalkers) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["firewalker_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(CrimsonShadows) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["crimsonshadow_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(PurpleBlobs) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["purpleblob_sprite_id"], dx, dy)
+					end
+				end
+
+				for epk, epv in pairs(OrangeBlobs) do
+					if(epv["x"] == (c-1) and epv["y"] == (r-1)) then
+						draw_sprite("game-sprites", Sprite_Info["orangeblob_sprite_id"], dx, dy)
 					end
 				end
 

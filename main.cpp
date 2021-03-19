@@ -24,13 +24,15 @@
 * SOFTWARE.
 */
 
+// (gci -include *.cpp,*.h,*.lua -recurse | select-string .).Count
+
 #include "Common.h"
 #include "Entity.h"
 #include "Text.h"
 #include "SpriteSheet.h"
 #include "Game.h"
 #include "LuaAPI.h"
-
+ 
 SDL_Window* window = nullptr;
 SDL_Surface* window_surface = nullptr;
 SDL_Renderer* renderer = nullptr;
