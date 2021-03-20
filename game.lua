@@ -8,6 +8,7 @@ Game = {
 	view_port_width = 40,
 	view_port_height = 24,
 	music = false,
+	spritesheet_path = "assets/roguelike.png",
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
 	logo_path = "assets/roguely-logo.png",
@@ -23,6 +24,19 @@ Game = {
 	},
 	dead = false,
 	game_started = false,
+	player_pos = {
+		-- These is notional because after we generate a map we'll get a randomized
+		-- position to start that is a known good ground tile
+		x = 10,
+		y = 10
+	},
+	sprite_info = {
+		width = 32,
+		height = 32,
+		player_sprite_id = 3,
+		hidden_sprite_id = 18,
+		heart_sprite_id = 48
+	},
 	entities = {
 		rewards = {
 			coin = {
@@ -144,28 +158,10 @@ Game = {
 	}
 }
 
-Game_Sprites_Info = {
-	width = 32,
-	height = 32
-}
-
-Player_Pos = {
-	-- These is notional because after we generate a map we'll get a randomized
-	-- position to start that is a known good ground tile
-	x = 10,
-	y = 10
-}
-
 function create_entities(entity_table, group, entity_name, entity_type)
 	local entities = {}
 
-	-- print ("group = " .. group)
-	-- print ("entity_name = " .. entity_name)
-	-- print ("entity_type = " .. entity_type)
-	--print (entity_table[group][entity_name])
-
 	for k,v in pairs(entity_table[group]) do
-		--print(k, v)
 		entities = add_entities(group, entity_type, v.components, v.total)
 	end
 
@@ -173,13 +169,9 @@ function create_entities(entity_table, group, entity_name, entity_type)
 end
 
 function _init()
-	Sprite_Info = add_sprite_sheet("game-sprites", "assets/roguelike.png", Game_Sprites_Info.width, Game_Sprites_Info.height)
+	add_sprite_sheet("game-sprites", Game.spritesheet_path, Game.sprite_info.width, Game.sprite_info.height)
 
-	Sprite_Info["player_sprite_id"] = 3
-	Sprite_Info["hidden_sprite_id"] = 18
-	Sprite_Info["heart_sprite_id"] = 48
-
-	Player_Id = add_entity("common", "player", Player_Pos["x"], Player_Pos["y"], {
+	Game.player_id = add_entity("common", "player", Game.player_pos["x"], Game.player_pos["y"], {
 		sprite_component = {
 			name = "player",
 			spritesheet_name = "game-sprites",
@@ -195,55 +187,42 @@ function _init()
 		}
 	})
 
-	-- Need to generate a map before we can call add_entities because the x,y
-	-- of the entities is auto generated so that it won't collide with any
-	-- entity
 	generate_map("main", Game["map_width"], Game["map_height"])
 	switch_map("main")
 
 	local pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", pos["x"], pos["y"])
 
-	Items = create_entities(Game.entities, "rewards", "coin", "item")
-	Enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
+	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
+	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
 
-	-- print ("Created Rewards")
-	-- for k,v in pairs(Items) do
-	-- 	print(k, v)
-	-- end
-
-	-- print ("Enemies Rewards")
-	-- for k,v in pairs(Enemies) do
-	-- 	print(k, v)
-	-- end
-
-	Game_Map = get_map("main", false)
+	Game.map = get_map("main", false)
 	fov("main")
 end
 
 function _update(event, data)
 	if(event == "key_event") then
 		if data["key"] == "up" then
-			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "up", "player", { "common" })) then
-				update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] - 1)
+			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "up", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos["x"], Game.player_pos["y"] - 1)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "down" then
-			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "down", "player", { "common" })) then
-				update_entity_position("common", "player", Player_Pos["x"], Player_Pos["y"] + 1)
+			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "down", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos["x"], Game.player_pos["y"] + 1)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "left" then
-			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "left", "player", { "common" })) then
-				update_entity_position("common", "player", Player_Pos["x"] - 1, Player_Pos["y"])
+			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "left", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos["x"] - 1, Game.player_pos["y"])
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "right" then
-			if(is_tile_walkable(Player_Pos["x"], Player_Pos["y"], "right", "player", { "common" })) then
-				update_entity_position("common", "player", Player_Pos["x"] + 1, Player_Pos["y"])
+			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "right", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos["x"] + 1, Game.player_pos["y"])
 			else
 				play_sound("bump")
 			end
@@ -254,29 +233,29 @@ function _update(event, data)
 			update_entity_position("common", "player", pos["x"], pos["y"])
 		end
 
-		if (Items[XY_Id] and Items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
+		if (Game.items[XY_Id] and Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
 			play_sound("coin")
 		 	set_component_value("common", "player", "score_component", "score",
-		 		Player["components"]["score_component"]["score"] +
-		 		Items[XY_Id]["item"]["components"]["value_component"]["value"])
-		 	remove_entity("rewards", Items[XY_Id]["item"]["id"])
+			 	Game.player["components"]["score_component"]["score"] +
+		 		Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
+		 	remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
 		end
 
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
-			Player = data["player"]
-			Player_id = data["player"][Player_Id]
-			Player_Pos["x"] = data["player"]["point"]["x"]
-			Player_Pos["y"] = data["player"]["point"]["y"]
-			XY_Id = tostring(Player_Pos["x"] .. "_" .. Player_Pos["y"])
+			Game.player = data["player"]
+			Game.player_id = data["player"][Game.player_id]
+			Game.player_pos["x"] = data["player"]["point"]["x"]
+			Game.player_pos["y"] = data["player"]["point"]["y"]
+			XY_Id = tostring(Game.player_pos["x"] .. "_" .. Game.player_pos["y"])
 			fov("main")
 		else
 			if(data["entity_group_name"] == "rewards") then
-			 	Items = data["entity_group"]
+			 	Game.items = data["entity_group"]
 			end
 		end
 	elseif (event == "light_map") then
-	 	Game_Light_Map = data
+	 	Game.light_map = data
 	end
 end
 
@@ -294,23 +273,23 @@ function render_info_bar()
 	set_draw_color(28 , 28, 28, 128)
 	draw_filled_rect(10, 10, 290, 150)
 
-	draw_sprite_scaled("game-sprites", Sprite_Info["heart_sprite_id"], 20, 20, Game_Sprites_Info.width * 2, Game_Sprites_Info.height * 2)
+	draw_sprite_scaled("game-sprites", Game.sprite_info["heart_sprite_id"], 20, 20, Game.sprite_info.width * 2, Game.sprite_info.height * 2)
 
-	local p_hw = calculate_health_bar_width(Player["components"]["health_component"]["health"], Player["components"]["health_component"]["max_health"], 200)
+	local p_hw = calculate_health_bar_width(Game.player["components"]["health_component"]["health"], Game.player["components"]["health_component"]["max_health"], 200)
 
 	set_draw_color(33, 33, 33, 255)
-	draw_filled_rect((Game_Sprites_Info.width * 2 + 20), 36, 200, 24)
+	draw_filled_rect((Game.sprite_info.width * 2 + 20), 36, 200, 24)
 
-	if (Player["components"]["health_component"]["health"] <= Player["components"]["health_component"]["max_health"] / 3) then
+	if (Game.player["components"]["health_component"]["health"] <= Game.player["components"]["health_component"]["max_health"] / 3) then
 		set_draw_color(255, 0, 0, 255) -- red player's health is in trouble
 	else
 		set_draw_color(8, 138, 41, 255) -- green for player
 	end
 
-	draw_filled_rect((Game_Sprites_Info.width * 2 + 20), 36, p_hw, 24)
+	draw_filled_rect((Game.sprite_info.width * 2 + 20), 36, p_hw, 24)
 
-	draw_text(tostring(Player["components"]["health_component"]["health"]), "medium", (Game_Sprites_Info.width * 3 + 70), 28)
-	draw_text(tostring(Player["components"]["score_component"]["score"]), "large", 40, 90)
+	draw_text(tostring(Game.player["components"]["health_component"]["health"]), "medium", (Game.sprite_info.width * 3 + 70), 28)
+	draw_text(tostring(Game.player["components"]["score_component"]["score"]), "large", 40, 90)
 
 	set_draw_color(0, 0, 0, 255)
 end
@@ -323,10 +302,10 @@ function render_mini_map()
 			local dx = (c - 1) + offset_x
 			local dy = (r - 1) + offset_y
 
-			if (Game_Map[r][c] == 0) then
+			if (Game.map[r][c] == 0) then
 				set_draw_color(255, 255, 255, 128)
 				draw_point(dx, dy)
-			elseif (Game_Map[r][c] == 9) then
+			elseif (Game.map[r][c] == 9) then
 				set_draw_color(0, 0, 0, 128)
 				draw_point(dx, dy)
 			end
@@ -336,7 +315,7 @@ function render_mini_map()
 			--  	draw_filled_rect(dx - 3, dy - 3, 6, 6)
 			-- end
 
-			if (dx == Player_Pos["x"] + offset_x and dy == Player_Pos["y"] + offset_y) then
+			if (dx == Game.player_pos["x"] + offset_x and dy == Game.player_pos["y"] + offset_y) then
 				set_draw_color(255, 0, 0, 255)
 				draw_filled_rect(dx - 3, dy - 3, 6, 6)
 			end
@@ -358,25 +337,25 @@ function _render(delta_time)
 	for r = 1, get_view_port_height() do
 		for c = 1, get_view_port_width() do
 			local p_id = tostring((c-1) .. "_" .. (r-1))
-			local dx = ((c-1) * Game_Sprites_Info.width) - (get_view_port_x() * Game_Sprites_Info.width)
-			local dy = ((r-1) * Game_Sprites_Info.height) - (get_view_port_y() * Game_Sprites_Info.height)
+			local dx = ((c-1) * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
+			local dy = ((r-1) * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
 
-			if(Game_Light_Map[r][c] == 2) then
-				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
+			if(Game.light_map[r][c] == 2) then
+				draw_sprite("game-sprites", Game.map[r][c], dx, dy)
 
-				render_entity(Items, "item", p_id, dx, dy)
-				render_entity(Enemies, "enemy", p_id, dx, dy)
+				render_entity(Game.items, "item", p_id, dx, dy)
+				render_entity(Game.enemies, "enemy", p_id, dx, dy)
 
-				if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
-					local p_hw = calculate_health_bar_width(Player["components"]["health_component"]["health"], Player["components"]["health_component"]["max_health"], 32)
+				if(Game.player_pos["x"] == (c-1) and Game.player_pos["y"] == (r-1)) then
+					local p_hw = calculate_health_bar_width(Game.player["components"]["health_component"]["health"], Game.player["components"]["health_component"]["max_health"], 32)
 
 					set_draw_color(8, 138, 41, 255)
 					draw_filled_rect(dx, dy - 8, p_hw, 6)
-					draw_sprite("game-sprites", Sprite_Info["player_sprite_id"], dx, dy)
+					draw_sprite("game-sprites", Game.sprite_info["player_sprite_id"], dx, dy)
 					set_draw_color(0, 0, 0, 255)
 				end
 			else
-				draw_sprite("game-sprites", Sprite_Info["hidden_sprite_id"] , dx, dy)
+				draw_sprite("game-sprites", Game.sprite_info["hidden_sprite_id"] , dx, dy)
 			end
 		end
 	end
