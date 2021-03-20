@@ -35,6 +35,8 @@ Game = {
 	sprite_info = {
 		width = 32,
 		height = 32,
+		health_gem = 1,
+		attack_bonus_gem = 2,
 		player_sprite_id = 3,
 		hidden_sprite_id = 18,
 		heart_sprite_id = 48,
@@ -65,6 +67,24 @@ Game = {
 				},
 				total = 100
 			},
+			healthgem =  {
+				components = {
+					sprite_component = {
+						name = "healthgem",
+						spritesheet_name = "game-sprites",
+						sprite_id = 1
+					},
+					health_restoration_component = {
+						type = "powerup",
+						properties = {
+							action = function(group, entity_name, component_name, component_value_name, exiting_component_value)
+								set_component_value(group, entity_name, component_name, component_value, exiting_component_value + 25)
+							end
+						}
+					}
+				},
+				total = 50
+			},
 			goldencandle = {
 				components = {
 					sprite_component = {
@@ -73,8 +93,7 @@ Game = {
 						sprite_id = 6
 					},
 					value_component = { value = 25000 },
-					lua_component = {
-						name = "win_component",
+					win_component = {
 						type = "flags",
 						properties = { win = true }
 					}
@@ -93,7 +112,7 @@ Game = {
 					health_component = { health = 20 },
 					stats_component = { attack = 1 }
 				},
-				total = 100
+				total = 50
 			},
 			crab = {
 				components = {
@@ -105,7 +124,7 @@ Game = {
 					health_component = { health = 30 },
 					stats_component = { attack = 2 }
 				},
-				total = 50
+				total = 30
 			},
 			bug = {
 				components = {
@@ -117,7 +136,7 @@ Game = {
 					health_component = { health = 25 },
 					stats_component = { attack = 2 }
 				},
-				total = 40
+				total = 25
 			},
 			lurcher = {
 				components = {
@@ -129,7 +148,7 @@ Game = {
 					health_component = { health = 35 },
 					stats_component = { attack = 2 }
 				},
-				total = 30
+				total = 25
 			},
 			firewalker = {
 				components = {
@@ -291,23 +310,27 @@ function _update(event, data)
 			end
 		end
 
-		if(Game.started) then
-			if (Game.items[XY_Id] and
-				Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
+		if(Game.started and Game.items[XY_Id]) then
+			if (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
 				play_sound("coin")
 				set_component_value("common", "player", "score_component", "score",
 					Game.player["components"]["score_component"]["score"] +
 					Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
 				remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
-			elseif (Game.items[XY_Id] and
-					Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "goldencandle") then
-				Game.win_lose_message = "YOU WIN!!!"
-				Game.won = true
-				Game.started = false
-				set_component_value("common", "player", "score_component", "score",
-					Game.player["components"]["score_component"]["score"] +
-					Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
+			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "healthgem") then
+				play_sound("pickup")
+				-- if(Game.items[XY_Id]["item"]["components"]["lua_component"].name == ["health_restoration_component"]) then
+				-- end
 				remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "goldencandle") then
+				-- TODO: Use the Lua Component associated with the goldencandle to determine actions to take
+				-- Game.win_lose_message = "YOU WIN!!!"
+				-- Game.won = true
+				-- Game.started = false
+				-- set_component_value("common", "player", "score_component", "score",
+				-- 	Game.player["components"]["score_component"]["score"] +
+				-- 	Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
+				-- remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
 			end
 		end
 

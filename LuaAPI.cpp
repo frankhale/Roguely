@@ -160,7 +160,19 @@ sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> ent
 										entity_info_table[entity_type]["components"]["value_component"]["value"] = vc->get_value();
 								}
 						}
-						else if (c->get_component_name() == "lua_component")
+						else if (c->get_component_name() == "inventory_component")
+						{
+								auto ic = std::static_pointer_cast<roguely::ecs::InventoryComponent>(c);
+								if (ic != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["inventory_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["inventory_component"]["items"] = lua.create_table();
+										ic->for_each_item([&](std::shared_ptr<std::pair<std::string, int>> i) {												
+												entity_info_table[entity_type]["components"]["inventory_component"]["items"][i->first] = i->second;
+												});
+								}
+						}
+						else
 						{
 								auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(c);
 								if (lc != nullptr)
@@ -341,33 +353,30 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 														}
 												}
 										}
-										else if (key == "lua_component")
+										else
 										{
+												std::string type{};
+												sol::table props{};
+												bool has_type = false;
+												bool has_properties = false;
+
 												for (auto& cc : value_table)
 												{
-														std::string name{};
-														std::string type{};
-														sol::table props{};
-
-														// FIXME: Need to check to make sure the incoming types are what we expect
-
-														if (cc.first.as<std::string>() == "name")
-														{
-																name = cc.second.as<std::string>();
-														}
-														else if (cc.first.as<std::string>() == "type")
+														if (cc.first.as<std::string>() == "type" && cc.second.get_type() == sol::type::string)
 														{
 																type = cc.second.as<std::string>();
+																has_type = true;
 														}
-														else if (cc.first.as<std::string>() == "properties")
+														else if (cc.first.as<std::string>() == "properties" && cc.second.get_type() == sol::type::table)
 														{
 																props = cc.second.as<sol::table>();
+																has_properties = true;
 														}
+												}
 
-														if (name.size() > 0 && type.size() > 0)
-														{
-																game->add_lua_component(entity, name, type, props);
-														}
+												if (has_type && has_properties)
+												{
+														game->add_lua_component(entity, key, type, props);
 												}
 										}
 								}

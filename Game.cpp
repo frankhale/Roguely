@@ -189,9 +189,7 @@ namespace roguely::game
 		void Game::add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props)
 		{
 				auto lua_component = std::make_shared<roguely::ecs::LuaComponent>(n, t, props);
-				std::ostringstream lua_component_name;
-				lua_component_name << "_component";
-				lua_component->set_component_name(lua_component_name.str());
+				lua_component->set_component_name(n);
 				entity->add_component(lua_component);
 		}
 

@@ -124,18 +124,18 @@ namespace roguely::ecs
 		class InventoryComponent : public Component
 		{
 		public:
-				InventoryComponent() { inventory = std::make_unique<std::vector<std::pair<std::string, int>>>(); }
+				InventoryComponent() { inventory = std::make_unique<std::vector<std::shared_ptr<std::pair<std::string, int>>>>(); }
 
 				void upsert_item(std::pair<std::string, int> item_key_value_pair)
 				{
 						auto item = std::find_if(inventory->begin(), inventory->end(),
-								[&](const std::pair<std::string, int>& i) {
-										return i.first == item_key_value_pair.first;
+								[&](const std::shared_ptr<std::pair<std::string, int>>& i) {
+										return (*i).first == item_key_value_pair.first;
 								});
 
 						if (item != inventory->end())
 						{
-								item->second = item_key_value_pair.second;
+								(*item)->second = item_key_value_pair.second;
 						}
 						else
 						{
@@ -146,32 +146,35 @@ namespace roguely::ecs
 				void add_item(std::string name, int count)
 				{
 						std::pair item{ name, count };
-						inventory->push_back(item);
+						auto p_item = std::make_shared<std::pair<std::string, int>>(item);
+						inventory->push_back(p_item);
 				};
 
 				void remove_item(std::string name, int count)
 				{
 						auto item = std::find_if(inventory->begin(), inventory->end(),
-								[&](const std::pair<std::string, int>& i) {
-										return i.first == name;
+								[&](const std::shared_ptr<std::pair<std::string, int>>& i) {
+										return (*i).first == name;
 								});
 
 						if (item != inventory->end())
 						{
-								item->second -= count;
+								(*item)->second -= count;
 
-								if (item->second <= 0) {
+								if ((*item)->second <= 0) {
 										inventory->erase(std::remove_if(inventory->begin(), inventory->end(),
-												[&](const std::pair<std::string, int> i) {
-														return i.first == name;
+												[&](const std::shared_ptr < std::pair<std::string, int>> i) {
+														return (*i).first == name;
 												}),
 												inventory->end());
 								}
 						}
 				};
 
+				void for_each_item(std::function<void(std::shared_ptr<std::pair<std::string, int>>&)> fi) { for (auto& i : *inventory) fi(i); }
+
 		private:
-				std::unique_ptr<std::vector<std::pair<std::string, int>>> inventory;
+				std::unique_ptr<std::vector<std::shared_ptr<std::pair<std::string, int>>>> inventory;
 		};
 
 		class LuaComponent : public Component
