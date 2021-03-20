@@ -77,8 +77,8 @@ Game = {
 					health_restoration_component = {
 						type = "powerup",
 						properties = {
-							action = function(group, entity_name, component_name, component_value_name, exiting_component_value)
-								set_component_value(group, entity_name, component_name, component_value, exiting_component_value + 25)
+							action = function(group, entity_name, component_name, component_value_name, existing_component_value)
+								set_component_value(group, entity_name, component_name, component_value_name, existing_component_value + 25)
 							end
 						}
 					}
@@ -229,7 +229,7 @@ end
 function _init()
 	add_sprite_sheet("game-sprites", Game.spritesheet_path, Game.sprite_info.width, Game.sprite_info.height)
 
-	Game.player_id = add_entity("common", "player", Game.player_pos["x"], Game.player_pos["y"], {
+	Game.player_id = add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, {
 		sprite_component = {
 			name = "player",
 			spritesheet_name = "game-sprites",
@@ -245,21 +245,21 @@ function _init()
 		}
 	})
 
-	generate_map("main", Game["map_width"], Game["map_height"])
+	generate_map("main", Game.map_width, Game.map_height)
 	switch_map("main")
 
 	local pos = generate_random_point({ "common" })
-	update_entity_position("common", "player", pos["x"], pos["y"])
+	update_entity_position("common", "player", pos.x, pos.y)
 
 	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
 	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
 
 	for k,v in pairs(Game.items) do
 		for k1,v1 in pairs(v) do
-			if(v1["components"]["sprite_component"]["name"] == "goldencandle") then
-				Game["goldencandle"] = {
-					point = v1["point"],
-					p_id = tostring(v1["point"]["x"] .. "_" .. v1["point"]["y"])
+			if(v1.components.sprite_component.name == "goldencandle") then
+				Game.goldencandle = {
+					point = v1.point,
+					p_id = tostring(v1.point.x .. "_" .. v1.point.y)
 				}
 			end
 		end
@@ -272,26 +272,26 @@ end
 function _update(event, data)
 	if(event == "key_event") then
 		if data["key"] == "up" then
-			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "up", "player", { "common" })) then
-				update_entity_position("common", "player", Game.player_pos["x"], Game.player_pos["y"] - 1)
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "down" then
-			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "down", "player", { "common" })) then
-				update_entity_position("common", "player", Game.player_pos["x"], Game.player_pos["y"] + 1)
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "left" then
-			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "left", "player", { "common" })) then
-				update_entity_position("common", "player", Game.player_pos["x"] - 1, Game.player_pos["y"])
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "right" then
-			if(is_tile_walkable(Game.player_pos["x"], Game.player_pos["y"], "right", "player", { "common" })) then
-				update_entity_position("common", "player", Game.player_pos["x"] + 1, Game.player_pos["y"])
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common" })) then
+				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
 			else
 				play_sound("bump")
 			end
@@ -300,7 +300,7 @@ function _update(event, data)
 				-- warp player (for testing purposes)
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
-				update_entity_position("common", "player", pos["x"], pos["y"])
+				update_entity_position("common", "player", pos.x, pos.y)
 			else
 				Game.won = false
 				Game.started = true
@@ -311,19 +311,24 @@ function _update(event, data)
 		end
 
 		if(Game.started and Game.items[XY_Id]) then
-			if (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
+			if (Game.items[XY_Id].item.components.sprite_component.name == "coin") then
 				play_sound("coin")
 				set_component_value("common", "player", "score_component", "score",
-					Game.player["components"]["score_component"]["score"] +
-					Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
-				remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+					Game.player.components.score_component.score +
+					Game.items[XY_Id].item.components.value_component.value)
+				remove_entity("rewards", Game.items[XY_Id].item.id)
 			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "healthgem") then
 				play_sound("pickup")
-				-- if(Game.items[XY_Id]["item"]["components"]["lua_component"].name == ["health_restoration_component"]) then
-				-- end
-				remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+				local action = Game.items[XY_Id].item.components.health_restoration_component.properties.action
+				local player_current_health = Game.player.components.health_component.health
+				print("Player current health = " .. player_current_health)
+				action("common", "player", "health_component", "health", player_current_health)
+				local player_health_after_powerup = Game.player.components.health_component.health
+				print("Player health after powerup = " .. player_health_after_powerup)
+				remove_entity("rewards", Game.items[XY_Id].item.id)
 			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "goldencandle") then
 				-- TODO: Use the Lua Component associated with the goldencandle to determine actions to take
+				-- TODO: We need a way to reset the game once we are in a win state (eg. delete entities/re-initialize)
 				-- Game.win_lose_message = "YOU WIN!!!"
 				-- Game.won = true
 				-- Game.started = false
@@ -432,7 +437,7 @@ function render_entity(entity_group, entity_type, p_id, dx, dy)
 end
 
 function render_health_bar(entity, r, g, b, dx, dy)
-	local hw = calculate_health_bar_width(entity["components"]["health_component"]["health"], entity["components"]["health_component"]["max_health"], 32)
+	local hw = calculate_health_bar_width(entity["components"]["health_component"]["health"], entity["components"]["health_component"]["max_health"], Game.sprite_info.width)
 	set_draw_color(r, g, b, 255)
 	draw_filled_rect(dx, dy - 8, hw, 6)
 	set_draw_color(0, 0, 0, 255)

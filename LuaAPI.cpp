@@ -177,8 +177,10 @@ sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> ent
 								auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(c);
 								if (lc != nullptr)
 								{
-										entity_info_table[entity_type]["components"][lc->get_type()] = lua.create_table();
-										entity_info_table[entity_type]["components"][lc->get_type()][lc->get_name()] = lc->get_properties();
+										auto name = lc->get_name();
+
+										entity_info_table[entity_type]["components"][name] = lua.create_table();
+										entity_info_table[entity_type]["components"][name]["properties"] = lc->get_properties();
 								}
 						}
 				}
