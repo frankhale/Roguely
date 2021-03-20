@@ -22,7 +22,126 @@ Game = {
 		warp = "assets/sounds/warp.wav"
 	},
 	dead = false,
-	game_started = false
+	game_started = false,
+	entities = {
+		rewards = {
+			coin = {
+				components = {
+					sprite_component = {
+						name = "coin",
+						spritesheet_name = "game-sprites",
+						sprite_id = 14
+					},
+					value_component = {
+						value = 25
+					}
+				},
+				total = 100
+			},
+			goldencandle = {
+				components = {
+					sprite_component = {
+						name = "goldencandle",
+						spritesheet_name = "game-sprites",
+						sprite_id = 6
+					},
+					value_component = { value = 25000 },
+					lua_component = {
+						name = "win_component",
+						type = "flags",
+						properties = { win = true }
+					}
+				},
+				total = 1
+			}
+		},
+		enemies = {
+			spider = {
+				components = {
+					sprite_component = {
+						name = "spider",
+						spritesheet_name = "game-sprites",
+						sprite_id = 4
+					},
+					health_component = { health = 20 },
+					stats_component = { attack = 1 }
+				},
+				total = 100
+			},
+			crab = {
+				components = {
+					sprite_component = {
+						name = "crab",
+						spritesheet_name = "game-sprites",
+						sprite_id = 12
+					},
+					health_component = { health = 30 },
+					stats_component = { attack = 2 }
+				},
+				total = 50
+			},
+			bug = {
+				components = {
+					sprite_component = {
+						name = "bug",
+						spritesheet_name = "game-sprites",
+						sprite_id = 17
+					},
+					health_component = { health = 50 },
+					stats_component = { attack = 2 }
+				},
+				total = 40
+			},
+			firewalker = {
+				components = {
+					sprite_component = {
+						name = "firewalker",
+						spritesheet_name = "game-sprites",
+						sprite_id = 21
+					},
+					health_component = { health = 75 },
+					stats_component = { attack = 4 }
+				},
+				total = 30
+			},
+			crimsonshadow = {
+				components = {
+					sprite_component = {
+						name = "crimsonshadow",
+						spritesheet_name = "game-sprites",
+						sprite_id = 34
+					},
+					health_component = { health = 85 },
+					stats_component = { attack = 5 }
+				},
+				total = 25
+			},
+			purpleblob = {
+				components = {
+					sprite_component = {
+						name = "purpleblob",
+						spritesheet_name = "game-sprites",
+						sprite_id = 61
+					},
+					health_component = { health = 95 },
+					stats_component = { attack = 6 }
+				},
+				total = 20
+			},
+			orangeblob = {
+				components = {
+					sprite_component = {
+						name = "orangeblob",
+						spritesheet_name = "game-sprites",
+						sprite_id = 64
+					},
+					health_component = { health = 100 },
+					stats_component = { attack = 7 }
+				},
+				total = 10
+			}
+		}
+	}
 }
 
 Game_Sprites_Info = {
@@ -36,6 +155,22 @@ Player_Pos = {
 	x = 10,
 	y = 10
 }
+
+function create_entities(entity_table, group, entity_name, entity_type)
+	local entities = {}
+
+	-- print ("group = " .. group)
+	-- print ("entity_name = " .. entity_name)
+	-- print ("entity_type = " .. entity_type)
+	--print (entity_table[group][entity_name])
+
+	for k,v in pairs(entity_table[group]) do
+		--print(k, v)
+		entities = add_entities(group, entity_type, v.components, v.total)
+	end
+
+	return entities
+end
 
 function _init()
 	Sprite_Info = add_sprite_sheet("game-sprites", "assets/roguelike.png", Game_Sprites_Info.width, Game_Sprites_Info.height)
@@ -69,100 +204,18 @@ function _init()
 	local pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", pos["x"], pos["y"])
 
-	add_entities("rewards", "item", {
-		sprite_component = {
-			name = "coin",
-			spritesheet_name = "game-sprites",
-			sprite_id = 14
-		},
-		value_component = {
-			value = 25
-		}
-	}, 100)
+	Items = create_entities(Game.entities, "rewards", "coin", "item")
+	Enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
 
-	Items = add_entities("rewards", "item", {
-		sprite_component = {
-			name = "goldencandle",
-			spritesheet_name = "game-sprites",
-			sprite_id = 6
-		},
-		value_component = { value = 25000 },
-		lua_component = {
-			name = "win_component",
-			type = "flags",
-			properties = { win = true }
-		}
-	}, 1)
+	-- print ("Created Rewards")
+	-- for k,v in pairs(Items) do
+	-- 	print(k, v)
+	-- end
 
-	add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "spider",
-			spritesheet_name = "game-sprites",
-			sprite_id = 4
-		},
-		health_component = { health = 20 },
-		stats_component = { attack = 1 }
-	}, 100)
-
-	add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "crab",
-			spritesheet_name = "game-sprites",
-			sprite_id = 12
-		},
-		health_component = { health = 30 },
-		stats_component = { attack = 2 }
-	}, 50)
-
-	add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "bug",
-			spritesheet_name = "game-sprites",
-			sprite_id = 17
-		},
-		health_component = { health = 50 },
-		stats_component = { attack = 2 }
-	}, 40)
-
-	add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "firewalker",
-			spritesheet_name = "game-sprites",
-			sprite_id = 21
-		},
-		health_component = { health = 75 },
-		stats_component = { attack = 4 }
-	}, 30)
-
-	add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "crimsonshadow",
-			spritesheet_name = "game-sprites",
-			sprite_id = 34
-		},
-		health_component = { health = 85 },
-		stats_component = { attack = 5 }
-	}, 25)
-
-	add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "purpleblob",
-			spritesheet_name = "game-sprites",
-			sprite_id = 61
-		},
-		health_component = { health = 95 },
-		stats_component = { attack = 6 }
-	}, 20)
-
-	Enemies = add_entities("enemies", "enemy", {
-		sprite_component = {
-			name = "orangeblob",
-			spritesheet_name = "game-sprites",
-			sprite_id = 64
-		},
-		health_component = { health = 100 },
-		stats_component = { attack = 7 }
-	}, 10)
+	-- print ("Enemies Rewards")
+	-- for k,v in pairs(Enemies) do
+	-- 	print(k, v)
+	-- end
 
 	Game_Map = get_map("main", false)
 	fov("main")
