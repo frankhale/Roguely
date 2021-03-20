@@ -141,6 +141,14 @@ namespace roguely::game
 						return results;
 				}
 
+				void reset() { 
+						maps.reset();
+						entity_groups.reset(); 
+
+						maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
+						entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+				}
+
 		private:
 				int view_port_x = 0;
 				int view_port_y = 0;

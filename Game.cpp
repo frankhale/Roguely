@@ -34,8 +34,7 @@ namespace roguely::game
 {
 		Game::Game()
 		{
-				maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
-				entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+				reset();
 		}
 
 		void Game::generate_map_for_testing()

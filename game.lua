@@ -304,9 +304,7 @@ function _update(event, data)
 			else
 				Game.won = false
 				Game.started = true
-				-- FIXME: We need to reset the game but don't have a good
-				-- way to do that yet. We need to be able to delete all entities
-				-- and recreate them
+				reset()
 			end
 		end
 
@@ -321,21 +319,17 @@ function _update(event, data)
 				play_sound("pickup")
 				local action = Game.items[XY_Id].item.components.health_restoration_component.properties.action
 				local player_current_health = Game.player.components.health_component.health
-				print("Player current health = " .. player_current_health)
 				action("common", "player", "health_component", "health", player_current_health)
-				local player_health_after_powerup = Game.player.components.health_component.health
-				print("Player health after powerup = " .. player_health_after_powerup)
 				remove_entity("rewards", Game.items[XY_Id].item.id)
 			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "goldencandle") then
 				-- TODO: Use the Lua Component associated with the goldencandle to determine actions to take
-				-- TODO: We need a way to reset the game once we are in a win state (eg. delete entities/re-initialize)
-				-- Game.win_lose_message = "YOU WIN!!!"
-				-- Game.won = true
-				-- Game.started = false
-				-- set_component_value("common", "player", "score_component", "score",
-				-- 	Game.player["components"]["score_component"]["score"] +
-				-- 	Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
-				-- remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+				Game.win_lose_message = "YOU WIN!!!"
+				Game.won = true
+				Game.started = false
+				set_component_value("common", "player", "score_component", "score",
+					Game.player.components.score_component.score +
+					Game.items[XY_Id].item.components.value_component.value)
+				remove_entity("rewards", Game.items[XY_Id].item.id)
 			end
 		end
 
@@ -466,7 +460,7 @@ function render_win_or_death_screen()
 											  math.floor(Game.window_height / 2 - text_extents.height / 2))
 	draw_text(tostring("Final Score: " .. Game.player["components"]["score_component"]["score"]), "large", 20, 20)
 	draw_text(tostring("Total Enemies Killed: " .. Game.total_enemies_killed), "large", 20, 70)
-	draw_text("Press the space bar to play again...", "medium", math.floor(Game.window_width / 2 - text_extents.width / 2 - 250), Game.window_width - 100)
+	draw_text("Press the space bar to play again...", "medium", math.floor(Game.window_width / 2 - text_extents.width / 2 - 150), Game.window_height - 100)
 end
 
 function _render(delta_time)

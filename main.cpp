@@ -33,6 +33,8 @@
 #include "Game.h"
 #include "LuaAPI.h"
  
+// TODO: Move sprite_sheets, sounds, text_* to game class
+
 SDL_Window* window = nullptr;
 SDL_Surface* window_surface = nullptr;
 SDL_Renderer* renderer = nullptr;
@@ -417,6 +419,20 @@ int main(int argc, char* argv[])
 
 				lua.set_function("draw_graphic", [&](std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor) {
 						render_graphic(renderer, path, window_width, x, y, centered, scaled, scaled_factor);
+						});
+
+				lua.set_function("reset", [&](sol::this_state s) {
+						sol::state_view lua(s);
+						auto lua_init = lua["_init"];
+
+						if (lua_init.valid() && lua_init.get_type() == sol::type::function)
+						{
+								game->reset();
+								sprite_sheets.reset();
+								sprite_sheets = std::make_shared<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
+								
+								lua_init();
+						}
 						});
 
 				auto lua_init = lua["_init"];
