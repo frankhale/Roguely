@@ -11,7 +11,7 @@ Game = {
 	spritesheet_path = "assets/roguelike.png",
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
-	logo_path = "assets/roguely-logo.png",
+	logo_image_path = "assets/roguely-logo.png",
 	start_game_image_path = "assets/press-space-bar-to-play.png",
 	credit_image_path = "assets/credits.png",
 	sounds = {
@@ -23,7 +23,9 @@ Game = {
 		warp = "assets/sounds/warp.wav"
 	},
 	dead = false,
-	game_started = false,
+	started = false,
+	total_enemies_killed = 0,
+	won = false,
 	player_pos = {
 		-- These is notional because after we generate a map we'll get a randomized
 		-- position to start that is a known good ground tile
@@ -35,7 +37,18 @@ Game = {
 		height = 32,
 		player_sprite_id = 3,
 		hidden_sprite_id = 18,
-		heart_sprite_id = 48
+		heart_sprite_id = 48,
+		coin_sprite_id = 14,
+		spider_sprite_id = 4,
+		lurcher_sprite_id = 5,
+		crab_sprite_id = 12,
+		bug_sprite_id = 17,
+		firewalker_sprite_id = 21,
+		crimsonshadow_sprite_id = 34,
+		purpleblob_sprite_id = 61,
+		orangeblob_sprite_id = 64,
+		mantis_sprite_id = 54,
+		golden_candle_sprite_id = 6
 	},
 	entities = {
 		rewards = {
@@ -101,10 +114,22 @@ Game = {
 						spritesheet_name = "game-sprites",
 						sprite_id = 17
 					},
-					health_component = { health = 50 },
+					health_component = { health = 25 },
 					stats_component = { attack = 2 }
 				},
 				total = 40
+			},
+			lurcher = {
+				components = {
+					sprite_component = {
+						name = "lurcher",
+						spritesheet_name = "game-sprites",
+						sprite_id = 5
+					},
+					health_component = { health = 35 },
+					stats_component = { attack = 2 }
+				},
+				total = 30
 			},
 			firewalker = {
 				components = {
@@ -116,7 +141,19 @@ Game = {
 					health_component = { health = 75 },
 					stats_component = { attack = 4 }
 				},
-				total = 30
+				total = 25
+			},
+			mantis = {
+				components = {
+					sprite_component = {
+						name = "crimsonshadow",
+						spritesheet_name = "game-sprites",
+						sprite_id = 54
+					},
+					health_component = { health = 50 },
+					stats_component = { attack = 3 }
+				},
+				total = 25
 			},
 			crimsonshadow = {
 				components = {
@@ -128,7 +165,7 @@ Game = {
 					health_component = { health = 85 },
 					stats_component = { attack = 5 }
 				},
-				total = 25
+				total = 20
 			},
 			purpleblob = {
 				components = {
@@ -140,7 +177,7 @@ Game = {
 					health_component = { health = 95 },
 					stats_component = { attack = 6 }
 				},
-				total = 20
+				total = 15
 			},
 			orangeblob = {
 				components = {
@@ -157,6 +194,8 @@ Game = {
 		}
 	}
 }
+
+ERROR = false
 
 function create_entities(entity_table, group, entity_name, entity_type)
 	local entities = {}
@@ -196,6 +235,17 @@ function _init()
 	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
 	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
 
+	for k,v in pairs(Game.items) do
+		for k1,v1 in pairs(v) do
+			if(v1["components"]["sprite_component"]["name"] == "goldencandle") then
+				Game["goldencandle"] = {
+					point = v1["point"],
+					p_id = tostring(v1["point"]["x"] .. "_" .. v1["point"]["y"])
+				}
+			end
+		end
+	end
+
 	Game.map = get_map("main", false)
 	fov("main")
 end
@@ -227,18 +277,38 @@ function _update(event, data)
 				play_sound("bump")
 			end
 		 elseif data["key"] == "space" then
-			-- warp player (for testing purposes)
-			play_sound("warp")
-			local pos = generate_random_point({ "common" })
-			update_entity_position("common", "player", pos["x"], pos["y"])
+			if (Game.started) then
+				-- warp player (for testing purposes)
+				play_sound("warp")
+				local pos = generate_random_point({ "common" })
+				update_entity_position("common", "player", pos["x"], pos["y"])
+			else
+				Game.won = false
+				Game.started = true
+				-- FIXME: We need to reset the game but don't have a good
+				-- way to do that yet. We need to be able to delete all entities
+				-- and recreate them
+			end
 		end
 
-		if (Game.items[XY_Id] and Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
-			play_sound("coin")
-		 	set_component_value("common", "player", "score_component", "score",
-			 	Game.player["components"]["score_component"]["score"] +
-		 		Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
-		 	remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+		if(Game.started) then
+			if (Game.items[XY_Id] and
+				Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
+				play_sound("coin")
+				set_component_value("common", "player", "score_component", "score",
+					Game.player["components"]["score_component"]["score"] +
+					Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
+				remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+			elseif (Game.items[XY_Id] and
+					Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "goldencandle") then
+				Game.win_lose_message = "YOU WIN!!!"
+				Game.won = true
+				Game.started = false
+				set_component_value("common", "player", "score_component", "score",
+					Game.player["components"]["score_component"]["score"] +
+					Game.items[XY_Id]["item"]["components"]["value_component"]["value"])
+				remove_entity("rewards", Game.items[XY_Id]["item"]["id"])
+			end
 		end
 
 	elseif (event == "entity_event") then
@@ -310,10 +380,10 @@ function render_mini_map()
 				draw_point(dx, dy)
 			end
 
-			-- if (dx == gc_x + offset_x and dy == gc_y) then
-			--  	set_draw_color(0, 255, 0, 255)
-			--  	draw_filled_rect(dx - 3, dy - 3, 6, 6)
-			-- end
+			if (dx == Game.goldencandle.point.x + offset_x and dy == Game.goldencandle.point.y) then
+			 	set_draw_color(0, 255, 0, 255)
+			 	draw_filled_rect(dx - 3, dy - 3, 6, 6)
+			end
 
 			if (dx == Game.player_pos["x"] + offset_x and dy == Game.player_pos["y"] + offset_y) then
 				set_draw_color(255, 0, 0, 255)
@@ -329,44 +399,90 @@ function render_entity(entity_group, entity_type, p_id, dx, dy)
 	if(entity_group[p_id] ~= nil) then
 		local sprite_id = entity_group[p_id][entity_type]["components"]["sprite_component"]["sprite_id"]
 		local spritesheet_name = entity_group[p_id][entity_type]["components"]["sprite_component"]["spritesheet_name"]
+
+		if(entity_type == "enemy") then
+			render_health_bar(entity_group[p_id][entity_type], 255, 0, 0, dx, dy)
+		end
+
 		draw_sprite(spritesheet_name, sprite_id, dx, dy)
 	end
 end
 
+function render_health_bar(entity, r, g, b, dx, dy)
+	local hw = calculate_health_bar_width(entity["components"]["health_component"]["health"], entity["components"]["health_component"]["max_health"], 32)
+	set_draw_color(r, g, b, 255)
+	draw_filled_rect(dx, dy - 8, hw, 6)
+	set_draw_color(0, 0, 0, 255)
+end
+
+function render_title_screen()
+	draw_graphic(Game.logo_image_path, Game.window_width, 0, 20, true, true, 2)
+
+	draw_sprite("game-sprites", Game.sprite_info["orangeblob_sprite_id"], math.floor(Game.window_width / 2 - 256), 325)
+	draw_sprite("game-sprites", Game.sprite_info["crimsonshadow_sprite_id"], math.floor(Game.window_width / 2 - 192), 325)
+	draw_sprite("game-sprites", Game.sprite_info["spider_sprite_id"], math.floor(Game.window_width / 2 - 128), 325)
+	draw_sprite("game-sprites", Game.sprite_info["lurcher_sprite_id"], math.floor(Game.window_width / 2 - 64), 325)
+	draw_sprite("game-sprites", Game.sprite_info["player_sprite_id"], math.floor(Game.window_width / 2), 325)
+	draw_sprite("game-sprites", Game.sprite_info["crab_sprite_id"], math.floor(Game.window_width / 2 + 64), 325)
+	draw_sprite("game-sprites", Game.sprite_info["firewalker_sprite_id"], math.floor(Game.window_width / 2 + 128), 325)
+	draw_sprite("game-sprites", Game.sprite_info["mantis_sprite_id"], math.floor(Game.window_width / 2 + 192), 325)
+	draw_sprite("game-sprites", Game.sprite_info["purpleblob_sprite_id"], math.floor(Game.window_width / 2 + 256), 325)
+
+	draw_graphic(Game.start_game_image_path, Game.window_width, 0, 215, true, true, 2)
+	draw_graphic(Game.credit_image_path, Game.window_width, 0, 300, true, true, 2)
+end
+
+function render_win_or_death_screen()
+	local text_extents = get_text_extents(Game.win_lose_message, "large")
+	draw_text(Game.win_lose_message, "large", math.floor(Game.window_width / 2 - text_extents.width / 2),
+											  math.floor(Game.window_height / 2 - text_extents.height / 2))
+	draw_text(tostring("Final Score: " .. Game.player["components"]["score_component"]["score"]), "large", 20, 20)
+	draw_text(tostring("Total Enemies Killed: " .. Game.total_enemies_killed), "large", 20, 70)
+	draw_text("Press the space bar to play again...", "medium", math.floor(Game.window_width / 2 - text_extents.width / 2 - 250), Game.window_width - 100)
+end
+
 function _render(delta_time)
-	for r = 1, get_view_port_height() do
-		for c = 1, get_view_port_width() do
-			local p_id = tostring((c-1) .. "_" .. (r-1))
-			local dx = ((c-1) * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
-			local dy = ((r-1) * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
-
-			if(Game.light_map[r][c] == 2) then
-				draw_sprite("game-sprites", Game.map[r][c], dx, dy)
-
-				render_entity(Game.items, "item", p_id, dx, dy)
-				render_entity(Game.enemies, "enemy", p_id, dx, dy)
-
-				if(Game.player_pos["x"] == (c-1) and Game.player_pos["y"] == (r-1)) then
-					local p_hw = calculate_health_bar_width(Game.player["components"]["health_component"]["health"], Game.player["components"]["health_component"]["max_health"], 32)
-
-					set_draw_color(8, 138, 41, 255)
-					draw_filled_rect(dx, dy - 8, p_hw, 6)
-					draw_sprite("game-sprites", Game.sprite_info["player_sprite_id"], dx, dy)
-					set_draw_color(0, 0, 0, 255)
-				end
-			else
-				draw_sprite("game-sprites", Game.sprite_info["hidden_sprite_id"] , dx, dy)
-			end
-		end
+	if (ERROR) then
+		return
 	end
 
-	render_info_bar()
-	render_mini_map()
+	if(Game.started == false and Game.won == false) then
+			render_title_screen()
+		else if (Game.started == true and Game.won == false) then
+			for r = 1, get_view_port_height() do
+				for c = 1, get_view_port_width() do
+					local p_id = tostring((c-1) .. "_" .. (r-1))
+					local dx = ((c-1) * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
+					local dy = ((r-1) * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
+
+					if(Game.light_map[r][c] == 2) then
+						draw_sprite("game-sprites", Game.map[r][c], dx, dy)
+
+						render_entity(Game.items, "item", p_id, dx, dy)
+						render_entity(Game.enemies, "enemy", p_id, dx, dy)
+
+						if(Game.player_pos["x"] == (c-1) and Game.player_pos["y"] == (r-1)) then
+							render_health_bar(Game.player, 8, 138, 41, dx, dy)
+							draw_sprite("game-sprites", Game.sprite_info["player_sprite_id"], dx, dy)
+						end
+					else
+						draw_sprite("game-sprites", Game.sprite_info["hidden_sprite_id"] , dx, dy)
+					end
+				end
+			end
+
+			render_info_bar()
+			render_mini_map()
+		else
+			render_win_or_death_screen()
+		end
+	end
 end
 
 function _tick(delta_time)
 end
 
 function _error(err)
+	ERROR = true
 	print("An error occurred: " .. err)
 end

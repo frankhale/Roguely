@@ -654,3 +654,30 @@ sol::table get_entity_group_points(std::shared_ptr<roguely::game::Game> game, st
 
 		return entity_group_table;
 }
+
+void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor)
+{
+		auto graphic = IMG_Load(path.c_str());
+		auto graphic_texture = SDL_CreateTextureFromSurface(renderer, graphic);
+
+		SDL_Rect dest = { x, y, graphic->w, graphic->h };
+
+		if (centered)
+				dest = { ((window_width / (2 + (int)scaled_factor)) - (graphic->w / 2)), y, graphic->w, graphic->h };
+
+		SDL_Rect src = { 0, 0, graphic->w, graphic->h };
+
+		if (scaled)
+		{
+				SDL_RenderSetScale(renderer, scaled_factor, scaled_factor);
+				SDL_RenderCopy(renderer, graphic_texture, &src, &dest);
+				SDL_RenderSetScale(renderer, 1, 1);
+		}
+		else
+		{
+				SDL_RenderCopy(renderer, graphic_texture, &src, &dest);
+		}
+
+		SDL_FreeSurface(graphic);
+		SDL_DestroyTexture(graphic_texture);
+}

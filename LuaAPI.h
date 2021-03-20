@@ -57,3 +57,4 @@ void tick(float delta_time, sol::this_state s);
 sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
 sol::table convert_entity_group_to_lua_table(std::shared_ptr<roguely::game::Game> game, std::string entity_group_name, sol::this_state s);
 void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
+void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);

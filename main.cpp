@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 		static roguely::common::Timer logic_timer;
 
 		sol::state lua;
-		lua.open_libraries(sol::lib::base, sol::lib::debug);
+		lua.open_libraries(sol::lib::base, sol::lib::math, sol::lib::debug);
 		
 		auto game_script = lua.load_file("game.lua");
 
@@ -267,9 +267,11 @@ int main(int argc, char* argv[])
 				//			  to various functions which was blowing us up.
 
 				lua["get_test_map"] = get_test_map;
+				
 				lua.set_function("get_sprite_info", [&](std::string sprite_sheet_name, sol::this_state s) {
 						return get_sprite_info(sprite_sheets, sprite_sheet_name, s);
 						});
+
 				lua.set_function("draw_text", [&](std::string t, std::string size, int x, int y) {
 						std::shared_ptr<roguely::common::Text> text = text_small;
 
@@ -281,6 +283,23 @@ int main(int argc, char* argv[])
 								text = text_large;
 
 						draw_text(renderer, text, t, x, y);
+						});
+
+				lua.set_function("get_text_extents", [&](std::string t, std::string size, sol::this_state s) {
+						std::shared_ptr<roguely::common::Text> text = text_small;
+
+						if (size == "small")
+								text = text_small;
+						else if (size == "medium")
+								text = text_medium;
+						else if (size == "large")
+								text = text_large;
+
+						auto extents = text->get_text_extents(t.c_str());
+						sol::table extents_table = lua.create_table();
+						extents_table.set("width", extents.width);
+						extents_table.set("height", extents.height);
+						return extents_table;
 						});
 
 				lua.set_function("add_sprite_sheet", [&](std::string name, std::string path, int sw, int sh, sol::this_state s) {
@@ -394,6 +413,10 @@ int main(int argc, char* argv[])
 
 				lua.set_function("get_entity_group_points", [&](std::string entity_group_name, sol::this_state s) {
 						return get_entity_group_points(game, entity_group_name, s);
+						});
+
+				lua.set_function("draw_graphic", [&](std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor) {
+						render_graphic(renderer, path, window_width, x, y, centered, scaled, scaled_factor);
 						});
 
 				auto lua_init = lua["_init"];
