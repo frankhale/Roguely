@@ -18,7 +18,8 @@ Game = {
 		bump = "assets/sounds/bump.wav",
 		combat = "assets/sounds/combat.wav",
 		death = "assets/sounds/death.wav",
-		pickup = "assets/sounds/pickup.wav"
+		pickup = "assets/sounds/pickup.wav",
+		warp = "assets/sounds/warp.wav"
 	},
 	dead = false,
 	game_started = false
@@ -195,6 +196,7 @@ function _update(event, data)
 			end
 		 elseif data["key"] == "space" then
 			-- warp player (for testing purposes)
+			play_sound("warp")
 			local pos = generate_random_point({ "common" })
 			update_entity_position("common", "player", pos["x"], pos["y"])
 		end
