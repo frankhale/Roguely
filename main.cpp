@@ -362,6 +362,8 @@ int main(int argc, char* argv[])
 				lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
 						auto entity = game->update_entity_position(entity_group_name, entity_id, x, y);
 						if (entity != nullptr)
+								if (entity_id == "player") game->rb_fov();
+
 								return emit_lua_update_for_entity(entity, s);
 						});
 
@@ -386,7 +388,7 @@ int main(int argc, char* argv[])
 						});
 
 				lua.set_function("fov", [&](std::string name, sol::this_state s) {
-						game->rb_fov();
+						//game->rb_fov();
 						lua["_update"]("light_map", get_map(game, name, true, s));
 						});
 
@@ -408,7 +410,7 @@ int main(int argc, char* argv[])
 						accumulated_seconds += system_timer.elapsed_seconds;
 
 						SDL_Event e;
-						while (SDL_PollEvent(&e) > 0)
+						while (SDL_PollEvent(&e) > 0) 
 						{
 								switch (e.type)
 								{

@@ -117,7 +117,17 @@ sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> ent
 		entity->for_each_component([&](std::shared_ptr<roguely::ecs::Component> c) {
 				if (c != nullptr)
 				{
-						if (c->get_component_name() == "score_component") {
+						if (c->get_component_name() == "sprite_component") {
+								auto sc = std::dynamic_pointer_cast<roguely::ecs::SpriteComponent>(c);
+								if (sc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["sprite_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["sprite_component"]["name"] = sc->get_name();
+										entity_info_table[entity_type]["components"]["sprite_component"]["sprite_id"] = sc->get_sprite_id();
+										entity_info_table[entity_type]["components"]["sprite_component"]["spritesheet_name"] = sc->get_spritesheet_name();
+								}
+						}
+						else if (c->get_component_name() == "score_component") {
 								auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
 								if (sc != nullptr)
 								{
@@ -245,26 +255,23 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 
 												for (auto& cc : value_table)
 												{
-														if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
+														if (cc.first.get_type() == sol::type::string && cc.first.as<std::string>() == "name")
 														{
-																if (cc.first.as<std::string>() == "name")
-																{
-																		sprite_name = cc.second.as<std::string>();
-																}
-																else if (cc.first.as<std::string>() == "spritesheet_name")
-																{
-																		spritesheet_name = cc.second.as<std::string>();
-																}
-																else if (cc.first.as<std::string>() == "sprite_id")
-																{
-																		sprite_id = cc.second.as<int>();
-																}
+																sprite_name = cc.second.as<std::string>();
 														}
-												}
+														else if (cc.first.get_type() == sol::type::string && cc.first.as<std::string>() == "spritesheet_name")
+														{
+																spritesheet_name = cc.second.as<std::string>();
+														}
+														else if (cc.first.get_type() == sol::type::string && cc.first.as<std::string>() == "sprite_id")
+														{
+																sprite_id = cc.second.as<int>();
+														}
 
-												if (sprite_name.length() > 0 && spritesheet_name.length() > 0)
-												{
-														game->add_sprite_component(entity, spritesheet_name, sprite_id, sprite_name);
+														if (sprite_name.length() > 0 && spritesheet_name.length() > 0)
+														{
+																game->add_sprite_component(entity, spritesheet_name, sprite_id, sprite_name);
+														}
 												}
 										}
 										else if (key == "health_component")
@@ -342,6 +349,8 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 														std::string type{};
 														sol::table props{};
 
+														// FIXME: Need to check to make sure the incoming types are what we expect
+
 														if (cc.first.as<std::string>() == "name")
 														{
 																name = cc.second.as<std::string>();
@@ -350,7 +359,7 @@ std::string add_entity(std::shared_ptr<roguely::game::Game> game, std::string en
 														{
 																type = cc.second.as<std::string>();
 														}
-														else if (cc.first.as<std::string>() == "props")
+														else if (cc.first.as<std::string>() == "properties")
 														{
 																props = cc.second.as<sol::table>();
 														}

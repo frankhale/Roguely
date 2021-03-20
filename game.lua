@@ -41,15 +41,6 @@ function _init()
 
 	Sprite_Info["player_sprite_id"] = 3
 	Sprite_Info["hidden_sprite_id"] = 18
-	Sprite_Info["coin_sprite_id"] = 14
-	Sprite_Info["spider_sprite_id"] = 4
-	Sprite_Info["crab_sprite_id"] = 12
-	Sprite_Info["bug_sprite_id"] = 17
-	Sprite_Info["firewalker_sprite_id"] = 21
-	Sprite_Info["crimsonshadow_sprite_id"] = 34
-	Sprite_Info["purpleblob_sprite_id"] = 61
-	Sprite_Info["orangeblob_sprite_id"] = 64
-	Sprite_Info["golden_candle_sprite_id"] = 6
 	Sprite_Info["heart_sprite_id"] = 48
 
 	Player_Id = add_entity("common", "player", Player_Pos["x"], Player_Pos["y"], {
@@ -77,48 +68,23 @@ function _init()
 	local pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", pos["x"], pos["y"])
 
-	Coins = add_entities("coins", "item", {
+	add_entities("rewards", "item", {
+		sprite_component = {
+			name = "coin",
+			spritesheet_name = "game-sprites",
+			sprite_id = 14
+		},
 		value_component = {
 			value = 25
 		}
 	}, 100)
 
-	Spiders = add_entities("spiders", "enemy", {
-		health_component = { health = 20 },
-		stats_component = { attack = 1 }
-	}, 100)
-
-	Crabs = add_entities("crabs", "enemy", {
-		health_component = { health = 30 },
-		stats_component = { attack = 2 }
-	}, 80)
-
-	Bugs = add_entities("bugs", "enemy", {
-		health_component = { health = 50 },
-		stats_component = { attack = 2 }
-	}, 80)
-
-	FireWalkers = add_entities("firewalkers", "enemy", {
-		health_component = { health = 75 },
-		stats_component = { attack = 4 }
-	}, 50)
-
-	CrimsonShadows = add_entities("crimsonshadows", "enemy", {
-		health_component = { health = 85 },
-		stats_component = { attack = 5 }
-	}, 40)
-
-	PurpleBlobs = add_entities("purpleblobs", "enemy", {
-		health_component = { health = 95 },
-		stats_component = { attack = 6 }
-	}, 30)
-
-	OrangeBlobs = add_entities("orangeblobs", "enemy", {
-		health_component = { health = 100 },
-		stats_component = { attack = 7 }
-	}, 20)
-
-	GoldenCandle = add_entities("goldencandle", "item", {
+	Items = add_entities("rewards", "item", {
+		sprite_component = {
+			name = "goldencandle",
+			spritesheet_name = "game-sprites",
+			sprite_id = 6
+		},
 		value_component = { value = 25000 },
 		lua_component = {
 			name = "win_component",
@@ -127,8 +93,78 @@ function _init()
 		}
 	}, 1)
 
+	add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "spider",
+			spritesheet_name = "game-sprites",
+			sprite_id = 4
+		},
+		health_component = { health = 20 },
+		stats_component = { attack = 1 }
+	}, 100)
+
+	add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "crab",
+			spritesheet_name = "game-sprites",
+			sprite_id = 12
+		},
+		health_component = { health = 30 },
+		stats_component = { attack = 2 }
+	}, 50)
+
+	add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "bug",
+			spritesheet_name = "game-sprites",
+			sprite_id = 17
+		},
+		health_component = { health = 50 },
+		stats_component = { attack = 2 }
+	}, 40)
+
+	add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "firewalker",
+			spritesheet_name = "game-sprites",
+			sprite_id = 21
+		},
+		health_component = { health = 75 },
+		stats_component = { attack = 4 }
+	}, 30)
+
+	add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "crimsonshadow",
+			spritesheet_name = "game-sprites",
+			sprite_id = 34
+		},
+		health_component = { health = 85 },
+		stats_component = { attack = 5 }
+	}, 25)
+
+	add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "purpleblob",
+			spritesheet_name = "game-sprites",
+			sprite_id = 61
+		},
+		health_component = { health = 95 },
+		stats_component = { attack = 6 }
+	}, 20)
+
+	Enemies = add_entities("enemies", "enemy", {
+		sprite_component = {
+			name = "orangeblob",
+			spritesheet_name = "game-sprites",
+			sprite_id = 64
+		},
+		health_component = { health = 100 },
+		stats_component = { attack = 7 }
+	}, 10)
+
 	Game_Map = get_map("main", false)
-	Game_Light_Map = get_map("main", true)
+	fov("main")
 end
 
 function _update(event, data)
@@ -158,21 +194,18 @@ function _update(event, data)
 				play_sound("bump")
 			end
 		 elseif data["key"] == "space" then
-			print("generating new map...")
-			generate_map("main", Game["map_width"], Game["map_height"])
-			switch_map("main")
-			Game_Map = get_map("main", false)
+			-- warp player (for testing purposes)
+			local pos = generate_random_point({ "common" })
+			update_entity_position("common", "player", pos["x"], pos["y"])
 		end
 
-		--print(get_view_port_width(), get_view_port_height())
-
-		-- if (Coins and Coins[XY_Id]) then
-		-- 	play_sound("coin")
-		-- 	set_component_value("common", "player", "score_component", "score",
-		-- 		Player["components"]["score_component"]["score"] +
-		-- 		Coins[XY_Id]["item"]["components"]["value_component"]["value"])
-		-- 	remove_entity("coins", Coins[XY_Id]["item"]["id"])
-		-- end
+		if (Items[XY_Id] and Items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "coin") then
+			play_sound("coin")
+		 	set_component_value("common", "player", "score_component", "score",
+		 		Player["components"]["score_component"]["score"] +
+		 		Items[XY_Id]["item"]["components"]["value_component"]["value"])
+		 	remove_entity("rewards", Items[XY_Id]["item"]["id"])
+		end
 
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
@@ -181,10 +214,10 @@ function _update(event, data)
 			Player_Pos["x"] = data["player"]["point"]["x"]
 			Player_Pos["y"] = data["player"]["point"]["y"]
 			XY_Id = tostring(Player_Pos["x"] .. "_" .. Player_Pos["y"])
+			fov("main")
 		else
-			-- Other entities were updated
-			if(data["entity_group_name"] == "coins") then
-				Coins = data["entity_group"]
+			if(data["entity_group_name"] == "rewards") then
+			 	Items = data["entity_group"]
 			end
 		end
 	elseif (event == "light_map") then
@@ -228,21 +261,28 @@ function render_info_bar()
 end
 
 function render_mini_map()
+	local offset_x = Game["window_width"] - 150
+	local offset_y = 10
 	for r = 1, Game["map_height"] do
 		for c = 1, Game["map_width"] do
-			local dx = (c - 1) + (Game["window_width"] - 150)
-			local dy = (r - 1) + 10
+			local dx = (c - 1) + offset_x
+			local dy = (r - 1) + offset_y
 
 			if (Game_Map[r][c] == 0) then
-				set_draw_color(255,255,255,128)
+				set_draw_color(255, 255, 255, 128)
 				draw_point(dx, dy)
 			elseif (Game_Map[r][c] == 9) then
-				set_draw_color(0,0,0,128)
+				set_draw_color(0, 0, 0, 128)
 				draw_point(dx, dy)
 			end
 
-			if (dx == Player_Pos["x"] + (Game["window_width"] - 150) and dy == Player_Pos["y"] + 10) then
-				set_draw_color(255,0,0,255)
+			-- if (dx == gc_x + offset_x and dy == gc_y) then
+			--  	set_draw_color(0, 255, 0, 255)
+			--  	draw_filled_rect(dx - 3, dy - 3, 6, 6)
+			-- end
+
+			if (dx == Player_Pos["x"] + offset_x and dy == Player_Pos["y"] + offset_y) then
+				set_draw_color(255, 0, 0, 255)
 				draw_filled_rect(dx - 3, dy - 3, 6, 6)
 			end
 		end
@@ -251,40 +291,38 @@ function render_mini_map()
 	set_draw_color(0,0,0,255)
 end
 
-function render_entity(entity_group, entity_type, sprite_sheet_name, entity_sprite_id_key, cx, cy, dx, dy)
-	for epk, epv in pairs(entity_group) do
-		if(epv[entity_type]["point"]["x"] == (cx-1) and
-		   epv[entity_type]["point"]["y"] == (cy-1)) then
-			draw_sprite(sprite_sheet_name, Sprite_Info[entity_sprite_id_key], dx, dy)
-		end
+function render_entity(entity_group, entity_type, p_id, dx, dy)
+	if(entity_group[p_id] ~= nil) then
+		local sprite_id = entity_group[p_id][entity_type]["components"]["sprite_component"]["sprite_id"]
+		local spritesheet_name = entity_group[p_id][entity_type]["components"]["sprite_component"]["spritesheet_name"]
+		draw_sprite(spritesheet_name, sprite_id, dx, dy)
 	end
 end
 
 function _render(delta_time)
 	for r = 1, get_view_port_height() do
 		for c = 1, get_view_port_width() do
+			local p_id = tostring((c-1) .. "_" .. (r-1))
 			local dx = ((c-1) * Game_Sprites_Info.width) - (get_view_port_x() * Game_Sprites_Info.width)
 			local dy = ((r-1) * Game_Sprites_Info.height) - (get_view_port_y() * Game_Sprites_Info.height)
 
-			--if(Game_Light_Map[r][c] == 2) then
+			if(Game_Light_Map[r][c] == 2) then
 				draw_sprite("game-sprites", Game_Map[r][c], dx, dy)
 
-				-- render_entity(Coins, "item", "game-sprites", "coin_sprite_id", c, r, dx, dy)
-				-- render_entity(GoldenCandle, "item", "game-sprites", "goldencandle_sprite_id", c, r, dx, dy)
-				-- render_entity(Spiders, "enemy", "game-sprites", "spider_sprite_id", c, r, dx, dy)
-				-- render_entity(Crabs, "enemy", "game-sprites", "crab_sprite_id", c, r, dx, dy)
-				-- render_entity(Bugs, "enemy", "game-sprites", "bug_sprite_id", c, r, dx, dy)
-				-- render_entity(FireWalkers, "enemy", "game-sprites", "firewalker_sprite_id", c, r, dx, dy)
-				-- render_entity(CrimsonShadows, "enemy", "game-sprites", "crimsonshadow_sprite_id", c, r, dx, dy)
-				-- render_entity(PurpleBlobs, "enemy", "game-sprites", "purpleblob_sprite_id", c, r, dx, dy)
-				-- render_entity(OrangeBlobs, "enemy", "game-sprites", "orangeblob_sprite_id", c, r, dx, dy)
+				render_entity(Items, "item", p_id, dx, dy)
+				render_entity(Enemies, "enemy", p_id, dx, dy)
 
 				if(Player_Pos["x"] == (c-1) and Player_Pos["y"] == (r-1)) then
+					local p_hw = calculate_health_bar_width(Player["components"]["health_component"]["health"], Player["components"]["health_component"]["max_health"], 32)
+
+					set_draw_color(8, 138, 41, 255)
+					draw_filled_rect(dx, dy - 8, p_hw, 6)
 					draw_sprite("game-sprites", Sprite_Info["player_sprite_id"], dx, dy)
+					set_draw_color(0, 0, 0, 255)
 				end
-			--else
-			--	draw_sprite("game-sprites", Sprite_Info["hidden_sprite_id"] , dx, dy)
-			--end
+			else
+				draw_sprite("game-sprites", Sprite_Info["hidden_sprite_id"] , dx, dy)
+			end
 		end
 	end
 

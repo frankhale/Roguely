@@ -95,19 +95,21 @@ namespace roguely::ecs
 		class SpriteComponent : public Component
 		{
 		public:
-				SpriteComponent(std::string spritesheet_name, int sprite_in_spritesheet_id, std::string n)
+				SpriteComponent(std::string ss_name, int sprite_in_spritesheet_id, std::string n)
 				{
-						spritesheet = spritesheet_name;
-						id = sprite_in_spritesheet_id;
+						spritesheet_name = ss_name;
+						sprite_id = sprite_in_spritesheet_id;
 						name = n;
 				}
 
 				auto get_name() const { return name; }
+				auto get_spritesheet_name() const { return spritesheet_name; }
+				auto get_sprite_id() const { return sprite_id; }
 
 		private:
-				std::string spritesheet;
+				std::string spritesheet_name;
 				std::string name;
-				int id = 0;
+				int sprite_id = 0;
 		};
 
 		class ValueComponent : public Component

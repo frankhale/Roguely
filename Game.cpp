@@ -131,7 +131,6 @@ namespace roguely::game
 				{
 						player_id = id;
 						player = entity;
-
 				}
 
 				entityGroup->entities->emplace_back(entity);
