@@ -275,25 +275,25 @@ end
 function _update(event, data)
 	if(event == "key_event") then
 		if data["key"] == "up" then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common" })) then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "down" then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common" })) then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "left" then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common" })) then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
 			else
 				play_sound("bump")
 			end
 		 elseif data["key"] == "right" then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common" })) then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
 			else
 				play_sound("bump")

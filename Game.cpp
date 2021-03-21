@@ -250,6 +250,7 @@ namespace roguely::game
 						}
 				}
 
+				// TODO: Is this really the case? Science this motherfucker bruh!
 				// if we get this far its not any of our other entities, most likely open ground
 				TileWalkableInfo twi{
 						true,
@@ -274,6 +275,8 @@ namespace roguely::game
 
 		TileWalkableInfo Game::is_tile_walkable(int x, int y, roguely::common::MovementDirection dir, roguely::common::WhoAmI whoAmI, std::vector<std::string> entity_groups_to_check)
 		{
+				TileWalkableInfo result{ false, { x, y }, roguely::ecs::EntityType::Wall };
+
 				bool walkable = false;
 				auto is_player = player->x() == x && player->y() == y;
 
@@ -303,16 +306,10 @@ namespace roguely::game
 						if (!walkable) break;
 
 						if (group != entity_groups->end())
-						{
-								auto walkableInfo = is_entity_location_traversable(x, y, (*group)->entities, whoAmI, dir);
-
-								if (walkableInfo->walkable) {
-										return *walkableInfo;
-								}
-						}
+								result = *is_entity_location_traversable(x, y, (*group)->entities, whoAmI, dir);
 				}
 
-				return { false, { x, y }, roguely::ecs::EntityType::Wall };
+				return result;
 		}
 
 		bool Game::is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check)
