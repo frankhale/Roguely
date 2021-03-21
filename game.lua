@@ -315,6 +315,9 @@ function _init()
 	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
 	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
 
+	Game.number_of_enemies = 0
+	for _ in pairs(Game.enemies) do Game.number_of_enemies = Game.number_of_enemies + 1 end
+
 	for k,v in pairs(Game.items) do
 		for k1,v1 in pairs(v) do
 			if(v1.components.sprite_component.name == "goldencandle") then
@@ -328,6 +331,40 @@ function _init()
 
 	Game.map = get_map("main", false)
 	fov("main")
+end
+
+function move_enemies()
+	local should_move = get_random_number(1, 100) >= 60
+	local enemies_new_positions = {}
+
+	if (should_move) then
+		for k, e in pairs(Game.enemies) do
+			local direction = get_random_number(1, 4)
+			local x = e.enemy.point.x
+			local y = e.enemy.point.y
+
+			if(direction == 1 and is_tile_walkable(x, y, "up", "enemy", { "common", "enemies" })) then
+				y = y - 1
+			elseif (direction == 2 and is_tile_walkable(x, y, "dowm", "enemy", { "common", "enemies" })) then
+				y = y + 1
+			elseif (direction == 3 and is_tile_walkable(x, y, "left", "enemy", { "common", "enemies" })) then
+				x = x - 1
+			elseif (direction == 4 and is_tile_walkable(x, y, "right", "enemy", { "common", "enemies" })) then
+				x = x + 1
+			end
+
+			enemies_new_positions[e.enemy.id] = {}
+			enemies_new_positions[e.enemy.id]["pid"] = create_pid_from_x_y(e.enemy.point.x, e.enemy.point.y)
+			enemies_new_positions[e.enemy.id]["id"] = e.enemy.id
+			enemies_new_positions[e.enemy.id]["x"] = x
+			enemies_new_positions[e.enemy.id]["y"] = y
+		end
+
+		for k, e in pairs(enemies_new_positions) do
+			Game.enemy_moving_pid = e.pid
+			update_entity_position("enemies", e.id, e.x, e.y)
+		end
+	end
 end
 
 function initiate_attack_sequence(pid)
@@ -391,6 +428,7 @@ function _update(event, data)
 		if data["key"] == "up" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
+				move_enemies()
 			else
 				local pid = get_player_movement_direction_pid("up")
 				if(Game.enemies[pid]) then
@@ -403,6 +441,7 @@ function _update(event, data)
 		 elseif data["key"] == "down" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
+				move_enemies()
 			else
 				local pid = get_player_movement_direction_pid("down")
 				if(Game.enemies[pid]) then
@@ -415,6 +454,7 @@ function _update(event, data)
 		 elseif data["key"] == "left" and started()then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
+				move_enemies()
 			else
 				local pid = get_player_movement_direction_pid("left")
 				if(Game.enemies[pid]) then
@@ -427,6 +467,7 @@ function _update(event, data)
 		 elseif data["key"] == "right" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
+				move_enemies()
 			else
 				local pid = get_player_movement_direction_pid("right")
 				if(Game.enemies[pid]) then
@@ -475,18 +516,25 @@ function _update(event, data)
 				remove_entity("rewards", Game.items[XY_Id].item.id)
 			end
 		end
-
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
-			Game.player = data["player"]
-			Game.player_id = data["player"][Game.player_id]
-			Game.player_pos["x"] = data["player"]["point"]["x"]
-			Game.player_pos["y"] = data["player"]["point"]["y"]
-			XY_Id = tostring(Game.player_pos["x"] .. "_" .. Game.player_pos["y"])
+			Game.player = data.player
+			Game.player_id = data.player[Game.player_id]
+			Game.player_pos.x = data.player.point.x
+			Game.player_pos.y = data.player.point.y
+			XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
 			fov("main")
 		elseif (data["enemy"] ~= nil) then
-			local enemy_pid = create_pid_from_x_y(data["enemy"].point.x, data["enemy"].point.y)
-			Game.enemies[enemy_pid].enemy = data["enemy"]
+			local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
+			if(Game.enemies[enemy_pid] == nil) then
+				-- Enemy has moved and we need to update the old entity accordingly
+				-- Need to find the enemy by it's Id rather than PID
+				Game.enemies[Game.enemy_moving_pid] = nil
+				Game.enemies[enemy_pid] = {}
+				Game.enemies[enemy_pid]["enemy"] = data["enemy"]
+			else
+				Game.enemies[enemy_pid].enemy = data["enemy"]
+			end
 		else
 			if(data["entity_group_name"] == "rewards") then
 			 	Game.items = data["entity_group"]
