@@ -36,6 +36,7 @@ Game = {
 		width = 32,
 		height = 32,
 		health_gem = 1,
+		treasure_chest = 13,
 		attack_bonus_gem = 2,
 		player_sprite_id = 3,
 		hidden_sprite_id = 18,
@@ -50,7 +51,9 @@ Game = {
 		purpleblob_sprite_id = 61,
 		orangeblob_sprite_id = 64,
 		mantis_sprite_id = 54,
-		golden_candle_sprite_id = 6
+		golden_candle_sprite_id = 6,
+		wall_with_grass_1 = 35,
+		wall_with_grass_2 = 36
 	},
 	entities = {
 		rewards = {
@@ -394,7 +397,9 @@ function render_mini_map()
 			local dx = (c - 1) + offset_x
 			local dy = (r - 1) + offset_y
 
-			if (Game.map[r][c] == 0) then
+			if (Game.map[r][c] == 0 or
+				Game.map[r][c] == 35 or
+				Game.map[r][c] == 36) then
 				set_draw_color(255, 255, 255, 128)
 				draw_point(dx, dy)
 			elseif (Game.map[r][c] == 9) then

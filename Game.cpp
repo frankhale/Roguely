@@ -278,7 +278,7 @@ namespace roguely::game
 				auto is_player = player->x() == x && player->y() == y;
 
 				// for enemy movement
-				if (is_tile_player_tile(x, y, dir)) {
+				if (whoAmI != roguely::common::WhoAmI::Player && is_tile_player_tile(x, y, dir)) {
 						return { false, { x, y }, roguely::ecs::EntityType::Player };
 				};
 
@@ -289,11 +289,18 @@ namespace roguely::game
 										return eg->name == egtc;
 								});
 
+						// FIXME: this is ugly as fuck! 
 						walkable = is_tile_on_map_traversable(x, y, dir, 0 /* Wall */);
 
-						if (!walkable) {
-								return { false, { x, y }, roguely::ecs::EntityType::Wall };
-						}
+						if (!walkable) break;						
+
+						walkable = is_tile_on_map_traversable(x, y, dir, 35 /* Wall alt 1 */);
+
+						if (!walkable) break;
+
+						walkable = is_tile_on_map_traversable(x, y, dir, 36 /* Wall alt 2 */);
+
+						if (!walkable) break;
 
 						if (group != entity_groups->end())
 						{
@@ -305,14 +312,16 @@ namespace roguely::game
 						}
 				}
 
-				return {};
+				return { false, { x, y }, roguely::ecs::EntityType::Wall };
 		}
 
 		bool Game::is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check)
 		{
-				if (player->x() == x || player->y() == y) return true;
 				if (current_map->map == nullptr) return true;
-				if ((*current_map->map)(y, x) == 0) return true;
+				if (player->x() == x || player->y() == y) return true;
+				if ((*current_map->map)(y, x) == 0 ||
+						(*current_map->map)(y, x) == 35 ||
+						(*current_map->map)(y, x) == 36) return true;
 
 				bool blocked = true;
 
@@ -396,20 +405,6 @@ namespace roguely::game
 				if (entity_id == "player" || player->get_id() == entity_id)
 				{
 						player->set_point({ x, y });
-
-						//std::cout << "set player to ("
-						//		<< x
-						//		<< ", "
-						//		<< y
-						//		<< ")"
-						//		<< std::endl;
-
-						//std::cout << "player is (" 
-						//				  << player->x() 
-						//					<< ", " 
-						//				  << player->y() 
-						//				  << ")" 
-						//				  << std::endl;
 
 						update_player_viewport_points();
 						rb_fov();
@@ -618,7 +613,9 @@ namespace roguely::game
 						{
 								(*current_map->light_map)((int)oy, (int)ox) = 2;
 
-								if ((*current_map->map)((int)oy, (int)ox) == 0) // if tile is a wall
+								if ((*current_map->map)((int)oy, (int)ox) == 0 ||
+										(*current_map->map)((int)oy, (int)ox) == 35 ||
+										(*current_map->map)((int)oy, (int)ox) == 36) // if tile is a wall
 										break;
 
 								ox += x;
