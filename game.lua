@@ -345,6 +345,10 @@ function initiate_attack_sequence(pid)
 		print("Player killed enemy!!!")
 		Game.total_enemies_killed = Game.total_enemies_killed + 1
 		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
+
+		-- TODO: Spawn a treasure chest, add ability to pick up a treasure chest (add entity for this with components)
+		-- TODO: If Firewalker spawn an attack gem, add ability to pick it up
+
 		remove_entity("enemies", enemy_id)
 	end
 
