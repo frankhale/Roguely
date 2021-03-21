@@ -331,6 +331,13 @@ function _init()
 
 	Game.map = get_map("main", false)
 	fov("main")
+
+	-- for k, e in pairs(Game.enemies) do
+	-- 	--print(e.enemy.point.x, e.enemy.point.y)
+	-- 	if(Game.map[e.enemy.point.y][e.enemy.point.x] == 0) then
+	-- 		print("oops, an enemy is in the wall!!!")
+	-- 	end
+	-- end
 end
 
 function move_enemies()
@@ -343,13 +350,13 @@ function move_enemies()
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
 
-			if(direction == 1 and is_tile_walkable(x, y, "up", "enemy", { "common", "enemies" })) then
+			if(direction == 1 and is_tile_walkable(x, y-1, "up", "enemy", { "common", "enemies" })) then
 				y = y - 1
-			elseif (direction == 2 and is_tile_walkable(x, y, "dowm", "enemy", { "common", "enemies" })) then
+			elseif (direction == 2 and is_tile_walkable(x, y+1, "dowm", "enemy", { "common", "enemies" })) then
 				y = y + 1
-			elseif (direction == 3 and is_tile_walkable(x, y, "left", "enemy", { "common", "enemies" })) then
+			elseif (direction == 3 and is_tile_walkable(x-1, y, "left", "enemy", { "common", "enemies" })) then
 				x = x - 1
-			elseif (direction == 4 and is_tile_walkable(x, y, "right", "enemy", { "common", "enemies" })) then
+			elseif (direction == 4 and is_tile_walkable(x+1, y, "right", "enemy", { "common", "enemies" })) then
 				x = x + 1
 			end
 
@@ -483,7 +490,6 @@ function _update(event, data)
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
 				update_entity_position("common", "player", pos.x, pos.y)
-				set_component_value("common", "player", "health_component", "health", 10)
 			else
 				Game.lost = false
 				Game.won = false
@@ -590,9 +596,7 @@ function render_mini_map()
 			local dx = (c - 1) + offset_x
 			local dy = (r - 1) + offset_y
 
-			if (Game.map[r][c] == 0 or
-				Game.map[r][c] == 35 or
-				Game.map[r][c] == 36) then
+			if (Game.map[r][c] == 0)then
 				set_draw_color(255, 255, 255, 128)
 				draw_point(dx, dy)
 			elseif (Game.map[r][c] == 9) then

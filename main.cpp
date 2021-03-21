@@ -235,7 +235,7 @@ void init_game(sol::table game_config)
 int main(int argc, char* argv[])
 {		
 		// Timer code from : https://gamedev.stackexchange.com/a/163508/18014
-		const int UPDATE_FREQUENCY{ 60 };
+		const int UPDATE_FREQUENCY{ 30 };
 		const float CYCLE_TIME{ 1.0f / UPDATE_FREQUENCY };
 		float accumulated_seconds{ 0.0f };
 		static roguely::common::Timer system_timer;

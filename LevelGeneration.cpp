@@ -29,27 +29,6 @@
 
 namespace roguely::level_generation
 {
-		int get_random_ground_tile()
-		{
-				auto y = std::rand() % 100 + 1;
-
-				int ground_tile = 0;
-
-				if (y <= 60) {
-						ground_tile = 0;
-				}
-				else if (y >= 61 && y <= 80)
-				{
-						ground_tile = 35;
-				}
-				else if (y >= 81 && y <= 100)
-				{
-						ground_tile = 36;
-				}
-
-				return ground_tile;
-		}
-
 		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y)
 		{
 				int wall_count = 0;
@@ -60,9 +39,7 @@ namespace roguely::level_generation
 						{
 								if (row >= 1 && col >= 1 && row < map_height - 1 && col < map_width - 1)
 								{
-										if ((*map)(row,col) == 0 ||
-												(*map)(row, col) == 35 ||
-												(*map)(row, col) == 36)
+										if ((*map)(row,col) == 0)
 												wall_count++;
 								}
 								else
@@ -88,7 +65,7 @@ namespace roguely::level_generation
 										auto neighbor_wall_count = get_neighbor_wall_count(temp_map, map_width, map_height, columns, rows);
 
 										if (neighbor_wall_count > 4)
-												(*map)(rows, columns) = get_random_ground_tile();
+												(*map)(rows, columns) = 0;
 										else
 												(*map)(rows,columns) = 9;
 								}
@@ -108,7 +85,7 @@ namespace roguely::level_generation
 								if (z > 48)
 										(*map)(r, c) = 9;
 								else
-										(*map)(r, c) = get_random_ground_tile();
+										(*map)(r, c) = 0;
 						}
 				}
 

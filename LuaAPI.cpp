@@ -549,14 +549,7 @@ bool is_tile_walkable(std::shared_ptr<roguely::game::Game> game, int x, int y, s
 		roguely::common::WhoAmI who_am_i{};
 
 		for (auto& eg : entity_groups_to_check)
-		{
-				if (eg.second.get_type() == sol::type::string)
-				{
-						//std::cout << "is_tile_walkable" << std::endl;
-						//std::cout << eg.second.as<std::string>() << std::endl;
-						entity_groups.push_back(eg.second.as<std::string>());
-				}
-		}
+				if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
 
 		if (direction == "up") { movement_direction = roguely::common::MovementDirection::Up; }
 		else if (direction == "down") { movement_direction = roguely::common::MovementDirection::Down; }
