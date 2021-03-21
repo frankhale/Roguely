@@ -320,13 +320,11 @@ function initiate_attack_sequence(pid)
 	if (player_crit_chance) then
 		-- do crit attack
 		local damage = player_attack + get_random_number(1, 5) * 2
-		print("Player damage during attack = " .. damage)
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
 	else
 		-- do normal attack
 		local damage = player_attack + get_random_number(1, 5)
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
-		print("Player damage during attack = " .. damage)
 	end
 
 	-- enemy strikes next
@@ -342,7 +340,6 @@ function initiate_attack_sequence(pid)
 
 	-- check to see if enemy died
 	if(enemy_health <= 0) then
-		print("Player killed enemy!!!")
 		Game.total_enemies_killed = Game.total_enemies_killed + 1
 		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
 
@@ -359,9 +356,13 @@ function initiate_attack_sequence(pid)
 	end
 end
 
+function started()
+	return Game.started == true and Game.won == false and Game.lost == false
+end
+
 function _update(event, data)
 	if(event == "key_event") then
-		if data["key"] == "up" then
+		if data["key"] == "up" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
 			else
@@ -373,7 +374,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "down" then
+		 elseif data["key"] == "down" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
 			else
@@ -385,7 +386,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "left" then
+		 elseif data["key"] == "left" and started()then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
 			else
@@ -397,7 +398,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "right" then
+		 elseif data["key"] == "right" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
 			else
@@ -410,7 +411,7 @@ function _update(event, data)
 				end
 			end
 		 elseif data["key"] == "space" then
-			if (Game.started) then
+			if (Game.started and Game.lost == false) then
 				-- warp player (for testing purposes)
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
@@ -595,7 +596,7 @@ function _render(delta_time)
 		return
 	end
 
-	if(Game.started == false and Game.won == false) then
+	if(Game.started == false and Game.won == false and Game.lost == false) then
 			render_title_screen()
 		else if (Game.started == true and Game.won == false and Game.lost == false) then
 			for r = 1, get_view_port_height() do
