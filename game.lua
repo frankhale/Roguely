@@ -26,6 +26,7 @@ Game = {
 	started = false,
 	total_enemies_killed = 0,
 	won = false,
+	lost = false,
 	player_pos = {
 		-- These is notional because after we generate a map we'll get a randomized
 		-- position to start that is a known good ground tile
@@ -33,6 +34,7 @@ Game = {
 		y = 10
 	},
 	sprite_info = {
+		-- used for quick reference even though entities have a sprite component
 		width = 32,
 		height = 32,
 		health_gem = 1,
@@ -55,6 +57,8 @@ Game = {
 		wall_with_grass_1 = 35,
 		wall_with_grass_2 = 36
 	},
+	health_recovery_time = 0,
+	health_recovery = 10,
 	entities = {
 		rewards = {
 			coin = {
@@ -219,6 +223,36 @@ Game = {
 
 ERROR = false
 
+-- A PID is an X,Y identitier we use as a key into the entities table. This
+-- saves us a for loop which is really slow! PID stands for position ID.
+-- This function is used to get a PID for a direction the player wants to move.
+-- This PID can be used to see if there is anything on the tile we want to move
+-- onto.
+function get_player_movement_direction_pid(dir)
+	local x = 0
+	local y = 0
+
+	if(dir == "up") then
+		x = Game.player_pos.x
+		y = Game.player_pos.y - 1
+	elseif(dir == "down") then
+		x = Game.player_pos.x
+		y = Game.player_pos.y + 1
+	elseif(dir == "left") then
+		x = Game.player_pos.x - 1
+		y = Game.player_pos.y
+	elseif(dir == "right") then
+		x = Game.player_pos.x + 1
+		y = Game.player_pos.y
+	end
+
+	return tostring(x .. "_" .. y)
+end
+
+function create_pid_from_x_y(x, y)
+	return tostring(x .. "_" .. y)
+end
+
 function create_entities(entity_table, group, entity_name, entity_type)
 	local entities = {}
 
@@ -272,31 +306,104 @@ function _init()
 	fov("main")
 end
 
+function initiate_attack_sequence(pid)
+	-- generate some random numbers for crit chance (player and enemy)
+	local player_crit_chance = get_random_number(1, 100) <= 20
+	local enemy_crit_chance =  get_random_number(1, 100) <= 20
+	local player_attack = Game.player.components.stats_component.attack
+	local player_health = Game.player.components.health_component.health
+	local enemy_attack = Game.enemies[pid].enemy.components.stats_component.attack
+	local enemy_health = Game.enemies[pid].enemy.components.health_component.health
+	local enemy_id = Game.enemies[pid].enemy.id
+
+	-- player strikes first
+	if (player_crit_chance) then
+		-- do crit attack
+		local damage = player_attack + get_random_number(1, 5) * 2
+		print("Player damage during attack = " .. damage)
+		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
+	else
+		-- do normal attack
+		local damage = player_attack + get_random_number(1, 5)
+		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
+		print("Player damage during attack = " .. damage)
+	end
+
+	-- enemy strikes next
+	if (enemy_crit_chance) then
+		-- do crit attack
+		local damage = player_attack + get_random_number(1, 5) * 2
+		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+	else
+		-- do normal attack
+		local damage = player_attack + get_random_number(1, 5)
+		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+	end
+
+	-- check to see if enemy died
+	if(enemy_health <= 0) then
+		print("Player killed enemy!!!")
+		Game.total_enemies_killed = Game.total_enemies_killed + 1
+		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
+		remove_entity("enemies", enemy_id)
+	end
+
+	-- check to see if player died
+	if (player_health <= 0) then
+		Game.win_lose_message = "You ded son!"
+		Game.lost = true
+	end
+end
+
 function _update(event, data)
 	if(event == "key_event") then
 		if data["key"] == "up" then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
 			else
-				play_sound("bump")
+				local pid = get_player_movement_direction_pid("up")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
 			end
 		 elseif data["key"] == "down" then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
 			else
-				play_sound("bump")
+				local pid = get_player_movement_direction_pid("down")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
 			end
 		 elseif data["key"] == "left" then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
 			else
-				play_sound("bump")
+				local pid = get_player_movement_direction_pid("left")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
 			end
 		 elseif data["key"] == "right" then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
 			else
-				play_sound("bump")
+				local pid = get_player_movement_direction_pid("right")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
 			end
 		 elseif data["key"] == "space" then
 			if (Game.started) then
@@ -304,7 +411,9 @@ function _update(event, data)
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
 				update_entity_position("common", "player", pos.x, pos.y)
+				set_component_value("common", "player", "health_component", "health", 10)
 			else
+				Game.lost = false
 				Game.won = false
 				Game.started = true
 				reset()
@@ -344,9 +453,14 @@ function _update(event, data)
 			Game.player_pos["y"] = data["player"]["point"]["y"]
 			XY_Id = tostring(Game.player_pos["x"] .. "_" .. Game.player_pos["y"])
 			fov("main")
+		elseif (data["enemy"] ~= nil) then
+			local enemy_pid = create_pid_from_x_y(data["enemy"].point.x, data["enemy"].point.y)
+			Game.enemies[enemy_pid].enemy = data["enemy"]
 		else
 			if(data["entity_group_name"] == "rewards") then
 			 	Game.items = data["entity_group"]
+			else
+				Game.enemies = data["entity_group"]
 			end
 		end
 	elseif (event == "light_map") then
@@ -355,13 +469,13 @@ function _update(event, data)
 end
 
 function calculate_health_bar_width(health, starting_health, health_bar_max_width)
-	local hw = health_bar_max_width;
+	local hw = health_bar_max_width
 
-	if (health < starting_health) then
-		hw = ((health * (100 / starting_health)) * health_bar_max_width) / 100
+	if (health <= starting_health) then
+		hw = (((health * (100 / starting_health)) * health_bar_max_width) / 100)
 	end
 
-	return hw
+	return math.floor(hw)
 end
 
 function render_info_bar()
@@ -381,7 +495,7 @@ function render_info_bar()
 		set_draw_color(8, 138, 41, 255) -- green for player
 	end
 
-	draw_filled_rect((Game.sprite_info.width * 2 + 20), 36, p_hw, 24)
+	draw_filled_rect((Game.sprite_info.width * 2 + 20), 36, math.floor(p_hw), 24)
 
 	draw_text(tostring(Game.player["components"]["health_component"]["health"]), "medium", (Game.sprite_info.width * 3 + 70), 28)
 	draw_text(tostring(Game.player["components"]["score_component"]["score"]), "large", 40, 90)
@@ -423,7 +537,7 @@ function render_mini_map()
 end
 
 function render_entity(entity_group, entity_type, p_id, dx, dy)
-	if(entity_group[p_id] ~= nil) then
+	if(entity_group[p_id]) then
 		local sprite_id = entity_group[p_id][entity_type]["components"]["sprite_component"]["sprite_id"]
 		local spritesheet_name = entity_group[p_id][entity_type]["components"]["sprite_component"]["spritesheet_name"]
 
@@ -436,10 +550,14 @@ function render_entity(entity_group, entity_type, p_id, dx, dy)
 end
 
 function render_health_bar(entity, r, g, b, dx, dy)
-	local hw = calculate_health_bar_width(entity["components"]["health_component"]["health"], entity["components"]["health_component"]["max_health"], Game.sprite_info.width)
-	set_draw_color(r, g, b, 255)
-	draw_filled_rect(dx, dy - 8, hw, 6)
-	set_draw_color(0, 0, 0, 255)
+	local hw = calculate_health_bar_width(entity["components"]["health_component"]["health"],
+										  entity["components"]["health_component"]["max_health"], Game.sprite_info.width)
+
+	if(hw >= 0) then
+		set_draw_color(r, g, b, 255)
+		draw_filled_rect(dx, dy - 8, hw, 6)
+		set_draw_color(0, 0, 0, 255)
+	end
 end
 
 function render_title_screen()
@@ -475,7 +593,7 @@ function _render(delta_time)
 
 	if(Game.started == false and Game.won == false) then
 			render_title_screen()
-		else if (Game.started == true and Game.won == false) then
+		else if (Game.started == true and Game.won == false and Game.lost == false) then
 			for r = 1, get_view_port_height() do
 				for c = 1, get_view_port_width() do
 					local p_id = tostring((c-1) .. "_" .. (r-1))
@@ -507,6 +625,13 @@ function _render(delta_time)
 end
 
 function _tick(delta_time)
+	Game.health_recovery_time = Game.health_recovery_time + delta_time
+	if(Game.health_recovery_time >= 2) then
+		Game.health_recovery_time = 0
+		if(Game.player.components.health_component.health < Game.player.components.health_component.max_health) then
+			set_component_value("common", "player", "health_component", "health", math.floor(Game.player.components.health_component.health + Game.health_recovery))
+		end
+	end
 end
 
 function _error(err)

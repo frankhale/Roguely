@@ -265,8 +265,11 @@ int main(int argc, char* argv[])
 
 				init_game(game_config);
 
-				// FIXME: This is temporary as we had some issues passing around state
-				//			  to various functions which was blowing us up.
+				// FIXME: This is temporary as we had some issues passing around Lua 
+				// state to various functions which was blowing us up. Things were 
+				// blowing up and I didn't find a quick fix. We will revisit this soon
+				// the Lua integration and some of the  global variables at the top
+				// will be rolled into the Game class.
 
 				lua["get_test_map"] = get_test_map;
 				
@@ -433,6 +436,15 @@ int main(int argc, char* argv[])
 								
 								lua_init();
 						}
+						});
+
+				lua.set_function("get_random_number", [&](int start, int end) {
+						return std::rand() % end + start;
+						});
+
+				lua.set_function("get_entity_group_without", [&](std::string entity_group_name, std::string id) {
+						//convert_entity_group_to_lua_table
+						
 						});
 
 				auto lua_init = lua["_init"];

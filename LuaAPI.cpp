@@ -167,7 +167,7 @@ sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> ent
 								{
 										entity_info_table[entity_type]["components"]["inventory_component"] = lua.create_table();
 										entity_info_table[entity_type]["components"]["inventory_component"]["items"] = lua.create_table();
-										ic->for_each_item([&](std::shared_ptr<std::pair<std::string, int>> i) {												
+										ic->for_each_item([&](std::shared_ptr<std::pair<std::string, int>> i) {
 												entity_info_table[entity_type]["components"]["inventory_component"]["items"][i->first] = i->second;
 												});
 								}

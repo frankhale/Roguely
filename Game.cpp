@@ -551,7 +551,7 @@ namespace roguely::game
 												auto did_update = set_component_value(component, key, value);
 
 												if (did_update)
-														return player;
+														return entity;
 										}
 								}
 						}
