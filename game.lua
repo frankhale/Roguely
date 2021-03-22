@@ -786,13 +786,13 @@ function _tick(delta_time)
 	for k, combat_log in pairs(Game.combat_log) do
 		combat_log.show = combat_log.show + delta_time
 		combat_log.offset = combat_log.offset + 10
-		combat_log.transparancy = combat_log.transparancy - 20
+		combat_log.transparancy = combat_log.transparancy - 10
 
 		if(combat_log.transparancy <= 10) then
 			combat_log.transparancy = 10
 		end
 
-		if(combat_log.show >= 1) then
+		if(combat_log.show >= .5) then
 			Game.combat_log[k] = nil
 		end
 	end

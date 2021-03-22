@@ -42,8 +42,8 @@ namespace roguely::game
 				sounds = std::make_shared<std::vector<std::shared_ptr<roguely::common::Sound>>>();
 
 				Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
-				Mix_Volume(-1, 3);
-				Mix_VolumeMusic(3);
+				Mix_Volume(-1, 2);
+				Mix_VolumeMusic(2);
 
 				view_port_width = game_config["view_port_width"];
 				view_port_height = game_config["view_port_height"];
