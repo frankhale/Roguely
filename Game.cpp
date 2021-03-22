@@ -32,9 +32,151 @@
 
 namespace roguely::game
 {
-		Game::Game()
+		Game::Game(sol::table gc)
 		{
-				reset();
+				game_config = gc;
+
+				reset(false);
+
+				sprite_sheets = std::make_shared<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
+				sounds = std::make_shared<std::vector<std::shared_ptr<roguely::common::Sound>>>();
+
+				Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
+				Mix_Volume(-1, 3);
+				Mix_VolumeMusic(3);
+
+				view_port_width = game_config["view_port_width"];
+				view_port_height = game_config["view_port_height"];
+				VIEW_PORT_WIDTH = view_port_width;
+				VIEW_PORT_HEIGHT = view_port_height;
+
+				if (game_config["sounds"].valid() && game_config["sounds"].get_type() == sol::type::table)
+				{
+						sol::table sound_table = game_config["sounds"];
+
+						for (auto& sound : sound_table)
+						{
+								if (sound.first.get_type() == sol::type::string &&
+										sound.second.get_type() == sol::type::string)
+								{
+										roguely::common::Sound s{
+											sound.first.as<std::string>(),
+											Mix_LoadWAV(sound.second.as<std::string>().c_str())
+										};
+
+										auto ss = std::make_shared<roguely::common::Sound>(s);
+
+										sounds->emplace_back(ss);
+								}
+						}
+				}
+
+				if ((bool)game_config["music"])
+				{
+						std::string soundtrack_path = game_config["soundtrack_path"];
+
+						soundtrack = Mix_LoadMUS(soundtrack_path.c_str());
+						Mix_PlayMusic(soundtrack, 1);
+				}
+
+				std::string font_path = game_config["font_path"];
+				text_medium = std::make_shared<roguely::common::Text>();
+				text_medium->load_font(font_path.c_str(), 40);
+				text_large = std::make_shared<roguely::common::Text>();
+				text_large->load_font(font_path.c_str(), 63);
+				text_small = std::make_shared<roguely::common::Text>();
+				text_small->load_font(font_path.c_str(), 26);
+		}
+
+		void Game::tear_down_sdl() 
+		{
+				if (soundtrack != nullptr)
+				{
+						Mix_FreeMusic(soundtrack);
+				}
+
+				for (auto& s : *sounds)
+				{
+						Mix_FreeChunk(s->sound);
+				}
+
+				sprite_sheets.reset();
+		}
+
+		void Game::reset(bool reset_ptr) {
+				if (reset_ptr) {
+						maps.reset();
+						entity_groups.reset();
+				}
+
+				maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
+				entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();				
+		}
+
+		void Game::play_sound(std::string name)
+		{
+				if (!(name.length() > 0)) return;
+
+				auto sound = std::find_if(sounds->begin(), sounds->end(),
+						[&](const auto& s) {
+								return s->name == name;
+						});
+
+				if (sound != sounds->end())
+				{
+						(*sound)->play();
+				}
+		}
+
+		void Game::add_spritesheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh)
+		{
+				auto ss = std::make_shared<roguely::sprites::SpriteSheet>(renderer, name, path, sw, sh);
+				sprite_sheets->emplace_back(ss);
+		}
+
+		void Game::draw_sprite(SDL_Renderer* renderer, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height)
+		{
+				if (!(name.length() > 0)) return;
+
+				auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
+						[&](const std::shared_ptr<roguely::sprites::SpriteSheet>& ss) {
+								return ss->get_name() == name;
+						});
+
+				if (sheet != sprite_sheets->end())
+				{
+						(*sheet)->draw_sprite(renderer, sprite_id, x, y, scaled_width, scaled_height);
+				}
+		}
+
+		void Game::draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y)
+		{
+				if (!(t.length() > 0)) return;
+
+				std::shared_ptr<roguely::common::Text> &text = text_small;
+
+				if (size == "small")
+						text = text_small;
+				else if (size == "medium")
+						text = text_medium;
+				else if (size == "large")
+						text = text_large;
+
+				text->draw_text(renderer, x, y, t.c_str());
+		}
+
+		roguely::common::TextExtents Game::get_text_extents(std::string t, std::string size)
+		{
+				std::shared_ptr<roguely::common::Text> &text = text_small;
+
+				if (size == "small")
+						text = text_small;
+				else if (size == "medium")
+						text = text_medium;
+				else if (size == "large")
+						text = text_large;
+
+				return text->get_text_extents(t.c_str());
 		}
 
 		void Game::generate_map_for_testing()
@@ -239,13 +381,13 @@ namespace roguely::game
 						{
 								if (e->get_entity_type() == roguely::ecs::EntityType::Enemy || whoAmI == roguely::common::WhoAmI::Enemy)
 								{
-								TileWalkableInfo twi{
-										false,
-										{ e->x(), e->y() },
-										e->get_entity_type()
-								};
+										TileWalkableInfo twi{
+												false,
+												{ e->x(), e->y() },
+												e->get_entity_type()
+										};
 
-								return std::make_shared<TileWalkableInfo>(twi);
+										return std::make_shared<TileWalkableInfo>(twi);
 								}
 						}
 				}
@@ -340,7 +482,7 @@ namespace roguely::game
 				{
 						std::cout << "How did we allow a x,y that is a wall tile???" << std::endl;
 				}
-				
+
 				return { c, r };
 		}
 

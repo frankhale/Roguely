@@ -29,6 +29,8 @@
 #include "Common.h"
 #include "Entity.h"
 #include "LevelGeneration.h"
+#include "SpriteSheet.h"
+#include "Text.h"
 
 namespace roguely::game
 {
@@ -42,7 +44,7 @@ namespace roguely::game
 		class Game
 		{
 		public:
-				Game();
+				Game(sol::table game_config);
 
 				void generate_map_for_testing();
 				void generate_map(std::string name, int map_width, int map_height)
@@ -141,13 +143,28 @@ namespace roguely::game
 						return results;
 				}
 
-				void reset() { 
-						maps.reset();
-						entity_groups.reset(); 
+				void add_spritesheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh);
+				std::shared_ptr<roguely::sprites::SpriteSheet> find_spritesheet(std::string name) {
+						auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
+								[&](const std::shared_ptr<roguely::sprites::SpriteSheet>& ss) {
+										return ss->get_name() == name;
+								});
 
-						maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
-						entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+						if (sheet != sprite_sheets->end())
+						{
+								return *sheet;
+						}
+
+						return nullptr;
 				}
+
+				void draw_sprite(SDL_Renderer* renderer, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height);
+				void draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y);
+				roguely::common::TextExtents get_text_extents(std::string t, std::string size);
+				void play_sound(std::string name);
+				void reset(bool reset_ptr);
+
+				void tear_down_sdl();
 
 		private:
 				int view_port_x = 0;
@@ -158,11 +175,21 @@ namespace roguely::game
 				int VIEW_PORT_WIDTH = 0;
 				int VIEW_PORT_HEIGHT = 0;
 
+				sol::table game_config;
+
+				Mix_Music* soundtrack{};
+
 				std::shared_ptr<roguely::common::Map> current_map{};				
 				std::shared_ptr<roguely::ecs::Entity> player{};				
 				std::string player_id{};
 
 				std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
 				std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
+				std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
+				std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
+
+				std::shared_ptr<roguely::common::Text> text_large{};
+				std::shared_ptr<roguely::common::Text> text_medium{};
+				std::shared_ptr<roguely::common::Text> text_small{};
 		};
 }

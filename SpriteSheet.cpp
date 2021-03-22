@@ -77,12 +77,7 @@ namespace roguely::sprites
 				auto sprite_rect = sprites->at(sprite_id);
 				SDL_RenderCopy(renderer, spritesheet_texture, &(*sprite_rect), &dest);
 		}
-
-		SpriteSheet::~SpriteSheet()
-		{
-				SDL_DestroyTexture(spritesheet_texture);
-		}
-
+		
 		sol::table SpriteSheet::get_sprites_as_lua_table(sol::this_state s)
 		{
 				sol::state_view lua(s);

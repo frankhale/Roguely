@@ -31,20 +31,11 @@
 #include "Text.h"
 #include "SpriteSheet.h"
 #include "Game.h"
-#include "LuaAPI.h"
- 
-// TODO: Move sprite_sheets, sounds, text_* to game class
 
 SDL_Window* window = nullptr;
 SDL_Surface* window_surface = nullptr;
 SDL_Renderer* renderer = nullptr;
-Mix_Music* soundtrack = nullptr;
-std::shared_ptr<roguely::game::Game> game = nullptr;
-std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds = nullptr;
-std::shared_ptr<roguely::common::Text> text_large = nullptr;
-std::shared_ptr<roguely::common::Text> text_medium = nullptr;
-std::shared_ptr<roguely::common::Text> text_small = nullptr;
-std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets = nullptr;
+std::shared_ptr<roguely::game::Game> game{};
 
 int init_sdl(sol::table game_config)
 {
@@ -110,15 +101,7 @@ int init_sdl(sol::table game_config)
 
 void tear_down_sdl(sol::table game_config)
 {
-		if ((bool)game_config["music"])
-		{
-				Mix_FreeMusic(soundtrack);
-		}
-
-		for (auto& s : *sounds)
-		{
-				Mix_FreeChunk(s->sound);
-		}
+		game->tear_down_sdl();
 
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
@@ -129,25 +112,11 @@ void tear_down_sdl(sol::table game_config)
 		SDL_Quit();
 }
 
-void play_soundtrack(std::string soundtrack_path)
-{
-		soundtrack = Mix_LoadMUS(soundtrack_path.c_str());
-		Mix_PlayMusic(soundtrack, 1);
-}
-
-// THIS IS ONLY HERE TO MAKE VCPKG INCLUDE MPG123 SO THAT SDL_MIXER WILL WORK
-int __DUMMY_ONLY_HERE_TO_MAKE_VCPKG_INCLUDE_MPG123_FOR_SDL_MIXER__()
-{
-		return mpg123_feature(MPG123_FEATURE_DECODE_LAYER3);
-}
-
 bool check_game_config(sol::table game_config)
 {
 		bool result = true;
 
 		// TODO: Add more checks in here so that we can cover 100% of the config
-
-		__DUMMY_ONLY_HERE_TO_MAKE_VCPKG_INCLUDE_MPG123_FOR_SDL_MIXER__();
 
 		auto title = game_config["window_title"];
 		auto window_width = game_config["window_width"];
@@ -183,53 +152,632 @@ bool check_game_config(sol::table game_config)
 
 void init_game(sol::table game_config)
 {
-		std::srand(static_cast<unsigned int>(std::time(nullptr)));
+		std::srand(static_cast<unsigned int>(std::time(nullptr)));	
+		game = std::make_shared<roguely::game::Game>(game_config);
+}
 
-		std::string font_path = game_config["font_path"];
+sol::table get_sprite_info(const std::shared_ptr<roguely::game::Game> &game, std::string name, sol::this_state s)
+{
+		if (!(name.length() > 0)) return nullptr;
 
-		game = std::make_shared<roguely::game::Game>();
-		game->set_view_port_width(game_config["view_port_width"]);
-		game->set_view_port_height(game_config["view_port_height"]);
+		auto sheet = game->find_spritesheet(name);
 
-		sprite_sheets = std::make_shared<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
-		text_medium = std::make_shared<roguely::common::Text>();
-		text_medium->load_font(font_path.c_str(), 40);
-		text_large = std::make_shared<roguely::common::Text>();
-		text_large->load_font(font_path.c_str(), 63);
-		text_small = std::make_shared<roguely::common::Text>();
-		text_small->load_font(font_path.c_str(), 26);
+		if (sheet != nullptr)
+				return sheet->get_sprites_as_lua_table(s);
 
-		Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 4096);
-		Mix_Volume(-1, 3);
-		Mix_VolumeMusic(3);
+		return nullptr;
+}
 
-		sounds = std::make_shared<std::vector<std::shared_ptr<roguely::common::Sound>>>();
+sol::table add_sprite_sheet(SDL_Renderer* renderer, const std::shared_ptr<roguely::game::Game> &game, std::string name, std::string path, int sw, int sh, sol::this_state s)
+{
+		sol::state_view lua(s);
 
-		if ((bool)game_config["music"])
+		if (!(name.length() > 0 && path.length() > 0)) return nullptr;
+
+		game->add_spritesheet(renderer, name, path, sw, sh);
+
+		auto sheet = game->find_spritesheet(name);
+
+		if (sheet != nullptr)
+				return sheet->get_sprites_as_lua_table(lua.lua_state());
+
+		return lua.create_table();
+}
+
+sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
+{
+		sol::state_view lua(s);
+		std::string entity_type{};
+
+		// Don't @ me bruh!
+		if (entity->get_entity_type() == roguely::ecs::EntityType::Player) entity_type = "player";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Enemy) entity_type = "enemy";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::NPC) entity_type = "npc";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Item) entity_type = "item";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Interactable) entity_type = "interactable";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Ground) entity_type = "ground";
+		else if (entity->get_entity_type() == roguely::ecs::EntityType::Wall) entity_type = "wall";
+
+		auto e_p = entity->get_point();
+		std::string e_id = entity->get_id();
+		sol::table entity_info_table = lua.create_table();
+		entity_info_table[entity_type] = lua.create_table();
+		entity_info_table[entity_type]["id"] = e_id;
+		entity_info_table[entity_type]["point"] = lua.create_table();
+		entity_info_table[entity_type]["point"]["x"] = e_p.x;
+		entity_info_table[entity_type]["point"]["y"] = e_p.y;
+		entity_info_table[entity_type]["components"] = lua.create_table();
+
+		entity->for_each_component([&](std::shared_ptr<roguely::ecs::Component> c) {
+				if (c != nullptr)
+				{
+						if (c->get_component_name() == "sprite_component") {
+								auto sc = std::dynamic_pointer_cast<roguely::ecs::SpriteComponent>(c);
+								if (sc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["sprite_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["sprite_component"]["name"] = sc->get_name();
+										entity_info_table[entity_type]["components"]["sprite_component"]["sprite_id"] = sc->get_sprite_id();
+										entity_info_table[entity_type]["components"]["sprite_component"]["spritesheet_name"] = sc->get_spritesheet_name();
+								}
+						}
+						else if (c->get_component_name() == "score_component") {
+								auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
+								if (sc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["score_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["score_component"]["score"] = sc->get_score();
+								}
+						}
+						else if (c->get_component_name() == "health_component") {
+								auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(c);
+								if (hc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["health_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["health_component"]["health"] = hc->get_health();
+										entity_info_table[entity_type]["components"]["health_component"]["max_health"] = hc->get_max_health();
+								}
+						}
+						else if (c->get_component_name() == "stats_component") {
+								auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(c);
+								if (sc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["stats_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["stats_component"]["attack"] = sc->get_attack();
+								}
+						}
+						else if (c->get_component_name() == "value_component") {
+								auto vc = std::static_pointer_cast<roguely::ecs::ValueComponent>(c);
+								if (vc != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["value_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["value_component"]["value"] = vc->get_value();
+								}
+						}
+						else if (c->get_component_name() == "inventory_component")
+						{
+								auto ic = std::static_pointer_cast<roguely::ecs::InventoryComponent>(c);
+								if (ic != nullptr)
+								{
+										entity_info_table[entity_type]["components"]["inventory_component"] = lua.create_table();
+										entity_info_table[entity_type]["components"]["inventory_component"]["items"] = lua.create_table();
+										ic->for_each_item([&](std::shared_ptr<std::pair<std::string, int>> i) {
+												entity_info_table[entity_type]["components"]["inventory_component"]["items"][i->first] = i->second;
+												});
+								}
+						}
+						else
+						{
+								auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(c);
+								if (lc != nullptr)
+								{
+										auto name = lc->get_name();
+
+										entity_info_table[entity_type]["components"][name] = lua.create_table();
+										entity_info_table[entity_type]["components"][name]["properties"] = lc->get_properties();
+								}
+						}
+				}
+				});
+
+		return entity_info_table;
+}
+
+sol::table convert_entity_group_to_lua_table(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto entity_group = game->get_entity_group(entity_group_name);
+
+		sol::table entity_group_info_table = lua.create_table();
+
+		for (auto& eg : *entity_group->entities)
 		{
-				std::string soundtrack_path = game_config["soundtrack_path"];
-				play_soundtrack(soundtrack_path);
+				std::ostringstream xy_id;
+				auto p = eg->get_point();
+				xy_id << p.x << "_" << p.y;
+
+				entity_group_info_table.set(xy_id.str(), convert_entity_to_lua_table(eg, lua.lua_state()));
 		}
 
-		if (game_config["sounds"].valid() && game_config["sounds"].get_type() == sol::type::table)
+		return entity_group_info_table;
+}
+
+std::string add_entity(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table)
+{
+		auto e_id = game->generate_uuid();
+		roguely::common::Point e_p = { x, y };
+		roguely::ecs::EntityType e_type{};
+
+		if (entity_type == "player") e_type = roguely::ecs::EntityType::Player;
+		else if (entity_type == "enemy") e_type = roguely::ecs::EntityType::Enemy;
+		else if (entity_type == "npc") e_type = roguely::ecs::EntityType::NPC;
+		else if (entity_type == "item") e_type = roguely::ecs::EntityType::Item;
+		else if (entity_type == "interactable") e_type = roguely::ecs::EntityType::Interactable;
+		else if (entity_type == "ground") e_type = roguely::ecs::EntityType::Ground;
+		else if (entity_type == "wall") e_type = roguely::ecs::EntityType::Wall;
+
+		//std::cout << "entityGroup = " << entityGroup
+		//		<< " | entityType = " << entityType
+		//		<< " | x = " << x
+		//		<< " | y = " << y
+		//		<< std::endl;
+
+		auto entity_group = game->get_entity_group(entity_group_name);
+
+		if (entity_group == nullptr)
 		{
-				sol::table sound_table = game_config["sounds"];
+				entity_group = game->create_entity_group(entity_group_name);
+		}
 
-				for (auto& sound : sound_table)
+		if (entity_group != nullptr) {
+				auto entity = game->add_entity_to_group(entity_group, e_type, e_id, e_p);
+
+				if (components_table.valid())
 				{
-						if (sound.first.get_type() == sol::type::string &&
-								sound.second.get_type() == sol::type::string)
+						// loop over components table and add components
+						for (auto& c : components_table)
 						{
-								roguely::common::Sound s{
-									sound.first.as<std::string>(),
-									Mix_LoadWAV(sound.second.as<std::string>().c_str()) };
+								std::string key = c.first.as<std::string>();
+								sol::table value_table = c.second.as<sol::table>();
 
-								auto ss = std::make_shared<roguely::common::Sound>(s);
+								if (value_table.valid()) {
+										if (key == "value_component")
+										{
+												for (auto& cc : value_table)
+												{
+														if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
+														{
+																if (cc.first.as<std::string>() == "value")
+																{
+																		auto value = cc.second.as<int>();
+																		game->add_value_component(entity, value);
+																}
+														}
+												}
+										}
+										else if (key == "sprite_component")
+										{
+												std::string sprite_name{};
+												std::string spritesheet_name{};
+												int sprite_id = 0;
 
-								sounds->emplace_back(ss);
+												for (auto& cc : value_table)
+												{
+														if (cc.first.get_type() == sol::type::string && cc.first.as<std::string>() == "name")
+														{
+																sprite_name = cc.second.as<std::string>();
+														}
+														else if (cc.first.get_type() == sol::type::string && cc.first.as<std::string>() == "spritesheet_name")
+														{
+																spritesheet_name = cc.second.as<std::string>();
+														}
+														else if (cc.first.get_type() == sol::type::string && cc.first.as<std::string>() == "sprite_id")
+														{
+																sprite_id = cc.second.as<int>();
+														}
+
+														if (sprite_name.length() > 0 && spritesheet_name.length() > 0)
+														{
+																game->add_sprite_component(entity, spritesheet_name, sprite_id, sprite_name);
+														}
+												}
+										}
+										else if (key == "health_component")
+										{
+												for (auto& cc : value_table)
+												{
+														if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
+														{
+																if (cc.first.as<std::string>() == "health")
+																{
+																		auto health = cc.second.as<int>();
+																		game->add_health_component(entity, health);
+																}
+														}
+												}
+										}
+										else if (key == "stats_component")
+										{
+												for (auto& cc : value_table)
+												{
+														if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
+														{
+																if (cc.first.as<std::string>() == "attack")
+																{
+																		auto attack = cc.second.as<int>();
+																		game->add_stats_component(entity, attack);
+																}
+														}
+												}
+										}
+										else if (key == "score_component")
+										{
+												for (auto& cc : value_table)
+												{
+														if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
+														{
+																if (cc.first.as<std::string>() == "score")
+																{
+																		auto score = cc.second.as<int>();
+																		game->add_score_component(entity, score);
+																}
+														}
+												}
+										}
+										else if (key == "inventory_component")
+										{
+												for (auto& cc : value_table)
+												{
+														if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::table)
+														{
+																sol::table items_table = cc.second.as<sol::table>();
+
+																if (cc.first.as<std::string>() == "items" && items_table.valid())
+																{
+																		std::vector<std::pair<std::string, int>> items{};
+
+																		for (auto& it : items_table)
+																		{
+																				if (it.first.get_type() == sol::type::string && it.second.get_type() == sol::type::number)
+																				{
+																						items.push_back({ it.first.as<std::string>(), it.second.as<int>() });
+																				}
+																		}
+
+																		game->add_inventory_component(entity, items);
+																}
+														}
+												}
+										}
+										else
+										{
+												std::string type{};
+												sol::table props{};
+												bool has_type = false;
+												bool has_properties = false;
+
+												for (auto& cc : value_table)
+												{
+														if (cc.first.as<std::string>() == "type" && cc.second.get_type() == sol::type::string)
+														{
+																type = cc.second.as<std::string>();
+																has_type = true;
+														}
+														else if (cc.first.as<std::string>() == "properties" && cc.second.get_type() == sol::type::table)
+														{
+																props = cc.second.as<sol::table>();
+																has_properties = true;
+														}
+												}
+
+												if (has_type && has_properties)
+												{
+														game->add_lua_component(entity, key, type, props);
+												}
+										}
+								}
 						}
 				}
 		}
+
+		return e_id;
+}
+
+std::string add_entity(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_type, sol::table components_table)
+{
+		auto entity_groups = game->get_entity_group_names();
+		auto random_point = game->generate_random_point(entity_groups);
+		return add_entity(game, entity_group_name, entity_type, random_point.x, random_point.y, components_table);
+}
+
+sol::table add_entities(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
+{
+		sol::state_view lua(s);
+
+		for (int i = 0; i < num; i++)
+				add_entity(game, entity_group_name, entity_type, components_table);
+
+		return convert_entity_group_to_lua_table(game, entity_group_name, lua.lua_state());
+}
+
+void remove_entity(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_id, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto result = game->remove_entity(entity_group_name, entity_id);
+
+		if (result)
+		{
+				auto lua_update = lua["_update"];
+				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+				{
+						sol::table data_table = lua.create_table();
+						data_table.set("entity_group_name", entity_group_name);
+						data_table.set("entity_id", entity_id);
+						data_table.set("entity_group", convert_entity_group_to_lua_table(game, entity_group_name, lua.lua_state()));
+
+						lua_update("entity_event", data_table);
+				}
+		}
+}
+
+sol::table get_test_map(sol::this_state s)
+{
+		sol::state_view lua(s);
+
+		const int width = 10;
+		const int height = 10;
+
+		int m[width][height] = {
+				{0,0,0,0,0,0,0,0,0,0},
+				{0,9,9,9,9,9,9,58,42,0},
+				{0,9,3,9,4,9,9,9,58,0},
+				{0,9,9,9,9,9,5,9,9,0},
+				{0,0,0,0,0,0,0,0,9,0},
+				{0,9,9,9,9,9,9,9,9,0},
+				{0,9,21,9,0,0,0,0,15,0},
+				{0,9,9,9,0,6,9,34,9,0},
+				{0,22,9,9,0,9,9,9,9,0},
+				{0,0,0,0,0,0,0,0,0,0}
+		};
+
+		sol::table map_table = lua.create_table();
+
+		for (int r = 1; r <= height; r++)
+		{
+				sol::table row_table = lua.create_table();
+				map_table.set(r, row_table);
+
+				for (int c = 1; c <= width; c++)
+				{
+						row_table.set(c, m[r - 1][c - 1]);
+				}
+		}
+
+		return map_table;
+}
+
+sol::table get_map(const std::shared_ptr<roguely::game::Game> &game, std::string name, bool light, sol::this_state s)
+{
+		sol::state_view lua(s);
+
+		auto map = game->get_map(name);
+
+		if (map == nullptr)
+		{
+				std::ostringstream err;
+				err << "Cannot find map: " << name;
+				lua["_error"](err.str());
+
+				return lua.create_table();
+		}
+
+		auto m = light ? map->light_map : map->map;
+
+		sol::table map_table = lua.create_table();
+
+		for (int r = 1; r <= map->height; r++)
+		{
+				sol::table row_table = lua.create_table();
+				map_table.set(r, row_table);
+
+				for (int c = 1; c <= map->width; c++)
+				{
+						row_table.set(c, (*m)((size_t)r - 1, (size_t)c - 1));
+				}
+		}
+
+		return map_table;
+}
+
+void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a)
+{
+		SDL_SetRenderDrawColor(renderer, r, g, b, a);
+}
+
+void draw_point(SDL_Renderer* renderer, int x, int y)
+{
+		SDL_RenderDrawPoint(renderer, x, y);
+}
+
+void draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h)
+{
+		SDL_Rect r = { x, y, w, h };
+		SDL_RenderDrawRect(renderer, &r);
+}
+
+void draw_filled_rect(SDL_Renderer* renderer, int x, int y, int w, int h)
+{
+		SDL_Rect r = { x, y, w, h };
+		SDL_RenderFillRect(renderer, &r);
+}
+
+sol::table get_random_point(const std::shared_ptr<roguely::game::Game> &game, sol::table entity_groups_to_check, sol::this_state s)
+{
+		sol::state_view lua(s);
+		sol::table point_table = lua.create_table();
+
+		// TODO: We have several APIs that need entity groups. This needs to be put
+		// into it's own function.
+		std::vector<std::string> entity_groups;
+		for (auto& eg : entity_groups_to_check)
+		{
+				if (eg.second.get_type() == sol::type::string)
+				{
+						//std::cout << eg.second.as<std::string>() << std::endl;
+						entity_groups.push_back(eg.second.as<std::string>());
+				}
+		}
+
+		auto result = game->generate_random_point(entity_groups);
+
+		point_table.set("x", result.x);
+		point_table.set("y", result.y);
+
+		return point_table;
+}
+
+bool is_tile_walkable(const std::shared_ptr<roguely::game::Game> &game, int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check)
+{
+		std::vector<std::string> entity_groups;
+		roguely::common::MovementDirection movement_direction{};
+		roguely::common::WhoAmI who_am_i{};
+
+		for (auto& eg : entity_groups_to_check)
+				if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
+
+		if (direction == "up") { movement_direction = roguely::common::MovementDirection::Up; }
+		else if (direction == "down") { movement_direction = roguely::common::MovementDirection::Down; }
+		else if (direction == "left") { movement_direction = roguely::common::MovementDirection::Left; }
+		else if (direction == "right") { movement_direction = roguely::common::MovementDirection::Right; }
+
+		if (who == "player") { who_am_i = roguely::common::WhoAmI::Player; }
+		else if (who == "enemy") { who_am_i = roguely::common::WhoAmI::Enemy; }
+
+		auto result = game->is_tile_walkable(x, y, movement_direction, who_am_i, entity_groups);
+
+		return result.walkable;
+}
+
+void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)
+{
+		sol::state_view lua(s);
+
+		if (entity != nullptr) {
+				auto lua_update = lua["_update"];
+
+				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+				{
+						auto entity_info_table = convert_entity_to_lua_table(entity, lua.lua_state());
+						lua_update("entity_event", entity_info_table);
+				}
+		}
+}
+
+void set_component_value(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s)
+{
+		std::shared_ptr<roguely::ecs::Entity> entity{};
+
+		if (value.get_type() == sol::type::number)
+		{
+				entity = game->set_component_value(entity_group_name, entity_id, component_name, key, value.as<int>());
+		}
+		else if (value.get_type() == sol::type::table)
+		{
+				for (auto& kvp : value.as<sol::table>())
+				{
+						if (kvp.first.get_type() == sol::type::string && kvp.second.get_type() == sol::type::number)
+						{
+								std::pair p{ kvp.first.as<std::string>(), kvp.second.as<int>() };
+								entity = game->set_component_value(entity_group_name, entity_id, component_name, key, p);
+						}
+				}
+		}
+
+		emit_lua_update_for_entity(entity, s);
+}
+
+void send_key_event(std::string key, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto lua_update = lua["_update"];
+
+		if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+		{
+				sol::table key_event_table = lua.create_table();
+				key_event_table.set("key", key);
+				lua_update("key_event", key_event_table);
+		}
+}
+
+void render(float delta_time, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto lua_render = lua["_render"];
+
+		if (lua_render.valid() && lua_render.get_type() == sol::type::function)
+		{
+				lua_render(delta_time);
+		}
+}
+
+void tick(float delta_time, sol::this_state s)
+{
+		sol::state_view lua(s);
+		auto lua_tick = lua["_tick"];
+
+		if (lua_tick.valid() && lua_tick.get_type() == sol::type::function)
+		{
+				lua_tick(delta_time);
+		}
+}
+
+sol::table get_entity_group_points(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, sol::this_state s)
+{
+		sol::state_view lua(s);
+		sol::table entity_group_table = lua.create_table();
+
+		auto entity_group = game->get_entity_group(entity_group_name);
+
+		if (entity_group != nullptr)
+		{
+				for (auto& e : *entity_group->entities)
+				{
+						sol::table point_table = lua.create_table_with(
+								"x", e->x(),
+								"y", e->y()
+						);
+						entity_group_table.set(e->get_id(), point_table);
+				}
+		}
+
+		return entity_group_table;
+}
+
+void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor)
+{
+		auto graphic = IMG_Load(path.c_str());
+		auto graphic_texture = SDL_CreateTextureFromSurface(renderer, graphic);
+
+		SDL_Rect dest = { x, y, graphic->w, graphic->h };
+
+		if (centered)
+				dest = { ((window_width / (2 + (int)scaled_factor)) - (graphic->w / 2)), y, graphic->w, graphic->h };
+
+		SDL_Rect src = { 0, 0, graphic->w, graphic->h };
+
+		if (scaled)
+		{
+				SDL_RenderSetScale(renderer, scaled_factor, scaled_factor);
+				SDL_RenderCopy(renderer, graphic_texture, &src, &dest);
+				SDL_RenderSetScale(renderer, 1, 1);
+		}
+		else
+		{
+				SDL_RenderCopy(renderer, graphic_texture, &src, &dest);
+		}
+
+		SDL_FreeSurface(graphic);
+		SDL_DestroyTexture(graphic_texture);
 }
 
 int main(int argc, char* argv[])
@@ -265,42 +813,18 @@ int main(int argc, char* argv[])
 
 				init_game(game_config);
 
-				// FIXME: This is temporary as we had some issues passing around Lua 
-				// state to various functions which was blowing us up. Things were 
-				// blowing up and I didn't find a quick fix. We will revisit this soon
-				// the Lua integration and some of the  global variables at the top
-				// will be rolled into the Game class.
-
 				lua["get_test_map"] = get_test_map;
 				
 				lua.set_function("get_sprite_info", [&](std::string sprite_sheet_name, sol::this_state s) {
-						return get_sprite_info(sprite_sheets, sprite_sheet_name, s);
+						return get_sprite_info(game, sprite_sheet_name, s);
 						});
 
 				lua.set_function("draw_text", [&](std::string t, std::string size, int x, int y) {
-						std::shared_ptr<roguely::common::Text> text = text_small;
-
-						if (size == "small")
-								text = text_small;
-						else if (size == "medium")
-								text = text_medium;
-						else if (size == "large")
-								text = text_large;
-
-						draw_text(renderer, text, t, x, y);
+						game->draw_text(renderer, t, size, x, y);
 						});
 
 				lua.set_function("get_text_extents", [&](std::string t, std::string size, sol::this_state s) {
-						std::shared_ptr<roguely::common::Text> text = text_small;
-
-						if (size == "small")
-								text = text_small;
-						else if (size == "medium")
-								text = text_medium;
-						else if (size == "large")
-								text = text_large;
-
-						auto extents = text->get_text_extents(t.c_str());
+						auto extents = game->get_text_extents(t.c_str(), size);
 						sol::table extents_table = lua.create_table();
 						extents_table.set("width", extents.width);
 						extents_table.set("height", extents.height);
@@ -308,19 +832,19 @@ int main(int argc, char* argv[])
 						});
 
 				lua.set_function("add_sprite_sheet", [&](std::string name, std::string path, int sw, int sh, sol::this_state s) {
-						return add_sprite_sheet(renderer, sprite_sheets, name, path, sw, sh, s);
+						return add_sprite_sheet(renderer, game, name, path, sw, sh, s);
 						});
 
 				lua.set_function("draw_sprite", [&](std::string name, int sprite_id, int x, int y) {
-						draw_sprite(renderer, sprite_sheets, name, sprite_id, x, y, 0, 0);
+						game->draw_sprite(renderer, name, sprite_id, x, y, 0, 0);
 						});
 
 				lua.set_function("draw_sprite_scaled", [&](std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height) {
-						draw_sprite(renderer, sprite_sheets, name, sprite_id, x, y, scaled_width, scaled_height);
+						game->draw_sprite(renderer, name, sprite_id, x, y, scaled_width, scaled_height);
 						});
 
 				lua.set_function("play_sound", [&](std::string name) {
-						play_sound(sounds, name);
+						game->play_sound(name);
 						});
 
 				lua.set_function("generate_map", [&](std::string name, int map_width, int map_height) {
@@ -430,9 +954,7 @@ int main(int argc, char* argv[])
 
 						if (lua_init.valid() && lua_init.get_type() == sol::type::function)
 						{
-								game->reset();
-								sprite_sheets.reset();
-								sprite_sheets = std::make_shared<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
+								game->reset(true);
 								
 								lua_init();
 						}
@@ -442,17 +964,9 @@ int main(int argc, char* argv[])
 						return std::rand() % end + start;
 						});
 
-				lua.set_function("get_entity_group_without", [&](std::string entity_group_name, std::string id) {
-						//convert_entity_group_to_lua_table
-						
-						});
-
 				auto lua_init = lua["_init"];
 
-				if (lua_init.valid() && lua_init.get_type() == sol::type::function)
-				{
-						lua_init();
-				}
+				if (lua_init.valid() && lua_init.get_type() == sol::type::function) lua_init();
 								
 				bool keep_window_open = true;
 				while (keep_window_open)
@@ -512,8 +1026,6 @@ int main(int argc, char* argv[])
 								SDL_RenderPresent(renderer);
 						}
 				}
-
-				sprite_sheets.reset();
 
 				tear_down_sdl(game_config);
 		}

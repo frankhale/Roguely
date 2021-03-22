@@ -34,7 +34,10 @@ namespace roguely::sprites
 		{
 		public:
 				SpriteSheet(SDL_Renderer* renderer, std::string n, std::string p, int sw, int sh);
-				~SpriteSheet();
+				~SpriteSheet() 
+				{ 												
+						SDL_DestroyTexture(spritesheet_texture); 
+				}
 
 				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y);
 				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height);				
@@ -50,7 +53,7 @@ namespace roguely::sprites
 				std::string path;
 				int sprite_width = 0;
 				int sprite_height = 0;
-				std::unique_ptr<std::vector<std::shared_ptr<SDL_Rect>>> sprites = nullptr;
-				SDL_Texture* spritesheet_texture = nullptr;
+				std::unique_ptr<std::vector<std::shared_ptr<SDL_Rect>>> sprites{};
+				SDL_Texture* spritesheet_texture{};
 		};
 }

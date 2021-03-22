@@ -179,7 +179,6 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="LevelGeneration.cpp" />
-    <ClCompile Include="LuaAPI.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SpriteSheet.cpp" />
     <ClCompile Include="Text.cpp" />
@@ -196,7 +195,6 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="LevelGeneration.h" />
-    <ClInclude Include="LuaAPI.h" />
     <ClInclude Include="SpriteSheet.h" />
     <ClInclude Include="Text.h" />
   </ItemGroup>
