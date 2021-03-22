@@ -331,46 +331,66 @@ function _init()
 
 	Game.map = get_map("main", false)
 	fov("main")
+end
 
-	-- for k, e in pairs(Game.enemies) do
-	-- 	--print(e.enemy.point.x, e.enemy.point.y)
-	-- 	if(Game.map[e.enemy.point.y][e.enemy.point.x] == 0) then
-	-- 		print("oops, an enemy is in the wall!!!")
-	-- 	end
-	-- end
+function get_enemy_by_id(id)
+	for k,v in pairs(Game.enemies) do
+		if(v.enemy.id == id) then
+			return v
+		end
+	end
+end
+
+function xy_falls_within_viewport(x, y)
+	if(x >= get_view_port_x() and
+	   x <= get_view_port_x() + get_view_port_width() and
+	   y >= get_view_port_y() and
+	   y <= get_view_port_y() + get_view_port_height()) then
+		return true
+	end
+
+	return false
 end
 
 function move_enemies()
-	local should_move = get_random_number(1, 100) >= 60
+	local should_move = get_random_number(1, 100) >= 80
 	local enemies_new_positions = {}
 
 	if (should_move) then
 		for k, e in pairs(Game.enemies) do
-			local direction = get_random_number(1, 4)
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
 
-			if(direction == 1 and is_tile_walkable(x, y-1, "up", "enemy", { "common", "enemies" })) then
-				y = y - 1
-			elseif (direction == 2 and is_tile_walkable(x, y+1, "dowm", "enemy", { "common", "enemies" })) then
-				y = y + 1
-			elseif (direction == 3 and is_tile_walkable(x-1, y, "left", "enemy", { "common", "enemies" })) then
-				x = x - 1
-			elseif (direction == 4 and is_tile_walkable(x+1, y, "right", "enemy", { "common", "enemies" })) then
-				x = x + 1
-			end
+			if(xy_falls_within_viewport(x, y)) then
+				local direction = get_random_number(1, 4)
 
-			enemies_new_positions[e.enemy.id] = {}
-			enemies_new_positions[e.enemy.id]["pid"] = create_pid_from_x_y(e.enemy.point.x, e.enemy.point.y)
-			enemies_new_positions[e.enemy.id]["id"] = e.enemy.id
-			enemies_new_positions[e.enemy.id]["x"] = x
-			enemies_new_positions[e.enemy.id]["y"] = y
+				if(direction == 1 and is_tile_walkable(x, y, "up", "enemy", { "common", "enemies" })) then
+					y = y - 1
+				elseif (direction == 2 and is_tile_walkable(x, y, "down", "enemy", { "common", "enemies" })) then
+					y = y + 1
+				elseif (direction == 3 and is_tile_walkable(x, y, "left", "enemy", { "common", "enemies" })) then
+					x = x - 1
+				elseif (direction == 4 and is_tile_walkable(x, y, "right", "enemy", { "common", "enemies" })) then
+					x = x + 1
+				end
+
+				enemies_new_positions[e.enemy.id] = {}
+				enemies_new_positions[e.enemy.id]["pid"] = create_pid_from_x_y(e.enemy.point.x, e.enemy.point.y)
+				enemies_new_positions[e.enemy.id]["id"] = e.enemy.id
+				enemies_new_positions[e.enemy.id]["x"] = x
+				enemies_new_positions[e.enemy.id]["y"] = y
+			end
 		end
 
 		for k, e in pairs(enemies_new_positions) do
-			Game.enemy_moving_pid = e.pid
-			update_entity_position("enemies", e.id, e.x, e.y)
-		end
+			Game.enemy_moving_id = e.id
+			if (get_enemy_by_id(Game.enemy_moving_id) ~= nil) then
+				Game.enemy_moving_pid = e.pid
+				update_entity_position("enemies", e.id, e.x, e.y)
+			else
+				e = nil
+			end
+		 end
 	end
 end
 
@@ -397,26 +417,28 @@ function initiate_attack_sequence(pid)
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
 	end
 
-	-- enemy strikes next
-	if (enemy_crit_chance) then
-		-- do crit attack
-		local damage = player_attack + get_random_number(1, 5) * 2
-		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
-	else
-		-- do normal attack
-		local damage = player_attack + get_random_number(1, 5)
-		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
-	end
-
 	-- check to see if enemy died
 	if(enemy_health <= 0) then
+		Game.enemies[pid]=nil
+		remove_entity("enemies", enemy_id)
+
 		Game.total_enemies_killed = Game.total_enemies_killed + 1
+		-- The score value here should be put into a component and not hard coded
 		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
 
 		-- TODO: Spawn a treasure chest, add ability to pick up a treasure chest (add entity for this with components)
 		-- TODO: If Firewalker spawn an attack gem, add ability to pick it up
-
-		remove_entity("enemies", enemy_id)
+	else
+		-- enemy strikes next
+		if (enemy_crit_chance) then
+			-- do crit attack
+			local damage = player_attack + get_random_number(1, 5) * 2
+			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+		else
+			-- do normal attack
+			local damage = player_attack + get_random_number(1, 5)
+			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+		end
 	end
 
 	-- check to see if player died
@@ -544,7 +566,7 @@ function _update(event, data)
 		else
 			if(data["entity_group_name"] == "rewards") then
 			 	Game.items = data["entity_group"]
-			else
+			elseif (data["entity_group_name"] == "enemies") then
 				Game.enemies = data["entity_group"]
 			end
 		end
@@ -605,12 +627,12 @@ function render_mini_map()
 			end
 
 			if (dx == Game.goldencandle.point.x + offset_x and dy == Game.goldencandle.point.y) then
-			 	set_draw_color(0, 255, 0, 255)
+			 	set_draw_color(255, 255, 0, 255)
 			 	draw_filled_rect(dx - 3, dy - 3, 6, 6)
 			end
 
 			if (dx == Game.player_pos["x"] + offset_x and dy == Game.player_pos["y"] + offset_y) then
-				set_draw_color(255, 0, 0, 255)
+				set_draw_color(0, 255, 0, 255)
 				draw_filled_rect(dx - 3, dy - 3, 6, 6)
 			end
 		end
