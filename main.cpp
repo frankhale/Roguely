@@ -316,12 +316,6 @@ std::string add_entity(const std::shared_ptr<roguely::game::Game> &game, std::st
 		else if (entity_type == "ground") e_type = roguely::ecs::EntityType::Ground;
 		else if (entity_type == "wall") e_type = roguely::ecs::EntityType::Wall;
 
-		//std::cout << "entityGroup = " << entityGroup
-		//		<< " | entityType = " << entityType
-		//		<< " | x = " << x
-		//		<< " | y = " << y
-		//		<< std::endl;
-
 		auto entity_group = game->get_entity_group(entity_group_name);
 
 		if (entity_group == nullptr)
@@ -490,6 +484,8 @@ std::string add_entity(const std::shared_ptr<roguely::game::Game> &game, std::st
 		return add_entity(game, entity_group_name, entity_type, random_point.x, random_point.y, components_table);
 }
 
+
+
 sol::table add_entities(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
 {
 		sol::state_view lua(s);
@@ -500,13 +496,29 @@ sol::table add_entities(const std::shared_ptr<roguely::game::Game> &game, std::s
 		return convert_entity_group_to_lua_table(game, entity_group_name, lua.lua_state());
 }
 
-void remove_entity(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_id, sol::this_state s)
+void emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s)
 {
 		sol::state_view lua(s);
+		auto lua_update = lua["_update"];
+		if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+		{
+				sol::table data_table = lua.create_table();
+				data_table.set("entity_group_name", entity_group_name);
+				data_table.set("entity_id", entity_id);
+				data_table.set("entity_group", convert_entity_group_to_lua_table(game, entity_group_name, lua.lua_state()));
+
+				lua_update("entity_event", data_table);
+		}
+}
+
+void remove_entity(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_id, sol::this_state s)
+{
+		//sol::state_view lua(s);
 		auto result = game->remove_entity(entity_group_name, entity_id);
 
 		if (result)
-		{
+				emit_lua_update_for_entity_group(entity_group_name, entity_id, s);
+		/*{
 				auto lua_update = lua["_update"];
 				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
 				{
@@ -517,7 +529,7 @@ void remove_entity(const std::shared_ptr<roguely::game::Game> &game, std::string
 
 						lua_update("entity_event", data_table);
 				}
-		}
+		}*/
 }
 
 sol::table get_test_map(sol::this_state s)
@@ -855,8 +867,9 @@ int main(int argc, char* argv[])
 						game->generate_map(name, map_width, map_height);
 						});
 
-				lua.set_function("add_entity", [&](std::string entity_group, std::string entity_type, int x, int y, sol::table components_table) {
-						return add_entity(game, entity_group, entity_type, x, y, components_table);
+				lua.set_function("add_entity", [&](std::string entity_group, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s) {
+						auto id = add_entity(game, entity_group, entity_type, x, y, components_table);
+						emit_lua_update_for_entity_group(entity_group, id, s);
 						});
 
 				lua.set_function("add_entities", [&](std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s) {

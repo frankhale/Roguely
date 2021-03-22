@@ -83,7 +83,23 @@ Game = {
 	},
 	health_recovery_time = 0,
 	health_recovery = 10,
-	combat_log = {},
+	action_log = {},
+	treasure_chest = {
+		components = {
+			sprite_component = {
+				name = "treasure_chest",
+				spritesheet_name = "game-sprites",
+				sprite_id = 13
+			},
+			value_component = {
+				value = 50
+			},
+			enemy_bonus_component = {
+				type = "bonus",
+				properties = { }
+			}
+		}
+	},
 	entities = {
 		rewards = {
 			coin = {
@@ -110,7 +126,9 @@ Game = {
 						type = "powerup",
 						properties = {
 							action = function(group, entity_name, component_name, component_value_name, existing_component_value)
-								set_component_value(group, entity_name, component_name, component_value_name, existing_component_value + 25)
+								local health_value = 25
+								add_action_log("player", "pickup", "+", tostring(health_value .. " health"), Game.player_pos.x, Game.player_pos.y)
+								set_component_value(group, entity_name, component_name, component_value_name, existing_component_value + health_value)
 							end
 						}
 					}
@@ -142,7 +160,8 @@ Game = {
 						sprite_id = 4
 					},
 					health_component = { health = 20 },
-					stats_component = { attack = 1 }
+					stats_component = { attack = 1 },
+					value_component = { value = 5 }
 				},
 				total = 50
 			},
@@ -154,7 +173,8 @@ Game = {
 						sprite_id = 12
 					},
 					health_component = { health = 30 },
-					stats_component = { attack = 2 }
+					stats_component = { attack = 2 },
+					value_component = { value = 10 }
 				},
 				total = 30
 			},
@@ -166,7 +186,8 @@ Game = {
 						sprite_id = 17
 					},
 					health_component = { health = 25 },
-					stats_component = { attack = 2 }
+					stats_component = { attack = 2 },
+					value_component = { value = 10 }
 				},
 				total = 25
 			},
@@ -178,7 +199,8 @@ Game = {
 						sprite_id = 5
 					},
 					health_component = { health = 35 },
-					stats_component = { attack = 2 }
+					stats_component = { attack = 2 },
+					value_component = { value = 15 }
 				},
 				total = 25
 			},
@@ -190,7 +212,8 @@ Game = {
 						sprite_id = 21
 					},
 					health_component = { health = 75 },
-					stats_component = { attack = 4 }
+					stats_component = { attack = 4 },
+					value_component = { value = 40 }
 				},
 				total = 25
 			},
@@ -202,7 +225,8 @@ Game = {
 						sprite_id = 54
 					},
 					health_component = { health = 50 },
-					stats_component = { attack = 3 }
+					stats_component = { attack = 3 },
+					value_component = { value = 30 }
 				},
 				total = 25
 			},
@@ -214,7 +238,10 @@ Game = {
 						sprite_id = 34
 					},
 					health_component = { health = 85 },
-					stats_component = { attack = 5 }
+					stats_component = { attack = 5 },
+					value_component = { value = 5 },
+					value_component = { value = 60 }
+
 				},
 				total = 20
 			},
@@ -226,7 +253,8 @@ Game = {
 						sprite_id = 61
 					},
 					health_component = { health = 95 },
-					stats_component = { attack = 6 }
+					stats_component = { attack = 6 },
+					value_component = { value = 75 }
 				},
 				total = 15
 			},
@@ -238,7 +266,8 @@ Game = {
 						sprite_id = 64
 					},
 					health_component = { health = 100 },
-					stats_component = { attack = 7 }
+					stats_component = { attack = 7 },
+					value_component = { value = 100 }
 				},
 				total = 10
 			}
@@ -291,7 +320,7 @@ end
 function _init()
 	add_sprite_sheet("game-sprites", Game.spritesheet_path, Game.sprite_info.width, Game.sprite_info.height)
 
-	Game.player_id = add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, {
+	add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, {
 		sprite_component = {
 			name = "player",
 			spritesheet_name = "game-sprites",
@@ -395,19 +424,18 @@ function move_enemies()
 	end
 end
 
-function add_combat_log(who, attack_type, combat_multiplier, damage, x, y)
+function add_action_log(who, type, multiplier, value, x, y)
 	local id = generate_uuid()
 
-	Game.combat_log[id] = {}
-	Game.combat_log[id]["show"] = 0
-	Game.combat_log[id]["transparancy"] = 255
-	Game.combat_log[id]["offset"] = 1
-	Game.combat_log[id]["who"] = who
-	Game.combat_log[id]["x"] = x
-	Game.combat_log[id]["y"] = y
-	Game.combat_log[id]["attack_type"] = attack_type
-	Game.combat_log[id]["message"] = tostring(combat_multiplier .. damage)
-
+	Game.action_log[id] = {}
+	Game.action_log[id]["show"] = 0
+	Game.action_log[id]["transparancy"] = 255
+	Game.action_log[id]["offset"] = 1
+	Game.action_log[id]["who"] = who
+	Game.action_log[id]["x"] = x
+	Game.action_log[id]["y"] = y
+	Game.action_log[id]["attack_type"] = type
+	Game.action_log[id]["message"] = tostring(multiplier .. value)
 end
 
 function initiate_attack_sequence(pid)
@@ -422,25 +450,24 @@ function initiate_attack_sequence(pid)
 	local enemy_x = Game.enemies[pid].enemy.point.x
 	local enemy_y = Game.enemies[pid].enemy.point.y
 
-	-- TODO: Add combat text
-
 	-- player strikes first
 	if (player_crit_chance) then
 		-- do crit attack
 		local damage = player_attack + get_random_number(1, 5) * 2
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
 
-		add_combat_log("player", "critical", "+", damage, enemy_x, enemy_y)
+		add_action_log("player", "critical", "+", damage, enemy_x, enemy_y)
 	else
 		-- do normal attack
 		local damage = player_attack + get_random_number(1, 5)
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
 
-		add_combat_log("player", "normal", "+", damage, enemy_x, enemy_y)
+		add_action_log("player", "normal", "+", damage, enemy_x, enemy_y)
 	end
 
 	-- check to see if enemy died
 	if(enemy_health <= 0) then
+		local enemy_value = Game.enemies[pid].enemy.components.value_component.value
 		Game.enemies[pid]=nil
 		remove_entity("enemies", enemy_id)
 
@@ -448,8 +475,10 @@ function initiate_attack_sequence(pid)
 		-- The score value here should be put into a component and not hard coded
 		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
 
-		-- TODO: Spawn a treasure chest, add ability to pick up a treasure chest (add entity for this with components)
-		-- TODO: If Firewalker spawn an attack gem, add ability to pick it up
+		Game.treasure_chest.components.enemy_bonus_component.properties.action = function()
+			set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + enemy_value)
+		end
+		add_entity("treasure_chests", "item", enemy_x, enemy_y, Game.treasure_chest.components)
 	else
 		-- enemy strikes next
 		if (enemy_crit_chance) then
@@ -457,13 +486,13 @@ function initiate_attack_sequence(pid)
 			local damage = player_attack + get_random_number(1, 5) * 2
 			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 
-			add_combat_log("enemy", "critical", "-", damage, Game.player_pos.x, Game.player_pos.y)
+			add_action_log("enemy", "critical", "-", damage, Game.player_pos.x, Game.player_pos.y)
 		else
 			-- do normal attack
 			local damage = player_attack + get_random_number(1, 5)
 			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 
-			add_combat_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
+			add_action_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
 		end
 	end
 
@@ -533,25 +562,26 @@ function _update(event, data)
 				end
 			end
 		 elseif data["key"] == "space" then
-			if (Game.started and Game.lost == false) then
-				-- warp player (for testing purposes)
+			if (Game.started) then
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
 				update_entity_position("common", "player", pos.x, pos.y)
-			else
+			elseif (Game.won == true or Game.lost == true) then
 				Game.lost = false
 				Game.won = false
 				Game.started = true
 				reset()
+			else
+				Game.started = true
 			end
 		end
 
 		if(Game.started and Game.items[XY_Id]) then
 			if (Game.items[XY_Id].item.components.sprite_component.name == "coin") then
+				local coin_value = Game.items[XY_Id].item.components.value_component.value
+				add_action_log("player", "pickup", "+", tostring(coin_value .. " score"), Game.player_pos.x, Game.player_pos.y)
 				play_sound("coin")
-				set_component_value("common", "player", "score_component", "score",
-					Game.player.components.score_component.score +
-					Game.items[XY_Id].item.components.value_component.value)
+				set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + coin_value)
 				remove_entity("rewards", Game.items[XY_Id].item.id)
 			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "healthgem") then
 				play_sound("pickup")
@@ -573,7 +603,7 @@ function _update(event, data)
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
 			Game.player = data.player
-			Game.player_id = data.player[Game.player_id]
+			Game.player_id = data.player.id --[Game.player_id]
 			Game.player_pos.x = data.player.point.x
 			Game.player_pos.y = data.player.point.y
 			XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
@@ -594,6 +624,8 @@ function _update(event, data)
 			 	Game.items = data["entity_group"]
 			elseif (data["entity_group_name"] == "enemies") then
 				Game.enemies = data["entity_group"]
+			else
+				Game[data["entity_group_name"]] = data["entity_group"]
 			end
 		end
 	elseif (event == "light_map") then
@@ -717,19 +749,33 @@ function render_win_or_death_screen()
 	draw_text("Press the space bar to play again...", "medium", math.floor(Game.window_width / 2 - text_extents.width / 2 - 150), Game.window_height - 100)
 end
 
-function render_combat_log()
-	for k, combat_log in pairs(Game.combat_log) do
-		if(combat_log ~= nil) then
-			local dx = (combat_log.x * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
-			local dy = (combat_log.y * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
+function render_action_log()
+	for k, action_log in pairs(Game.action_log) do
+		if(action_log ~= nil) then
+			local dx = (action_log.x * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
+			local dy = (action_log.y * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
 
-			if (combat_log.who == "player") then
-				draw_text_with_color(combat_log.message, "small", dx, (dy-combat_log.offset), 0, 255, 0, combat_log.transparancy)
-			elseif (combat_log.who == "enemy") then
-				draw_text_with_color(combat_log.message, "small", dx, (dy-combat_log.offset), 255, 0, 0, combat_log.transparancy)
+			if (action_log.who == "player") then
+				draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 0, 255, 0, action_log.transparancy)
+			elseif (action_log.who == "enemy") then
+				draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 255, 0, 0, action_log.transparancy)
 			end
 
 			set_draw_color(0, 0, 0, 255)
+		end
+	end
+end
+
+function render_treasure_chests()
+	if(Game.treasure_chests ~= nil) then
+		for k, treasure_chests in pairs(Game.treasure_chests) do
+			local tc_x = treasure_chests.item.point.x
+			local tc_y = treasure_chests.item.point.y
+			local p_id = tostring((tc_x) .. "_" .. (tc_y))
+			local dx = (tc_x * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
+			local dy = (tc_y * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
+
+			render_entity(Game.treasure_chests, "item", p_id, dx, dy)
 		end
 	end
 end
@@ -742,6 +788,8 @@ function _render(delta_time)
 	if(Game.started == false and Game.won == false and Game.lost == false) then
 			render_title_screen()
 		else if (Game.started == true and Game.won == false and Game.lost == false) then
+			render_treasure_chests()
+
 			for r = 1, get_view_port_height() do
 				for c = 1, get_view_port_width() do
 					local p_id = tostring((c-1) .. "_" .. (r-1))
@@ -766,7 +814,7 @@ function _render(delta_time)
 
 			render_info_bar()
 			render_mini_map()
-			render_combat_log()
+			render_action_log()
 		else
 			render_win_or_death_screen()
 		end
@@ -783,17 +831,17 @@ function _tick(delta_time)
 		end
 	end
 
-	for k, combat_log in pairs(Game.combat_log) do
-		combat_log.show = combat_log.show + delta_time
-		combat_log.offset = combat_log.offset + 10
-		combat_log.transparancy = combat_log.transparancy - 10
+	for k, action_log in pairs(Game.action_log) do
+		action_log.show = action_log.show + delta_time
+		action_log.offset = action_log.offset + 10
+		action_log.transparancy = action_log.transparancy - 10
 
-		if(combat_log.transparancy <= 10) then
-			combat_log.transparancy = 10
+		if(action_log.transparancy <= 10) then
+			action_log.transparancy = 10
 		end
 
-		if(combat_log.show >= .5) then
-			Game.combat_log[k] = nil
+		if(action_log.show >= .5) then
+			Game.action_log[k] = nil
 		end
 	end
 end
