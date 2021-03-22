@@ -88,7 +88,7 @@ namespace roguely::game
 				text_small->load_font(font_path.c_str(), 26);
 		}
 
-		void Game::tear_down_sdl() 
+		void Game::tear_down_sdl()
 		{
 				if (soundtrack != nullptr)
 				{
@@ -110,7 +110,7 @@ namespace roguely::game
 				}
 
 				maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
-				entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();				
+				entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
 		}
 
 		void Game::play_sound(std::string name)
@@ -151,9 +151,14 @@ namespace roguely::game
 
 		void Game::draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y)
 		{
+				draw_text(renderer, t, size, x, y, 255, 255, 255, 255);
+		}
+
+		void Game::draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y, int r, int g, int b, int a)
+		{
 				if (!(t.length() > 0)) return;
 
-				std::shared_ptr<roguely::common::Text> &text = text_small;
+				std::shared_ptr<roguely::common::Text> text = text_small;
 
 				if (size == "small")
 						text = text_small;
@@ -162,12 +167,14 @@ namespace roguely::game
 				else if (size == "large")
 						text = text_large;
 
-				text->draw_text(renderer, x, y, t.c_str());
+				SDL_Color text_color = { (Uint8)r, (Uint8)g, (Uint8)b, (Uint8)a };
+				text->draw_text(renderer, x, y, t.c_str(), text_color);
 		}
+
 
 		roguely::common::TextExtents Game::get_text_extents(std::string t, std::string size)
 		{
-				std::shared_ptr<roguely::common::Text> &text = text_small;
+				std::shared_ptr<roguely::common::Text> text = text_small;
 
 				if (size == "small")
 						text = text_small;

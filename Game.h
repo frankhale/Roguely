@@ -160,6 +160,7 @@ namespace roguely::game
 
 				void draw_sprite(SDL_Renderer* renderer, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height);
 				void draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y);
+				void draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y, int r, int g, int b, int a);
 				roguely::common::TextExtents get_text_extents(std::string t, std::string size);
 				void play_sound(std::string name);
 				void reset(bool reset_ptr);

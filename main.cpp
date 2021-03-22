@@ -823,6 +823,10 @@ int main(int argc, char* argv[])
 						game->draw_text(renderer, t, size, x, y);
 						});
 
+				lua.set_function("draw_text_with_color", [&](std::string t, std::string size, int x, int y, int r, int g, int b, int a) {
+						game->draw_text(renderer, t, size, x, y, r, g, b, a);
+						});
+
 				lua.set_function("get_text_extents", [&](std::string t, std::string size, sol::this_state s) {
 						auto extents = game->get_text_extents(t.c_str(), size);
 						sol::table extents_table = lua.create_table();
@@ -963,6 +967,10 @@ int main(int argc, char* argv[])
 				lua.set_function("get_random_number", [&](int start, int end) {
 						return std::rand() % end + start;
 						});
+				
+				lua.set_function("generate_uuid", [&]() {
+						return game->generate_uuid();
+						});
 
 				auto lua_init = lua["_init"];
 
@@ -1016,12 +1024,11 @@ int main(int argc, char* argv[])
 								accumulated_seconds = -CYCLE_TIME;
 								animation_timer.tick();
 								logic_timer.tick();
-								
-								tick(logic_timer.elapsed_seconds, lua.lua_state());
 
 								SDL_RenderClear(renderer);
 
 								render(animation_timer.elapsed_seconds, lua.lua_state());
+								tick(logic_timer.elapsed_seconds, lua.lua_state());
 
 								SDL_RenderPresent(renderer);
 						}

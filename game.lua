@@ -83,6 +83,7 @@ Game = {
 	},
 	health_recovery_time = 0,
 	health_recovery = 10,
+	combat_log = {},
 	entities = {
 		rewards = {
 			coin = {
@@ -394,6 +395,21 @@ function move_enemies()
 	end
 end
 
+function add_combat_log(who, attack_type, combat_multiplier, damage, x, y)
+	local id = generate_uuid()
+
+	Game.combat_log[id] = {}
+	Game.combat_log[id]["show"] = 0
+	Game.combat_log[id]["transparancy"] = 255
+	Game.combat_log[id]["offset"] = 1
+	Game.combat_log[id]["who"] = who
+	Game.combat_log[id]["x"] = x
+	Game.combat_log[id]["y"] = y
+	Game.combat_log[id]["attack_type"] = attack_type
+	Game.combat_log[id]["message"] = tostring(combat_multiplier .. damage)
+
+end
+
 function initiate_attack_sequence(pid)
 	-- generate some random numbers for crit chance (player and enemy)
 	local player_crit_chance = get_random_number(1, 100) <= 20
@@ -403,6 +419,8 @@ function initiate_attack_sequence(pid)
 	local enemy_attack = Game.enemies[pid].enemy.components.stats_component.attack
 	local enemy_health = Game.enemies[pid].enemy.components.health_component.health
 	local enemy_id = Game.enemies[pid].enemy.id
+	local enemy_x = Game.enemies[pid].enemy.point.x
+	local enemy_y = Game.enemies[pid].enemy.point.y
 
 	-- TODO: Add combat text
 
@@ -411,10 +429,14 @@ function initiate_attack_sequence(pid)
 		-- do crit attack
 		local damage = player_attack + get_random_number(1, 5) * 2
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
+
+		add_combat_log("player", "critical", "+", damage, enemy_x, enemy_y)
 	else
 		-- do normal attack
 		local damage = player_attack + get_random_number(1, 5)
 		set_component_value("enemies", enemy_id, "health_component", "health", math.floor(enemy_health - damage))
+
+		add_combat_log("player", "normal", "+", damage, enemy_x, enemy_y)
 	end
 
 	-- check to see if enemy died
@@ -434,10 +456,14 @@ function initiate_attack_sequence(pid)
 			-- do crit attack
 			local damage = player_attack + get_random_number(1, 5) * 2
 			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+
+			add_combat_log("enemy", "critical", "-", damage, Game.player_pos.x, Game.player_pos.y)
 		else
 			-- do normal attack
 			local damage = player_attack + get_random_number(1, 5)
 			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+
+			add_combat_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
 		end
 	end
 
@@ -691,6 +717,23 @@ function render_win_or_death_screen()
 	draw_text("Press the space bar to play again...", "medium", math.floor(Game.window_width / 2 - text_extents.width / 2 - 150), Game.window_height - 100)
 end
 
+function render_combat_log()
+	for k, combat_log in pairs(Game.combat_log) do
+		if(combat_log ~= nil) then
+			local dx = (combat_log.x * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
+			local dy = (combat_log.y * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
+
+			if (combat_log.who == "player") then
+				draw_text_with_color(combat_log.message, "small", dx, (dy-combat_log.offset), 0, 255, 0, combat_log.transparancy)
+			elseif (combat_log.who == "enemy") then
+				draw_text_with_color(combat_log.message, "small", dx, (dy-combat_log.offset), 255, 0, 0, combat_log.transparancy)
+			end
+
+			set_draw_color(0, 0, 0, 255)
+		end
+	end
+end
+
 function _render(delta_time)
 	if (ERROR) then
 		return
@@ -723,6 +766,7 @@ function _render(delta_time)
 
 			render_info_bar()
 			render_mini_map()
+			render_combat_log()
 		else
 			render_win_or_death_screen()
 		end
@@ -731,10 +775,25 @@ end
 
 function _tick(delta_time)
 	Game.health_recovery_time = Game.health_recovery_time + delta_time
+
 	if(Game.health_recovery_time >= 2) then
 		Game.health_recovery_time = 0
 		if(Game.player.components.health_component.health < Game.player.components.health_component.max_health) then
 			set_component_value("common", "player", "health_component", "health", math.floor(Game.player.components.health_component.health + Game.health_recovery))
+		end
+	end
+
+	for k, combat_log in pairs(Game.combat_log) do
+		combat_log.show = combat_log.show + delta_time
+		combat_log.offset = combat_log.offset + 10
+		combat_log.transparancy = combat_log.transparancy - 20
+
+		if(combat_log.transparancy <= 10) then
+			combat_log.transparancy = 10
+		end
+
+		if(combat_log.show >= 1) then
+			Game.combat_log[k] = nil
 		end
 	end
 end
