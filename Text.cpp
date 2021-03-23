@@ -24,58 +24,62 @@
 * SOFTWARE.
 */
 
-#include "Text.hpp"
+#include "Text.h"
 
-Text::Text()
+namespace roguely::common
 {
-		font = nullptr;
-		text_texture = nullptr;
-}
-
-int Text::LoadFont(const char* path, int ptsize)
-{
-		font = TTF_OpenFont(path, ptsize);
-		if (!font) {
-				std::cout << "Unable to load font: " << path << std::endl
-						<< "SDL2_ttf Error: " << TTF_GetError() << std::endl;
-				return -1;
+		Text::Text()
+		{
+				font = nullptr;
+				text_texture = nullptr;
 		}
 
-		return 0;
-}
+		int Text::load_font(const char* path, int ptsize)
+		{
+				font = TTF_OpenFont(path, ptsize);
 
-TextExtents Text::GetTextExtents(const char* text)
-{
-		int w{}, h{};
+				if (!font) {
+						std::cout << "Unable to load font: " << path << std::endl
+								<< "SDL2_ttf Error: " << TTF_GetError() << std::endl;
+						return -1;
+				}
 
-		if (TTF_SizeText(font, text, &w, &h) == 0) {
-				return { w, h };
+				return 0;
 		}
 
-		return {};
-}
+		TextExtents Text::get_text_extents(const char* text)
+		{
+				int w{}, h{};
 
-void Text::DrawText(SDL_Renderer* renderer, int x, int y, const char* text)
-{
-		DrawText(renderer, x, y, text, text_color);
-}
+				if (TTF_SizeText(font, text, &w, &h) == 0) {
+						return { w, h };
+				}
 
-void Text::DrawText(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color)
-{
-		if (strlen(text) <= 0) return;
+				return {};
+		}
 
-		text_texture = nullptr;
+		void Text::draw_text(SDL_Renderer* renderer, int x, int y, const char* text)
+		{
+				draw_text(renderer, x, y, text, text_color);
+		}
 
-		SDL_Rect text_rect;
-		SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, color);
-		text_rect.x = x;
-		text_rect.y = y;
-		text_rect.w = text_surface->w;
-		text_rect.h = text_surface->h;
+		void Text::draw_text(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color)
+		{
+				if (strlen(text) <= 0) return;
 
-		text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
-		SDL_FreeSurface(text_surface);
+				text_texture = nullptr;
 
-		SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
-		SDL_DestroyTexture(text_texture);
+				SDL_Rect text_rect;
+				SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, color);
+				text_rect.x = x;
+				text_rect.y = y;
+				text_rect.w = text_surface->w;
+				text_rect.h = text_surface->h;
+
+				text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+				SDL_FreeSurface(text_surface);
+
+				SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
+				SDL_DestroyTexture(text_texture);
+		}
 }

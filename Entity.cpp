@@ -24,12 +24,16 @@
 * SOFTWARE.
 */
 
-#include "Entity.hpp"
+#include "Entity.h"
 
-Entity::Entity(int id, Point point, EntityType entityType)
+namespace roguely::ecs
 {
-		_id = id;
-		_point = point;
-		_entityType = entityType;
-		components = std::make_shared<std::vector<std::shared_ptr<Component>>>();
+		Entity::Entity(std::shared_ptr<EntityGroup> entityGroup, std::string id, roguely::common::Point point, EntityType entityType)
+		{
+				_id = id;
+				_point = point;
+				_entityGroup = entityGroup;
+				_entityType = entityType;
+				components = std::make_unique<std::vector<std::shared_ptr<Component>>>();
+		}
 }

@@ -24,71 +24,88 @@
 * SOFTWARE.
 */
 
-#include "SpriteSheet.hpp"
+#include "SpriteSheet.h"
 
-SpriteSheet::SpriteSheet(SDL_Renderer* renderer, const char* path, int sw, int sh)
+namespace roguely::sprites
 {
-		auto game_tileset = IMG_Load(path);
-		auto t_color = SDL_MapRGB(game_tileset->format, 0, 0, 0);
-		SDL_SetColorKey(game_tileset, SDL_TRUE, t_color);
-
-		spritesheet_texture = SDL_CreateTextureFromSurface(renderer, game_tileset);
-		SDL_FreeSurface(game_tileset);
-
-		sprite_width = sw;
-		sprite_height = sh;
-
-		sprites[WALL] = { 0, 0, sprite_width, sprite_height };
-		sprites[HEALTH_GEM] = { sprite_width, 0, sprite_width, sprite_height };
-		sprites[ATTACK_BONUS_GEM] = { 2 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[PLAYER] = { 3 * sprite_width, 0, sprite_width, sprite_height  };
-		sprites[SPIDER] = { 4 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[LURCHER] = { 5 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[GOLDEN_CANDLE] = { 6 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[DOWN_LADDER] = { 7 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[UP_LADDER] = { 8 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[GROUND] = { 9 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[WATER] = { 10 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[GRASS] = { 11 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[CRAB] = { 12 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[TREASURE_CHEST] = { 13 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[COIN] = { 14 * sprite_width, 0, sprite_width, sprite_height };				
-		sprites[DOOR] = { 15 * sprite_width, 0, sprite_width, sprite_height };
-		sprites[WALL_SECRET_DOOR] = { 0, 1 * sprite_height, sprite_width, sprite_height };
-		sprites[BUG] = { sprite_width * 1, 1 * sprite_height, sprite_width, sprite_height };
-		sprites[FIRE_WALKER] = { sprite_width * 5, sprite_height, sprite_width, sprite_height };
-		sprites[HIDDEN] = { sprite_width * 2, 1 * sprite_height, sprite_width, sprite_height };
-		sprites[HEART] = { 0, sprite_height * 3, sprite_width, sprite_height };
-		sprites[CRIMSON_SHADOW] = { sprite_width * 2, sprite_height * 2, sprite_width, sprite_height };
-		sprites[WALL_WITH_GRASS_1] = { sprite_width * 3, sprite_height * 2, sprite_width, sprite_height };
-		sprites[WALL_WITH_GRASS_2] = { sprite_width * 4, sprite_height * 2, sprite_width, sprite_height };
-		sprites[MANTIS] = { sprite_width * 6, sprite_height * 3, sprite_width, sprite_height };
-		sprites[PURPLE_BLOB] = { sprite_width * 13, sprite_height * 3, sprite_width, sprite_height };
-		sprites[PURPLE_BLOB] = { sprite_width * 13, sprite_height * 3, sprite_width, sprite_height };
-		sprites[ORANGE_BLOB] = { 0, sprite_height * 4, sprite_width, sprite_height };
-}
-
-void SpriteSheet::drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y)
-{		
-		drawSprite(renderer, sprite_id, x, y, 0, 0);
-}
-
-void SpriteSheet::drawSprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height)
-{
-		int width = sprite_width;
-		int height = sprite_height;
-
-		if (scaled_width > 0 && scaled_height > 0)
+		SpriteSheet::SpriteSheet(SDL_Renderer* renderer, std::string n, std::string p, int sw, int sh)
 		{
-				width = scaled_width;
-				height = scaled_height;
+				path = p;
+				name = n;
+				sprite_width = sw;
+				sprite_height = sh;
+
+				auto tileset = IMG_Load(p.c_str());
+				auto t_color = SDL_MapRGB(tileset->format, 0, 0, 0);
+				SDL_SetColorKey(tileset, SDL_TRUE, t_color);
+				spritesheet_texture = SDL_CreateTextureFromSurface(renderer, tileset);
+				int total_sprites_on_sheet = tileset->w / sw * tileset->h / sh;
+				sprites = std::make_unique<std::vector<std::shared_ptr<SDL_Rect>>>(0);
+
+				for (int y = 0; y < total_sprites_on_sheet / (sh / 2); y++)
+				{
+						for (int x = 0; x < total_sprites_on_sheet / (sw / 2); x++)
+						{
+								SDL_Rect rect = { x * sw, y * sh, sw, sh };
+								auto r = std::make_shared<SDL_Rect>(rect);
+								sprites->emplace_back(r);
+						}
+				}
+
+				SDL_FreeSurface(tileset);
 		}
 
-		SDL_Rect dest = { x, y, width, height };
-		SDL_RenderCopy(renderer, spritesheet_texture, &sprites[sprite_id], &dest);
-}
+		void SpriteSheet::draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y)
+		{
+				draw_sprite(renderer, sprite_id, x, y, 0, 0);
+		}
 
-SpriteSheet::~SpriteSheet()
-{
-		SDL_DestroyTexture(spritesheet_texture);
+		void SpriteSheet::draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height)
+		{
+				if (sprite_id < 0 || sprite_id > sprites->capacity()) return;
+
+				int width = sprite_width;
+				int height = sprite_height;
+
+				if (scaled_width > 0 && scaled_height > 0)
+				{
+						width = scaled_width;
+						height = scaled_height;
+				}
+
+				SDL_Rect dest = { x, y, width, height };
+				auto sprite_rect = sprites->at(sprite_id);
+				SDL_RenderCopy(renderer, spritesheet_texture, &(*sprite_rect), &dest);
+		}
+		
+		sol::table SpriteSheet::get_sprites_as_lua_table(sol::this_state s)
+		{
+				sol::state_view lua(s);
+				sol::table sprites_table = lua.create_table();
+
+				//std::cout << "getting info for: " << name << std::endl;
+				//std::cout << "number of sprites: " << sprites->size() << std::endl;
+
+				for (std::size_t i = 0, sp = sprites->size(); i != sp; ++i)
+				{
+						auto sprite_rect = sprites->at(i);
+
+						sol::table rect_table = lua.create_table();
+
+						rect_table.set("x", sprite_rect->x);
+						rect_table.set("y", sprite_rect->y);
+						rect_table.set("w", sprite_rect->w);
+						rect_table.set("h", sprite_rect->h);
+
+						sprites_table.set(i, rect_table);
+
+						//std::cout << i << " - " <<
+						//		" x = " << sprite_rect->x <<
+						//		" y = " << sprite_rect->x <<
+						//		" w = " << sprite_rect->w <<
+						//		" h = " << sprite_rect->h << std::endl;
+				}
+
+				return sprites_table;
+		}
 }
