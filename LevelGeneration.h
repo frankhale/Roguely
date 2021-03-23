@@ -33,6 +33,10 @@
 
 namespace roguely::level_generation
 {
+		// Quick and dirty cellular automata that I learned about from YouTube
+		// We can do more but currently are just doing the very least to get a 
+		// playable level.
+
 		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y);
 		void perform_cellular_automaton(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int passes);
 		std::shared_ptr<boost::numeric::ublas::matrix<int>> init_cellular_automata(int map_width, int map_height);

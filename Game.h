@@ -189,6 +189,8 @@ namespace roguely::game
 				std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
 				std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
 
+				// Corner cut here. This is silly but keeps us going, we need to 
+				// rethink having a reusable Text class for variable size fonts.
 				std::shared_ptr<roguely::common::Text> text_large{};
 				std::shared_ptr<roguely::common::Text> text_medium{};
 				std::shared_ptr<roguely::common::Text> text_small{};

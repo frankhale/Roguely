@@ -30,6 +30,8 @@
 
 namespace roguely::ecs
 {
+		// We aren't using all these yet. I am simply putting them in place for
+		// later.
 		enum class EntityType
 		{
 				Player,
@@ -41,6 +43,11 @@ namespace roguely::ecs
 				Wall
 		};
 
+		// There are some built in components and the rest are defined in Lua 
+		// through the LuaComponent.
+		//
+		// I suspect I'll add a AnimationComponent here to capture the state needed
+		// to support simple animation.
 		class Component {
 		public:
 				virtual ~Component() {};
@@ -121,6 +128,7 @@ namespace roguely::ecs
 				int value = 0;
 		};
 
+		// Currently not used.
 		class InventoryComponent : public Component
 		{
 		public:
