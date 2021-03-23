@@ -4,7 +4,9 @@
 
 A simple Roguelike in SDL/C++/Lua
 
-Test level showing off game sprites (not actual game play)
+Test level showing off game sprites. The spritesheet is coming along for a much
+richer game but there is still a lot of work still to do. This screenshot **does
+not denote actual actual game play**
 
 ![Roguely Logo](screenshots/sprite-sandbox.png)
 
@@ -12,17 +14,16 @@ Test level showing off game sprites (not actual game play)
 
 NOTE: This is a work in progress...
 
-The map is using simple cellular automata to generate it. Each time you run the
-game you'll get a new map. Enemies spawn, move around and you can attack them to
-increase your score. You can pick up health gems and coins. Dead enemies spawn a
-treasure chest with a chance to increase health and score. If you kill a
-`fire walker` he will spawn a treasure chest and an attack gem which increases
-your attack power. Look for the golden candle and if you collect it you will
-win the game.
+The game so far is very simple anbd is using cellular automata to generate maps.
+Each time you run the game you'll get a new map. Enemies spawn, move around
+randomly and you can attack them to increase your score. You can pick up health
+gems and coins. Dead enemies spawn a treasure chest with a chance to increase
+health and score. Look for the golden candle and if you collect it you will win
+the game.
 
 ## Next Steps
 
-Before the code gets too messy, here is a list of things planned.
+This concluded during rewrite.
 
 - [x] Switch from manual dependency configuration to `vcpkg`
 - [x] Refactor current code so we can:
@@ -38,6 +39,13 @@ Before the code gets too messy, here is a list of things planned.
 I've included the Photoshop file that was used to create the tileset. My
 workflow is to develop tiles in 8x8 and then upscale them to 32x32 and then
 export the tileset as a PNG which is used in the game.
+
+The tileset is sort of all over the place. It's not well organized and has
+ventured into some animation tiles. We aren't doing any animation yet and a lot
+of these tiles are not currently being used. The main focus so far has been to
+get a basic engine up, provide lua support and get something working and for
+that I am very happy and recognize that there is still a long way to go before
+a proper game can be made.
 
 ## Game Objections (so far)
 
