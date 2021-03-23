@@ -23,7 +23,7 @@
 -- SOFTWARE.
 
 Game = {
-	window_title = "Roguely - A simple Roguelike in C++/Lua/SDL2",
+	window_title = "Roguely - A simple Roguelike in SDL2/C++/Lua",
 	window_icon_path = "assets/icon.png",
 	window_width = 1280,
 	window_height = 768,
