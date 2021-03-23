@@ -156,6 +156,10 @@ void init_game(sol::table game_config)
 		game = std::make_shared<roguely::game::Game>(game_config);
 }
 
+// It's super ugly to have this Lua integration code here but it is what it is
+// hopefully soon we'll have a better story for this. Possibly integrate this
+// into the Game class and rename Game to Engine.
+
 sol::table get_sprite_info(const std::shared_ptr<roguely::game::Game> &game, std::string name, sol::this_state s)
 {
 		if (!(name.length() > 0)) return nullptr;
@@ -484,8 +488,6 @@ std::string add_entity(const std::shared_ptr<roguely::game::Game> &game, std::st
 		return add_entity(game, entity_group_name, entity_type, random_point.x, random_point.y, components_table);
 }
 
-
-
 sol::table add_entities(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
 {
 		sol::state_view lua(s);
@@ -513,23 +515,10 @@ void emit_lua_update_for_entity_group(std::string entity_group_name, std::string
 
 void remove_entity(const std::shared_ptr<roguely::game::Game> &game, std::string entity_group_name, std::string entity_id, sol::this_state s)
 {
-		//sol::state_view lua(s);
 		auto result = game->remove_entity(entity_group_name, entity_id);
 
 		if (result)
 				emit_lua_update_for_entity_group(entity_group_name, entity_id, s);
-		/*{
-				auto lua_update = lua["_update"];
-				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
-				{
-						sol::table data_table = lua.create_table();
-						data_table.set("entity_group_name", entity_group_name);
-						data_table.set("entity_id", entity_id);
-						data_table.set("entity_group", convert_entity_group_to_lua_table(game, entity_group_name, lua.lua_state()));
-
-						lua_update("entity_event", data_table);
-				}
-		}*/
 }
 
 sol::table get_test_map(sol::this_state s)
