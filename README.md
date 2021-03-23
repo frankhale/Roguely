@@ -1,12 +1,10 @@
 # Roguely
 
-**NOTE: THERE IS MAJOR WORK GOING ON HERE AND IT'S NOT FINISHED...**
-
 ![Roguely Logo](assets/roguely-logo.png)
 
-A simple Roguelike in SDL and C++
+A simple Roguelike in SDL/C++/Lua
 
-Test level showing off game sprites
+Test level showing off game sprites (not actual game play)
 
 ![Roguely Logo](screenshots/sprite-sandbox.png)
 
@@ -26,20 +24,14 @@ win the game.
 
 Before the code gets too messy, here is a list of things planned.
 
-- Switch from manual dependency configuration to `vcpkg`
-- Refactor current code so we can:
-  - Integrate Lua
-  - Finish ECS system
-  - Move all in game objects (including player) to entities
-  - Remove hard coded entity references that we have now
-  - Optimize rendering pipeline
-  - Expand the title screen to add a screen to document how the game is played
-    and who the enemies are as well as what the objectives are.
-
-In order to get there we have to figure out just how much Lua integration we'll
-have and what that API will look like. The C++ side should provide the
-foundation for the game but decisions about the game content should be exposed
-from Lua. This is going to start shaping up over the next few weeks.
+- [x] Switch from manual dependency configuration to `vcpkg`
+- [x] Refactor current code so we can:
+  - [x] Integrate Lua
+  - [x] Finish ECS system
+  - [x] Move all in game objects (including player) to entities
+  - [x] Remove hard coded entity references that we have now
+  - [x] Optimize rendering pipeline
+  - [ ] Expand the title screen to add a screen to document how the game is played and who the enemies are as well as what the objectives are.
 
 ## Tileset
 
@@ -78,6 +70,8 @@ My first screenshot when I was able to render sprites:
 ![Old](screenshots/first.png)
 
 ## Videos
+
+[![Game Play (Part 2)](https://img.youtube.com/vi/Bs1GXWLNYok/0.jpg)](https://www.youtube.com/watch?v=Bs1GXWLNYok)
 
 [![Game Play (Part 1)](https://img.youtube.com/vi/IOBuFlfgCSE/0.jpg)](https://www.youtube.com/watch?v=IOBuFlfgCSE)
 
@@ -122,4 +116,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-17 March 2021
+22 March 2021
