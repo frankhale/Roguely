@@ -814,6 +814,14 @@ int main(int argc, char* argv[])
 
 				init_game(game_config);
 
+				// Let me explain why this is here. I ran into some issues passing 
+				// around Lua state and things were getting a bit wonky. I pulled the
+				// Lua integration back here for the time being because the problems
+				// went away and I could concentrate on finishing up the game code.
+				//
+				// Please understand I don't want any of the actual Lua integration 
+				// code here. This is super ugly and embarrassing. 
+
 				lua["get_test_map"] = get_test_map;
 				
 				lua.set_function("get_sprite_info", [&](std::string sprite_sheet_name, sol::this_state s) {
