@@ -2,25 +2,24 @@
 
 ![Roguely Logo](assets/roguely-logo.png)
 
-A simple Roguelike in SDL/C++/Lua
-
-Test level showing off game sprites. The spritesheet is coming along for a much
-richer game but there is still a lot of work still to do. This screenshot **does
-not denote actual actual game play**
-
-![Roguely Logo](screenshots/sprite-sandbox.png)
-
-## Status
-
 NOTE: This is a work in progress...
 
-The game so far is very simple anbd is using cellular automata to generate maps.
-Each time you run the game you'll get a new map. Enemies spawn, move around
-randomly and you can attack them to increase your score. You can pick up health
-gems and coins. Dead enemies spawn a treasure chest with a chance to increase
-health and score. Look for the golden candle and if you collect it you will win
-the game.
+Roguely is a very simple Roguelike in SDL/C++/Lua.
 
+The game is using very simple cellular automata to generate maps. Each time you
+run the game you'll get a new map. Enemies spawn, move around randomly and you
+can attack them to increase your score. You can pick up health gems and coins.
+Dead enemies spawn a treasure chest with a chance to increase health and score.
+Look for the golden candle and if you collect it you will win the game.
+
+There is no enemy AI yet. Enemies won't aggro on you. You can avoid enemies
+easily. This is an area that I plan to invest some time on in the future.
+
+The screenshot below shows off game sprites that are in the current iteration
+of the sprite sheet. Not all sprites in this screenshot are currently being used
+in the game. There is still a lot of work still left to do.
+
+![Roguely Logo](screenshots/sprite-sandbox.png)
 ## Next Steps
 
 This concluded during rewrite.
