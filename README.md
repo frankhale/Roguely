@@ -47,7 +47,7 @@ get a basic engine up, provide lua support and get something working and for
 that I am very happy and recognize that there is still a long way to go before
 a proper game can be made.
 
-## Game Objections (so far)
+## Game Objectives (so far)
 
 Not a lot to do besides run around and kill enemies and increase score. If you
 run across the golden candle you win. It's highlighted in yellow on the mini
