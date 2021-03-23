@@ -31,7 +31,7 @@ Game = {
 	map_height = 125,
 	view_port_width = 40,
 	view_port_height = 24,
-	music = true,
+	music = false,
 	spritesheet_path = "assets/roguelike.png",
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
@@ -96,7 +96,7 @@ Game = {
 			},
 			enemy_bonus_component = {
 				type = "bonus",
-				properties = { }
+				properties = {}
 			}
 		}
 	},
@@ -317,52 +317,6 @@ function create_entities(entity_table, group, entity_name, entity_type)
 	return entities
 end
 
-function _init()
-	add_sprite_sheet("game-sprites", Game.spritesheet_path, Game.sprite_info.width, Game.sprite_info.height)
-
-	add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, {
-		sprite_component = {
-			name = "player",
-			spritesheet_name = "game-sprites",
-			sprite_id = 3
-		},
-		health_component = { health = 60 },
-		stats_component = { attack = 1 },
-		score_component = { score = 0 },
-		inventory_component = {
-			items = {
-				health_potion = 3
-			}
-		}
-	})
-
-	generate_map("main", Game.map_width, Game.map_height)
-	switch_map("main")
-
-	local pos = generate_random_point({ "common" })
-	update_entity_position("common", "player", pos.x, pos.y)
-
-	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
-	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
-
-	Game.number_of_enemies = 0
-	for _ in pairs(Game.enemies) do Game.number_of_enemies = Game.number_of_enemies + 1 end
-
-	for k,v in pairs(Game.items) do
-		for k1,v1 in pairs(v) do
-			if(v1.components.sprite_component.name == "goldencandle") then
-				Game.goldencandle = {
-					point = v1.point,
-					p_id = tostring(v1.point.x .. "_" .. v1.point.y)
-				}
-			end
-		end
-	end
-
-	Game.map = get_map("main", false)
-	fov("main")
-end
-
 function get_enemy_by_id(id)
 	for k,v in pairs(Game.enemies) do
 		if(v.enemy.id == id) then
@@ -476,8 +430,19 @@ function initiate_attack_sequence(pid)
 		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
 
 		Game.treasure_chest.components.enemy_bonus_component.properties.action = function()
+			local health_boost = get_random_number(1, 100)
+
+			if (health_boost <= 20) then
+				local health_bonus = math.floor(player_health + 15 + (2 * health_boost))
+				add_action_log("player", "pickup", "+", tostring(enemy_value .. " score"), Game.player_pos.x, Game.player_pos.y)
+				set_component_value("common", "player", "health_component", "health", health_bonus)
+				print("got a health_boost crit")
+			end
+
+			add_action_log("player", "pickup", "+", tostring(enemy_value .. " score"), Game.player_pos.x, Game.player_pos.y)
 			set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + enemy_value)
 		end
+
 		add_entity("treasure_chests", "item", enemy_x, enemy_y, Game.treasure_chest.components)
 	else
 		-- enemy strikes next
@@ -505,132 +470,6 @@ end
 
 function started()
 	return Game.started == true and Game.won == false and Game.lost == false
-end
-
-function _update(event, data)
-	if(event == "key_event") then
-		if data["key"] == "up" and started() then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
-				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
-				move_enemies()
-			else
-				local pid = get_player_movement_direction_pid("up")
-				if(Game.enemies[pid]) then
-					play_sound("combat")
-					initiate_attack_sequence(pid)
-				else
-					play_sound("bump")
-				end
-			end
-		 elseif data["key"] == "down" and started() then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
-				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
-				move_enemies()
-			else
-				local pid = get_player_movement_direction_pid("down")
-				if(Game.enemies[pid]) then
-					play_sound("combat")
-					initiate_attack_sequence(pid)
-				else
-					play_sound("bump")
-				end
-			end
-		 elseif data["key"] == "left" and started()then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
-				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
-				move_enemies()
-			else
-				local pid = get_player_movement_direction_pid("left")
-				if(Game.enemies[pid]) then
-					play_sound("combat")
-					initiate_attack_sequence(pid)
-				else
-					play_sound("bump")
-				end
-			end
-		 elseif data["key"] == "right" and started() then
-			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
-				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
-				move_enemies()
-			else
-				local pid = get_player_movement_direction_pid("right")
-				if(Game.enemies[pid]) then
-					play_sound("combat")
-					initiate_attack_sequence(pid)
-				else
-					play_sound("bump")
-				end
-			end
-		 elseif data["key"] == "space" then
-			if (Game.started) then
-				play_sound("warp")
-				local pos = generate_random_point({ "common" })
-				update_entity_position("common", "player", pos.x, pos.y)
-			elseif (Game.won == true or Game.lost == true) then
-				Game.lost = false
-				Game.won = false
-				Game.started = true
-				reset()
-			else
-				Game.started = true
-			end
-		end
-
-		if(Game.started and Game.items[XY_Id]) then
-			if (Game.items[XY_Id].item.components.sprite_component.name == "coin") then
-				local coin_value = Game.items[XY_Id].item.components.value_component.value
-				add_action_log("player", "pickup", "+", tostring(coin_value .. " score"), Game.player_pos.x, Game.player_pos.y)
-				play_sound("coin")
-				set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + coin_value)
-				remove_entity("rewards", Game.items[XY_Id].item.id)
-			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "healthgem") then
-				play_sound("pickup")
-				local action = Game.items[XY_Id].item.components.health_restoration_component.properties.action
-				local player_current_health = Game.player.components.health_component.health
-				action("common", "player", "health_component", "health", player_current_health)
-				remove_entity("rewards", Game.items[XY_Id].item.id)
-			elseif (Game.items[XY_Id]["item"]["components"]["sprite_component"]["name"] == "goldencandle") then
-				-- TODO: Use the Lua Component associated with the goldencandle to determine actions to take
-				Game.win_lose_message = "YOU WIN!!!"
-				Game.won = true
-				Game.started = false
-				set_component_value("common", "player", "score_component", "score",
-					Game.player.components.score_component.score +
-					Game.items[XY_Id].item.components.value_component.value)
-				remove_entity("rewards", Game.items[XY_Id].item.id)
-			end
-		end
-	elseif (event == "entity_event") then
-		if (data["player"] ~= nil) then
-			Game.player = data.player
-			Game.player_id = data.player.id --[Game.player_id]
-			Game.player_pos.x = data.player.point.x
-			Game.player_pos.y = data.player.point.y
-			XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
-			fov("main")
-		elseif (data["enemy"] ~= nil) then
-			local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
-			if(Game.enemies[enemy_pid] == nil) then
-				-- Enemy has moved and we need to update the old entity accordingly
-				-- Need to find the enemy by it's Id rather than PID
-				Game.enemies[Game.enemy_moving_pid] = nil
-				Game.enemies[enemy_pid] = {}
-				Game.enemies[enemy_pid]["enemy"] = data["enemy"]
-			else
-				Game.enemies[enemy_pid].enemy = data["enemy"]
-			end
-		else
-			if(data["entity_group_name"] == "rewards") then
-			 	Game.items = data["entity_group"]
-			elseif (data["entity_group_name"] == "enemies") then
-				Game.enemies = data["entity_group"]
-			else
-				Game[data["entity_group_name"]] = data["entity_group"]
-			end
-		end
-	elseif (event == "light_map") then
-	 	Game.light_map = data
-	end
 end
 
 function calculate_health_bar_width(health, starting_health, health_bar_max_width)
@@ -777,6 +616,186 @@ function render_treasure_chests()
 
 			render_entity(Game.treasure_chests, "item", p_id, dx, dy)
 		end
+	end
+end
+
+-- Engine functions below
+
+function _init()
+	add_sprite_sheet("game-sprites", Game.spritesheet_path, Game.sprite_info.width, Game.sprite_info.height)
+
+	add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, {
+		sprite_component = {
+			name = "player",
+			spritesheet_name = "game-sprites",
+			sprite_id = 3
+		},
+		health_component = { health = 60 },
+		stats_component = { attack = 1 },
+		score_component = { score = 0 },
+		inventory_component = {
+			items = {
+				health_potion = 3
+			}
+		}
+	})
+
+	generate_map("main", Game.map_width, Game.map_height)
+	switch_map("main")
+
+	local pos = generate_random_point({ "common" })
+	update_entity_position("common", "player", pos.x, pos.y)
+
+	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
+	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
+
+	Game.number_of_enemies = 0
+	for _ in pairs(Game.enemies) do Game.number_of_enemies = Game.number_of_enemies + 1 end
+
+	for k,v in pairs(Game.items) do
+		for k1,v1 in pairs(v) do
+			if(v1.components.sprite_component.name == "goldencandle") then
+				Game.goldencandle = {
+					point = v1.point,
+					p_id = tostring(v1.point.x .. "_" .. v1.point.y)
+				}
+			end
+		end
+	end
+
+	Game.map = get_map("main", false)
+	fov("main")
+end
+
+function _update(event, data)
+	if(event == "key_event") then
+		if data["key"] == "up" and started() then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
+				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
+				move_enemies()
+			else
+				local pid = get_player_movement_direction_pid("up")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
+			end
+		 elseif data["key"] == "down" and started() then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
+				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
+				move_enemies()
+			else
+				local pid = get_player_movement_direction_pid("down")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
+			end
+		 elseif data["key"] == "left" and started()then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
+				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
+				move_enemies()
+			else
+				local pid = get_player_movement_direction_pid("left")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
+			end
+		 elseif data["key"] == "right" and started() then
+			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
+				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
+				move_enemies()
+			else
+				local pid = get_player_movement_direction_pid("right")
+				if(Game.enemies[pid]) then
+					play_sound("combat")
+					initiate_attack_sequence(pid)
+				else
+					play_sound("bump")
+				end
+			end
+		 elseif data["key"] == "space" then
+			if (Game.started) then
+				play_sound("warp")
+				local pos = generate_random_point({ "common" })
+				update_entity_position("common", "player", pos.x, pos.y)
+			elseif (Game.won == true or Game.lost == true) then
+				Game.lost = false
+				Game.won = false
+				Game.started = true
+				reset()
+			else
+				Game.started = true
+			end
+		end
+
+		if(Game.started and Game.items[XY_Id]) then
+			if (Game.items[XY_Id].item.components.sprite_component.name == "coin") then
+				local coin_value = Game.items[XY_Id].item.components.value_component.value
+				add_action_log("player", "pickup", "+", tostring(coin_value .. " score"), Game.player_pos.x, Game.player_pos.y)
+				play_sound("coin")
+				set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + coin_value)
+				remove_entity("rewards", Game.items[XY_Id].item.id)
+			elseif (Game.items[XY_Id].item.components.sprite_component.name == "healthgem") then
+				play_sound("pickup")
+				local action = Game.items[XY_Id].item.components.health_restoration_component.properties.action
+				local player_current_health = Game.player.components.health_component.health
+				action("common", "player", "health_component", "health", player_current_health)
+				remove_entity("rewards", Game.items[XY_Id].item.id)
+			elseif (Game.items[XY_Id].item.components.sprite_component.name == "goldencandle") then
+				-- TODO: Use the Lua Component associated with the goldencandle to determine actions to take
+				Game.win_lose_message = "YOU WIN!!!"
+				Game.won = true
+				Game.started = false
+				set_component_value("common", "player", "score_component", "score",
+					Game.player.components.score_component.score +
+					Game.items[XY_Id].item.components.value_component.value)
+				remove_entity("rewards", Game.items[XY_Id].item.id)
+			end
+		elseif (Game.started and Game.treasure_chests ~= nil and Game.treasure_chests[XY_Id]) then
+			if (Game.treasure_chests[XY_Id].item.components.sprite_component.name == "treasure_chest") then
+				play_sound("pickup")
+				Game.treasure_chests[XY_Id].item.components.enemy_bonus_component.properties.action()
+				remove_entity("treasure_chests", Game.treasure_chests[XY_Id].item.id)
+			end
+		end
+	elseif (event == "entity_event") then
+		if (data["player"] ~= nil) then
+			Game.player = data.player
+			Game.player_id = data.player.id --[Game.player_id]
+			Game.player_pos.x = data.player.point.x
+			Game.player_pos.y = data.player.point.y
+			XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
+			fov("main")
+		elseif (data["enemy"] ~= nil) then
+			local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
+			if(Game.enemies[enemy_pid] == nil) then
+				-- Enemy has moved and we need to update the old entity accordingly
+				-- Need to find the enemy by it's Id rather than PID
+				Game.enemies[Game.enemy_moving_pid] = nil
+				Game.enemies[enemy_pid] = {}
+				Game.enemies[enemy_pid]["enemy"] = data["enemy"]
+			else
+				Game.enemies[enemy_pid].enemy = data["enemy"]
+			end
+		else
+			if(data["entity_group_name"] == "rewards") then
+			 	Game.items = data["entity_group"]
+			elseif (data["entity_group_name"] == "enemies") then
+				Game.enemies = data["entity_group"]
+			else
+				Game[data["entity_group_name"]] = data["entity_group"]
+			end
+		end
+	elseif (event == "light_map") then
+	 	Game.light_map = data
 	end
 end
 
