@@ -39,6 +39,13 @@ I've included the Photoshop file that was used to create the tileset. My
 workflow is to develop tiles in 8x8 and then upscale them to 32x32 and then
 export the tileset as a PNG which is used in the game.
 
+## Game Objections (so far)
+
+Not a lot to do besides run around and kill enemies and increase score. If you
+run across the golden candle you win. It's highlighted in yellow on the mini
+map. If the level generation spawned you in a blocked area just hit the space
+bar to warp to another location.
+
 ## Screenshots
 
 Title Screen:
