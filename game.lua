@@ -127,7 +127,7 @@ Game = {
 						properties = {
 							action = function(group, entity_name, component_name, component_value_name, existing_component_value)
 								local health_value = 25
-								add_action_log("player", "pickup", "+", tostring(health_value .. " health"), Game.player_pos.x, Game.player_pos.y)
+								add_action_log("player", "health", "+", tostring(health_value .. " health"), Game.player_pos.x, Game.player_pos.y)
 								set_component_value(group, entity_name, component_name, component_value_name, existing_component_value + health_value)
 							end
 						}
@@ -386,6 +386,7 @@ function add_action_log(who, type, multiplier, value, x, y)
 	Game.action_log[id]["transparancy"] = 255
 	Game.action_log[id]["offset"] = 1
 	Game.action_log[id]["who"] = who
+	Game.action_log[id]["type"] = type
 	Game.action_log[id]["x"] = x
 	Game.action_log[id]["y"] = y
 	Game.action_log[id]["attack_type"] = type
@@ -434,12 +435,11 @@ function initiate_attack_sequence(pid)
 
 			if (health_boost <= 20) then
 				local health_bonus = math.floor(player_health + 15 + (2 * health_boost))
-				add_action_log("player", "pickup", "+", tostring(enemy_value .. " score"), Game.player_pos.x, Game.player_pos.y)
+				add_action_log("player", "health", "+", tostring(health_boost .. " health"), Game.player_pos.x, Game.player_pos.y - 1)
 				set_component_value("common", "player", "health_component", "health", health_bonus)
-				print("got a health_boost crit")
 			end
 
-			add_action_log("player", "pickup", "+", tostring(enemy_value .. " score"), Game.player_pos.x, Game.player_pos.y)
+			add_action_log("player", "score", "+", tostring(enemy_value .. " score"), Game.player_pos.x, Game.player_pos.y)
 			set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + enemy_value)
 		end
 
@@ -449,15 +449,15 @@ function initiate_attack_sequence(pid)
 		if (enemy_crit_chance) then
 			-- do crit attack
 			local damage = player_attack + get_random_number(1, 5) * 2
-			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 
 			add_action_log("enemy", "critical", "-", damage, Game.player_pos.x, Game.player_pos.y)
+			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 		else
 			-- do normal attack
 			local damage = player_attack + get_random_number(1, 5)
-			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 
 			add_action_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
+			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 		end
 	end
 
@@ -595,9 +595,15 @@ function render_action_log()
 			local dy = (action_log.y * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
 
 			if (action_log.who == "player") then
-				draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 0, 255, 0, action_log.transparancy)
-			elseif (action_log.who == "enemy") then
-				draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 255, 0, 0, action_log.transparancy)
+			 	if(action_log.type == "health") then
+			 		draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 255, 191, 0, action_log.transparancy)
+			 	elseif(action_log.type == "score") then
+			 		draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 255, 255, 0, action_log.transparancy)
+			 	else
+	 		 		draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 0, 255, 0, action_log.transparancy)
+			 	end
+			 elseif (action_log.who == "enemy") then
+			 	draw_text_with_color(action_log.message, "small", dx, (dy-action_log.offset), 255, 0, 0, action_log.transparancy)
 			end
 
 			set_draw_color(0, 0, 0, 255)
@@ -739,7 +745,7 @@ function _update(event, data)
 		if(Game.started and Game.items[XY_Id]) then
 			if (Game.items[XY_Id].item.components.sprite_component.name == "coin") then
 				local coin_value = Game.items[XY_Id].item.components.value_component.value
-				add_action_log("player", "pickup", "+", tostring(coin_value .. " score"), Game.player_pos.x, Game.player_pos.y)
+				add_action_log("player", "score", "+", tostring(coin_value .. " score"), Game.player_pos.x, Game.player_pos.y)
 				play_sound("coin")
 				set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + coin_value)
 				remove_entity("rewards", Game.items[XY_Id].item.id)
@@ -859,7 +865,7 @@ function _tick(delta_time)
 			action_log.transparancy = 10
 		end
 
-		if(action_log.show >= .5) then
+		if(action_log.show >= 2) then
 			Game.action_log[k] = nil
 		end
 	end
