@@ -728,7 +728,7 @@ function _update(event, data)
 				end
 			end
 		 elseif data["key"] == "space" then
-			if (Game.started and Game.won == false and Game.lost == false) then
+			if (started()) then
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
 				update_entity_position("common", "player", pos.x, pos.y)
