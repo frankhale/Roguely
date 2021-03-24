@@ -490,10 +490,6 @@ function calculate_health_bar_width(health, starting_health, health_bar_max_widt
 end
 
 function render_info_bar()
-	--set_draw_color(28 , 28, 28, 128)
-	--draw_filled_rect(10, 10, 290, 150)
-	--draw_sprite_scaled("game-sprites", Game.sprite_info["heart_sprite_id"], 20, 20, Game.sprite_info.width * 2, Game.sprite_info.height * 2)
-
 	local player_max_health = Game.player.components.health_component.max_health
 	local player_health = Game.player.components.health_component.health
 	local player_score = tostring(Game.player.components.score_component.score)
