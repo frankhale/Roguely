@@ -53,6 +53,10 @@ run across the golden candle you win. It's highlighted in yellow on the mini
 map. If the level generation spawned you in a blocked area just hit the space
 bar to warp to another location.
 
+## Known Issues
+
+- Sometimes a few enemies can become desynced
+
 ## Screenshots
 
 Title Screen:
@@ -132,4 +136,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-23 March 2021
+24 March 2021

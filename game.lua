@@ -31,7 +31,7 @@ Game = {
 	map_height = 125,
 	view_port_width = 40,
 	view_port_height = 24,
-	music = true,
+	music = false,
 	spritesheet_path = "assets/roguelike.png",
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
@@ -505,7 +505,7 @@ function render_info_bar()
 
 	draw_filled_rect(10, 10, math.floor(p_hw), math.floor(player_health_text_extents.height / 2) + 5)
 
-	draw_text(tostring(player_health), "medium", 100, 2)
+	draw_text(tostring(player_health), "medium", math.floor(110 - player_health_text_extents.width / 2), 2)
 	draw_text(player_score, "medium", math.floor(Game.window_width / 2 - score_text_extents.width / 2), 2)
 
 	set_draw_color(0, 0, 0, 255)
@@ -647,7 +647,7 @@ function _init()
 			spritesheet_name = "game-sprites",
 			sprite_id = 3
 		},
-		health_component = { health = 60 },
+		health_component = { health = 100 },
 		stats_component = { attack = 1 },
 		score_component = { score = 0 },
 		inventory_component = {
