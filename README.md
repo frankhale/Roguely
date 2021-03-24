@@ -65,9 +65,11 @@ Combat Text:
 
 Current Gameplay:
 
+![Old](screenshots/seventh.png)
+
 We have cellular automata level generation and a minimap now
 
-![New](screenshots/sixth.png)
+![Old](screenshots/sixth.png)
 
 Older gameplay showing how it evolved:
 
@@ -130,4 +132,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-22 March 2021
+23 March 2021

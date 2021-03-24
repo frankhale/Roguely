@@ -490,26 +490,31 @@ function calculate_health_bar_width(health, starting_health, health_bar_max_widt
 end
 
 function render_info_bar()
-	set_draw_color(28 , 28, 28, 128)
-	draw_filled_rect(10, 10, 290, 150)
+	--set_draw_color(28 , 28, 28, 128)
+	--draw_filled_rect(10, 10, 290, 150)
+	--draw_sprite_scaled("game-sprites", Game.sprite_info["heart_sprite_id"], 20, 20, Game.sprite_info.width * 2, Game.sprite_info.height * 2)
 
-	draw_sprite_scaled("game-sprites", Game.sprite_info["heart_sprite_id"], 20, 20, Game.sprite_info.width * 2, Game.sprite_info.height * 2)
+	local player_max_health = Game.player.components.health_component.max_health
+	local player_health = Game.player.components.health_component.health
+	local player_score = tostring(Game.player.components.score_component.score)
+	local score_text_extents = get_text_extents(player_score, "medium")
+	local player_health_text_extents = get_text_extents(tostring(player_health), "medium")
 
-	local p_hw = calculate_health_bar_width(Game.player["components"]["health_component"]["health"], Game.player["components"]["health_component"]["max_health"], 200)
+	local p_hw = calculate_health_bar_width(player_health, player_max_health, 200)
 
 	set_draw_color(33, 33, 33, 255)
-	draw_filled_rect((Game.sprite_info.width * 2 + 20), 36, 200, 24)
+	draw_filled_rect(10, 10, 200, math.floor(player_health_text_extents.height / 2) + 5)
 
-	if (Game.player["components"]["health_component"]["health"] <= Game.player["components"]["health_component"]["max_health"] / 3) then
+	if (player_health <= player_max_health / 3) then
 		set_draw_color(255, 0, 0, 255) -- red player's health is in trouble
 	else
 		set_draw_color(8, 138, 41, 255) -- green for player
 	end
 
-	draw_filled_rect((Game.sprite_info.width * 2 + 20), 36, math.floor(p_hw), 24)
+	draw_filled_rect(10, 10, math.floor(p_hw), math.floor(player_health_text_extents.height / 2) + 5)
 
-	draw_text(tostring(Game.player["components"]["health_component"]["health"]), "medium", (Game.sprite_info.width * 3 + 70), 28)
-	draw_text(tostring(Game.player["components"]["score_component"]["score"]), "large", 40, 90)
+	draw_text(tostring(player_health), "medium", 100, 2)
+	draw_text(player_score, "medium", math.floor(Game.window_width / 2 - score_text_extents.width / 2), 2)
 
 	set_draw_color(0, 0, 0, 255)
 end
