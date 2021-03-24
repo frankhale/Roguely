@@ -345,6 +345,7 @@ function move_enemies()
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
 
+			-- only move enemies that are within our viewport
 			if(xy_falls_within_viewport(x, y)) then
 				local direction = get_random_number(1, 4)
 

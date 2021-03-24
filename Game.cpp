@@ -379,6 +379,12 @@ namespace roguely::game
 
 		auto Game::is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir)
 		{
+				TileWalkableInfo twi{
+						true,
+						{ x, y },
+						roguely::ecs::EntityType::Ground /* treat everything as ground if its traversable */
+				};
+
 				for (const auto& e : *entities)
 				{
 						if ((dir == roguely::common::MovementDirection::Up && e->y() == y - 1 && e->x() == x) ||
@@ -386,27 +392,20 @@ namespace roguely::game
 								(dir == roguely::common::MovementDirection::Left && e->y() == y && e->x() == x - 1) ||
 								(dir == roguely::common::MovementDirection::Right && e->y() == y && e->x() == x + 1))
 						{
-								if (e->get_entity_type() == roguely::ecs::EntityType::Enemy || whoAmI == roguely::common::WhoAmI::Enemy)
-								{
-										TileWalkableInfo twi{
+								if (e->get_entity_type() == roguely::ecs::EntityType::Enemy ||
+										whoAmI == roguely::common::WhoAmI::Enemy) {
+										
+										twi = {
 												false,
 												{ e->x(), e->y() },
 												e->get_entity_type()
 										};
 
-										return std::make_shared<TileWalkableInfo>(twi);
+										break;
 								}
 						}
 				}
-
-				// TODO: Is this really the case? Science this motherfucker bruh!
-				// if we get this far its not any of our other entities, most likely open ground
-				TileWalkableInfo twi{
-						true,
-						{ x, y },
-						roguely::ecs::EntityType::Ground /* treat everything as ground if its traversable */
-				};
-
+				
 				return std::make_shared<TileWalkableInfo>(twi);
 		}
 
@@ -429,8 +428,6 @@ namespace roguely::game
 				TileWalkableInfo result{ false, { x, y }, roguely::ecs::EntityType::Wall };
 
 				if (!is_tile_on_map_traversable(x, y, dir, 0 /* Wall */)) return result;
-
-				auto is_player = player->x() == x && player->y() == y;
 
 				// for enemy movement
 				if (whoAmI != roguely::common::WhoAmI::Player && is_tile_player_tile(x, y, dir)) {
@@ -462,11 +459,9 @@ namespace roguely::game
 				for (auto& egtc : entity_groups_to_check)
 				{
 						auto group = get_entity_group(egtc);
-						if (group != nullptr && is_entity_location_traversable(x, y, group->entities)) blocked = false;
-						else {
-								blocked = true;
-								break;
-						}
+						blocked = (is_entity_location_traversable(x, y, group->entities)) ? false : true;
+
+						if (blocked) break;
 				}
 
 				return blocked;
@@ -484,11 +479,6 @@ namespace roguely::game
 						c = std::rand() % (current_map->width - 1);
 						r = std::rand() % (current_map->height - 1);
 				} while (is_xy_blocked(c, r, entity_groups_to_check));
-
-				if ((*current_map->map)(r, c) == 0)
-				{
-						std::cout << "How did we allow a x,y that is a wall tile???" << std::endl;
-				}
 
 				return { c, r };
 		}
@@ -510,20 +500,6 @@ namespace roguely::game
 
 		void Game::update_player_viewport_points()
 		{
-				//std::cout << "current_map->width = " << current_map->width
-				//		<< ", current_map->height = " << current_map->height
-				//		<< std::endl;
-
-				//std::cout << "view_port_x = " << view_port_x
-				//		<< ", view_port_y = " << view_port_y
-				//		<< std::endl;
-
-				//std::cout << "view_port_width = " << view_port_width
-				//		<< ", view_port_height = " << view_port_height
-				//		<< std::endl;
-
-				//std::cout << "player is (" << player->x() << ", " << player->y() << ")" << std::endl;
-
 				view_port_x = player->x() - VIEW_PORT_WIDTH / 2;
 				view_port_y = player->y() - VIEW_PORT_HEIGHT / 2;
 
