@@ -32,6 +32,9 @@
 #include "SpriteSheet.h"
 #include "Game.h"
 
+// TODO: For all Lua APIs we need to make sure all parameters are passed in
+//			 otherwise we crash with a silly error.
+
 SDL_Window* window = nullptr;
 SDL_Surface* window_surface = nullptr;
 SDL_Renderer* renderer = nullptr;

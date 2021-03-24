@@ -337,10 +337,9 @@ function xy_falls_within_viewport(x, y)
 end
 
 function move_enemies()
-	local should_move = get_random_number(1, 100) >= 80
-	local enemies_new_positions = {}
+	if (get_random_number(1, 100) >= 80) then
+		local enemies_new_positions = {}
 
-	if (should_move) then
 		for k, e in pairs(Game.enemies) do
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
@@ -348,22 +347,29 @@ function move_enemies()
 			-- only move enemies that are within our viewport
 			if(xy_falls_within_viewport(x, y)) then
 				local direction = get_random_number(1, 4)
+				local can_move = false
 
 				if(direction == 1 and is_tile_walkable(x, y, "up", "enemy", { "common", "enemies" })) then
 					y = y - 1
+					can_move = true
 				elseif (direction == 2 and is_tile_walkable(x, y, "down", "enemy", { "common", "enemies" })) then
 					y = y + 1
+					can_move = true
 				elseif (direction == 3 and is_tile_walkable(x, y, "left", "enemy", { "common", "enemies" })) then
 					x = x - 1
+					can_move = true
 				elseif (direction == 4 and is_tile_walkable(x, y, "right", "enemy", { "common", "enemies" })) then
 					x = x + 1
+					can_move = true
 				end
 
-				enemies_new_positions[e.enemy.id] = {}
-				enemies_new_positions[e.enemy.id]["pid"] = create_pid_from_x_y(e.enemy.point.x, e.enemy.point.y)
-				enemies_new_positions[e.enemy.id]["id"] = e.enemy.id
-				enemies_new_positions[e.enemy.id]["x"] = x
-				enemies_new_positions[e.enemy.id]["y"] = y
+				if (can_move) then
+					enemies_new_positions[e.enemy.id] = {}
+					enemies_new_positions[e.enemy.id]["pid"] = create_pid_from_x_y(e.enemy.point.x, e.enemy.point.y)
+					enemies_new_positions[e.enemy.id]["id"] = e.enemy.id
+					enemies_new_positions[e.enemy.id]["x"] = x
+					enemies_new_positions[e.enemy.id]["y"] = y
+				end
 			end
 		end
 
@@ -592,7 +598,14 @@ end
 function render_action_log()
 	for k, action_log in pairs(Game.action_log) do
 		if(action_log ~= nil) then
-			local dx = (action_log.x * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width)
+			local text_extents = get_text_extents(action_log.message, "small")
+			local x_offset = 0
+
+			if(text_extents.width > 20) then
+				x_offset = math.floor(text_extents.width / 2)
+			end
+
+			local dx = (action_log.x * Game.sprite_info.width) - (get_view_port_x() * Game.sprite_info.width) - x_offset
 			local dy = (action_log.y * Game.sprite_info.height) - (get_view_port_y() * Game.sprite_info.height)
 
 			if (action_log.who == "player") then
@@ -787,6 +800,7 @@ function _update(event, data)
 				-- Enemy has moved and we need to update the old entity accordingly
 				-- Need to find the enemy by it's Id rather than PID
 				Game.enemies[Game.enemy_moving_pid] = nil
+				Game.enemy_moving_pid = nil
 				Game.enemies[enemy_pid] = {}
 				Game.enemies[enemy_pid]["enemy"] = data["enemy"]
 			else
