@@ -337,6 +337,7 @@ function xy_falls_within_viewport(x, y)
 end
 
 function move_enemies()
+	-- Only move enemies around 20% of the time
 	if (get_random_number(1, 100) >= 80) then
 		local enemies_new_positions = {}
 
@@ -374,13 +375,8 @@ function move_enemies()
 		end
 
 		for k, e in pairs(enemies_new_positions) do
-			Game.enemy_moving_id = e.id
-			if (get_enemy_by_id(Game.enemy_moving_id) ~= nil) then
-				Game.enemy_moving_pid = e.pid
-				update_entity_position("enemies", e.id, e.x, e.y)
-			else
-				e = nil
-			end
+			Game.enemy_moving_pid = e.pid
+			update_entity_position("enemies", e.id, e.x, e.y)
 		 end
 	end
 end
@@ -797,16 +793,15 @@ function _update(event, data)
 			fov("main")
 		elseif (data["enemy"] ~= nil) then
 			local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
-			if(Game.enemies[enemy_pid] == nil) then
-				-- Enemy has moved and we need to update the old entity accordingly
-				-- Need to find the enemy by it's Id rather than PID
+
+			if(Game.enemy_moving_pid ~= nil) then
+				-- clean up old enemy table because it moved
 				Game.enemies[Game.enemy_moving_pid] = nil
 				Game.enemy_moving_pid = nil
-				Game.enemies[enemy_pid] = {}
-				Game.enemies[enemy_pid]["enemy"] = data["enemy"]
-			else
-				Game.enemies[enemy_pid].enemy = data["enemy"]
 			end
+
+			Game.enemies[enemy_pid] = {}
+			Game.enemies[enemy_pid].enemy = data["enemy"]
 		else
 			if(data["entity_group_name"] == "rewards") then
 			 	Game.items = data["entity_group"]
