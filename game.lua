@@ -101,7 +101,7 @@ Game = {
 		}
 	},
 	entities = {
-		rewards = {
+		items = {
 			coin = {
 				components = {
 					sprite_component = {
@@ -663,7 +663,7 @@ function _init()
 	local pos = generate_random_point({ "common" })
 	update_entity_position("common", "player", pos.x, pos.y)
 
-	Game.items = create_entities(Game.entities, "rewards", "coin", "item")
+	Game.items = create_entities(Game.entities, "items", "coin", "item")
 	Game.enemies = create_entities(Game.entities, "enemies", "spider", "enemy")
 
 	Game.number_of_enemies = 0
@@ -759,13 +759,13 @@ function _update(event, data)
 				add_action_log("player", "score", "+", tostring(coin_value .. " score"), Game.player_pos.x, Game.player_pos.y)
 				play_sound("coin")
 				set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + coin_value)
-				remove_entity("rewards", Game.items[XY_Id].item.id)
+				remove_entity("items", Game.items[XY_Id].item.id)
 			elseif (Game.items[XY_Id].item.components.sprite_component.name == "healthgem") then
 				play_sound("pickup")
 				local action = Game.items[XY_Id].item.components.health_restoration_component.properties.action
 				local player_current_health = Game.player.components.health_component.health
 				action("common", "player", "health_component", "health", player_current_health)
-				remove_entity("rewards", Game.items[XY_Id].item.id)
+				remove_entity("items", Game.items[XY_Id].item.id)
 			elseif (Game.items[XY_Id].item.components.sprite_component.name == "goldencandle") then
 				-- TODO: Use the Lua Component associated with the goldencandle to determine actions to take
 				Game.win_lose_message = "YOU WIN!!!"
@@ -774,7 +774,7 @@ function _update(event, data)
 				set_component_value("common", "player", "score_component", "score",
 					Game.player.components.score_component.score +
 					Game.items[XY_Id].item.components.value_component.value)
-				remove_entity("rewards", Game.items[XY_Id].item.id)
+				remove_entity("items", Game.items[XY_Id].item.id)
 			end
 		elseif (Game.started and Game.treasure_chests ~= nil and Game.treasure_chests[XY_Id]) then
 			if (Game.treasure_chests[XY_Id].item.components.sprite_component.name == "treasure_chest") then
@@ -803,13 +803,7 @@ function _update(event, data)
 			Game.enemies[enemy_pid] = {}
 			Game.enemies[enemy_pid].enemy = data["enemy"]
 		else
-			if(data["entity_group_name"] == "rewards") then
-			 	Game.items = data["entity_group"]
-			elseif (data["entity_group_name"] == "enemies") then
-				Game.enemies = data["entity_group"]
-			else
-				Game[data["entity_group_name"]] = data["entity_group"]
-			end
+			Game[data["entity_group_name"]] = data["entity_group"]
 		end
 	elseif (event == "light_map") then
 	 	Game.light_map = data
