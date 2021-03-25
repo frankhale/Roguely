@@ -248,8 +248,8 @@ namespace roguely::engine
 				Mix_Volume(-1, 2);
 				Mix_VolumeMusic(2);
 
-				sprite_sheets = std::make_shared<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
-				sounds = std::make_shared<std::vector<std::shared_ptr<roguely::common::Sound>>>();
+				sprite_sheets = std::make_unique<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
+				sounds = std::make_unique<std::vector<std::shared_ptr<roguely::common::Sound>>>();
 
 				reset(false);
 		}
@@ -371,11 +371,11 @@ namespace roguely::engine
 				}
 
 				std::string font_path = game_config["font_path"];
-				text_medium = std::make_shared<roguely::common::Text>();
+				text_medium = std::make_unique<roguely::common::Text>();
 				text_medium->load_font(font_path.c_str(), 40);
-				text_large = std::make_shared<roguely::common::Text>();
+				text_large = std::make_unique<roguely::common::Text>();
 				text_large->load_font(font_path.c_str(), 63);
-				text_small = std::make_shared<roguely::common::Text>();
+				text_small = std::make_unique<roguely::common::Text>();
 				text_small->load_font(font_path.c_str(), 26);
 
 				return 0;
@@ -387,8 +387,8 @@ namespace roguely::engine
 						entity_groups.reset();
 				}
 
-				maps = std::make_shared<std::vector<std::shared_ptr<roguely::common::Map>>>();
-				entity_groups = std::make_shared<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+				maps = std::make_unique<std::vector<std::shared_ptr<roguely::common::Map>>>();
+				entity_groups = std::make_unique<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
 		}
 
 		void Engine::play_sound(std::string name)
@@ -436,31 +436,17 @@ namespace roguely::engine
 		{
 				if (!(t.length() > 0)) return;
 
-				std::shared_ptr<roguely::common::Text> text = text_small;
-
-				if (size == "small")
-						text = text_small;
-				else if (size == "medium")
-						text = text_medium;
-				else if (size == "large")
-						text = text_large;
+				auto text = get_text_reference(size);
 
 				SDL_Color text_color = { (Uint8)r, (Uint8)g, (Uint8)b, (Uint8)a };
-				text->draw_text(renderer, x, y, t.c_str(), text_color);
+				(*text)->draw_text(renderer, x, y, t.c_str(), text_color);
 		}
 
 		roguely::common::TextExtents Engine::get_text_extents(std::string t, std::string size)
 		{
-				std::shared_ptr<roguely::common::Text> text = text_small;
+				auto text = get_text_reference(size);
 
-				if (size == "small")
-						text = text_small;
-				else if (size == "medium")
-						text = text_medium;
-				else if (size == "large")
-						text = text_large;
-
-				return text->get_text_extents(t.c_str());
+				return (*text)->get_text_extents(t.c_str());
 		}
 
 		void Engine::generate_map_for_testing()

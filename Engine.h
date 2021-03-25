@@ -584,6 +584,19 @@ namespace roguely::engine
 		private:
 
 				bool check_game_config(sol::table game_config, sol::this_state s);
+				auto get_text_reference(std::string size) 
+				{
+						auto text = &text_small;
+
+						if (size == "small")
+								text = &text_small;
+						else if (size == "medium")
+								text = &text_medium;
+						else if (size == "large")
+								text = &text_large;
+
+						return text;
+				}
 
 				int view_port_x = 0;
 				int view_port_y = 0;
@@ -593,20 +606,20 @@ namespace roguely::engine
 				int VIEW_PORT_WIDTH = 0;
 				int VIEW_PORT_HEIGHT = 0;
 
-				std::shared_ptr<roguely::common::Map> current_map{};				
-				std::shared_ptr<roguely::ecs::Entity> player{};				
 				std::string player_id{};
 
-				std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
-				std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
-				std::shared_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
-				std::shared_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
+				std::shared_ptr<roguely::common::Map> current_map{};
+				std::shared_ptr<roguely::ecs::Entity> player{};
+				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
+				std::unique_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
+				std::unique_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
+				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
 
 				// Corner cut here. This is silly but keeps us going, we need to 
 				// rethink having a reusable Text class for variable size fonts.
-				std::shared_ptr<roguely::common::Text> text_large{};
-				std::shared_ptr<roguely::common::Text> text_medium{};
-				std::shared_ptr<roguely::common::Text> text_small{};
+				std::unique_ptr<roguely::common::Text> text_large{};
+				std::unique_ptr<roguely::common::Text> text_medium{};
+				std::unique_ptr<roguely::common::Text> text_small{};
 
 				SDL_Window* window = nullptr;
 				SDL_Surface* window_surface = nullptr;
