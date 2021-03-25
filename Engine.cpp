@@ -657,7 +657,7 @@ namespace roguely::engine
 						{
 								if (e->get_entity_type() == roguely::ecs::EntityType::Enemy ||
 										whoAmI == roguely::common::WhoAmI::Enemy) {
-										
+
 										twi = {
 												false,
 												{ e->x(), e->y() },
@@ -668,7 +668,7 @@ namespace roguely::engine
 								}
 						}
 				}
-				
+
 				return std::make_shared<TileWalkableInfo>(twi);
 		}
 
@@ -803,6 +803,46 @@ namespace roguely::engine
 				}
 
 				return entity;
+		}
+
+		void Engine::update_entity_position(std::string entity_group_name, sol::table entity_positions)
+		{
+				auto entity_group = get_entity_group(entity_group_name);
+
+				if (entity_group != nullptr)
+				{
+						// loop over entity_positions table
+						for (auto& c : entity_positions)
+						{
+								std::string key = c.first.as<std::string>();
+								sol::table value_table = c.second.as<sol::table>();
+
+								if (value_table.valid() && key.size() > 0)
+								{
+										int x = -1;
+										int y = -1;
+
+										// find the entity in the group (key is the id of the entity)
+										for (auto& cc : value_table)
+										{
+												if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
+												{
+														if (cc.first.as<std::string>() == "x") x = cc.second.as<int>();
+														else if (cc.first.as<std::string>() == "y") y = cc.second.as<int>();
+												}
+										}
+
+										if (x > -1 && y > -1)
+										{
+												// update the entities x, y position
+												auto entity = get_entity(entity_group, key);
+
+												if (entity != nullptr)
+														entity->set_point({ x, y });
+										}
+								}
+						}
+				}
 		}
 
 		int Engine::get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key)
@@ -1339,7 +1379,9 @@ namespace roguely::engine
 				return convert_entity_group_to_lua_table(entity_group_name, lua.lua_state());
 		}
 
-		void  Engine::emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s)
+		// FIXME: Both emit_lua_update_for_entity_group's share similar code, need
+		//			  to remove the code duplication.
+		void Engine::emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s)
 		{
 				sol::state_view lua(s);
 				auto lua_update = lua["_update"];
@@ -1348,6 +1390,20 @@ namespace roguely::engine
 						sol::table data_table = lua.create_table();
 						data_table.set("entity_group_name", entity_group_name);
 						data_table.set("entity_id", entity_id);
+						data_table.set("entity_group", convert_entity_group_to_lua_table(entity_group_name, lua.lua_state()));
+
+						lua_update("entity_event", data_table);
+				}
+		}
+
+		void Engine::emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s)
+		{
+				sol::state_view lua(s);
+				auto lua_update = lua["_update"];
+				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
+				{
+						sol::table data_table = lua.create_table();
+						data_table.set("entity_group_name", entity_group_name);
 						data_table.set("entity_group", convert_entity_group_to_lua_table(entity_group_name, lua.lua_state()));
 
 						lua_update("entity_event", data_table);
@@ -1750,6 +1806,11 @@ namespace roguely::engine
 										if (entity_id == "player") rb_fov();
 
 								return emit_lua_update_for_entity(entity, s);
+								});
+
+						lua.set_function("update_entities_position", [&](std::string entity_group_name, sol::table entity_position_table, sol::this_state s) {
+								update_entity_position(entity_group_name, entity_position_table);
+								return emit_lua_update_for_entity_group(entity_group_name, s);
 								});
 
 						lua.set_function("get_view_port_x", [&]() {

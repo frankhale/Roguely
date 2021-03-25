@@ -31,7 +31,7 @@ Game = {
 	map_height = 125,
 	view_port_width = 40,
 	view_port_height = 24,
-	music = true,
+	music = false,
 	spritesheet_path = "assets/roguelike.png",
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
@@ -340,6 +340,7 @@ function move_enemies()
 	-- Only move enemies around 20% of the time
 	if (get_random_number(1, 100) >= 80) then
 		local enemies_new_positions = {}
+		local number_of_enemies = 0
 
 		for k, e in pairs(Game.enemies) do
 			local x = e.enemy.point.x
@@ -365,19 +366,18 @@ function move_enemies()
 				end
 
 				if (can_move) then
+					number_of_enemies = number_of_enemies + 1
+
 					enemies_new_positions[e.enemy.id] = {}
-					enemies_new_positions[e.enemy.id]["pid"] = create_pid_from_x_y(e.enemy.point.x, e.enemy.point.y)
-					enemies_new_positions[e.enemy.id]["id"] = e.enemy.id
 					enemies_new_positions[e.enemy.id]["x"] = x
 					enemies_new_positions[e.enemy.id]["y"] = y
 				end
 			end
 		end
 
-		for k, e in pairs(enemies_new_positions) do
-			Game.enemy_moving_pid = e.pid
-			update_entity_position("enemies", e.id, e.x, e.y)
-		 end
+		if (number_of_enemies > 0) then
+			update_entities_position("enemies", enemies_new_positions)
+		end
 	end
 end
 
@@ -792,16 +792,8 @@ function _update(event, data)
 			XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
 			fov("main")
 		elseif (data["enemy"] ~= nil) then
-			local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
-
-			if(Game.enemy_moving_pid ~= nil) then
-				-- clean up old enemy table because it moved
-				Game.enemies[Game.enemy_moving_pid] = nil
-				Game.enemy_moving_pid = nil
-			end
-
-			Game.enemies[enemy_pid] = {}
-			Game.enemies[enemy_pid].enemy = data["enemy"]
+		 	local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
+		 	Game.enemies[enemy_pid].enemy = data["enemy"]
 		else
 			Game[data["entity_group_name"]] = data["entity_group"]
 		end
