@@ -582,6 +582,7 @@ namespace roguely::engine
 				void tick(float delta_time, sol::this_state s);
 				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
 				void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);
+				void setup_lua_helpers(sol::this_state s);
 
 		private:
 

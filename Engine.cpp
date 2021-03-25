@@ -1673,10 +1673,189 @@ namespace roguely::engine
 				return result;
 		}
 
+		void Engine::setup_lua_helpers(sol::this_state s)
+		{
+				sol::state_view lua(s);
+
+				lua.set_function("get_sprite_info", [&](std::string sprite_sheet_name, sol::this_state s) {
+						sol::state_view lua(s);
+						return get_sprite_info(sprite_sheet_name, lua.lua_state());
+						});
+
+				lua.set_function("draw_text", [&](std::string t, std::string size, int x, int y) {
+						draw_text(renderer, t, size, x, y);
+						});
+
+				lua.set_function("draw_text_with_color", [&](std::string t, std::string size, int x, int y, int r, int g, int b, int a) {
+						draw_text(renderer, t, size, x, y, r, g, b, a);
+						});
+
+				lua.set_function("get_text_extents", [&](std::string t, std::string size, sol::this_state s) {
+						sol::state_view lua(s);
+						auto extents = get_text_extents(t.c_str(), size);
+						sol::table extents_table = lua.create_table();
+						extents_table.set("width", extents.width);
+						extents_table.set("height", extents.height);
+						return extents_table;
+						});
+
+				lua.set_function("add_sprite_sheet", [&](std::string name, std::string path, int sw, int sh, sol::this_state s) {
+						sol::state_view lua(s);
+						return add_sprite_sheet(renderer, name, path, sw, sh, lua.lua_state());
+						});
+
+				lua.set_function("draw_sprite", [&](std::string name, int sprite_id, int x, int y) {
+						draw_sprite(renderer, name, sprite_id, x, y, 0, 0);
+						});
+
+				lua.set_function("draw_sprite_scaled", [&](std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height) {
+						draw_sprite(renderer, name, sprite_id, x, y, scaled_width, scaled_height);
+						});
+
+				lua.set_function("play_sound", [&](std::string name) {
+						play_sound(name);
+						});
+
+				lua.set_function("generate_map", [&](std::string name, int map_width, int map_height) {
+						generate_map(name, map_width, map_height);
+						});
+
+				lua.set_function("add_entity", [&](std::string entity_group, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s) {
+						sol::state_view lua(s);
+						auto id = add_entity(entity_group, entity_type, x, y, components_table);
+						emit_lua_update_for_entity_group(entity_group, id, lua.lua_state());
+						});
+
+				lua.set_function("add_entities", [&](std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s) {
+						// FIXME: this relies on a map to be generated so we can generate x,y's that are not on walls. 
+						// If script writer tries to do this before a map has been generated then we will crash.
+						// Need to handle this!
+						sol::state_view lua(s);
+						return add_entities(entity_group_name, entity_type, components_table, num, lua.lua_state());
+						});
+
+				lua.set_function("remove_entity", [&](std::string entity_group_name, std::string entity_id, sol::this_state s) {
+						sol::state_view lua(s);
+						remove_entity(entity_group_name, entity_id, lua.lua_state());
+						});
+
+				lua.set_function("get_component_value", [&](std::string entity_group_name, std::string entity_id, std::string component_name, std::string key) {
+						return get_component_value(entity_group_name, entity_id, component_name, key);
+						});
+
+				lua.set_function("set_component_value", [&](std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s) {
+						sol::state_view lua(s);
+						set_component_value(entity_group_name, entity_id, component_name, key, value, lua.lua_state());
+						});
+
+				lua.set_function("switch_map", [&](std::string name) {
+						switch_map(name);
+						});
+
+				lua.set_function("get_map", [&](std::string name, bool light, sol::this_state s) {
+						sol::state_view lua(s);
+						return get_map(name, light, lua.lua_state());
+						});
+
+				lua.set_function("generate_random_point", [&](sol::table entity_groups_to_check, sol::this_state s) {
+						sol::state_view lua(s);
+						return get_random_point(entity_groups_to_check, s);
+						});
+
+				lua.set_function("is_tile_walkable", [&](int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check) {
+						return is_tile_walkable(x, y, direction, who, entity_groups_to_check);
+						});
+
+				lua.set_function("set_draw_color", [&](int r, int g, int b, int a) {
+						set_draw_color(renderer, r, g, b, a);
+						});
+
+				lua.set_function("draw_point", [&](int x, int y) {
+						draw_point(renderer, x, y);
+						});
+
+				lua.set_function("draw_rect", [&](int x, int y, int w, int h) {
+						draw_rect(renderer, x, y, w, h);
+						});
+
+				lua.set_function("draw_filled_rect", [&](int x, int y, int w, int h) {
+						draw_filled_rect(renderer, x, y, w, h);
+						});
+
+				lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
+						sol::state_view lua(s);
+						auto entity = update_entity_position(entity_group_name, entity_id, x, y);
+						if (entity != nullptr)
+								if (entity_id == "player") rb_fov();
+
+						return emit_lua_update_for_entity(entity, lua.lua_state());
+						});
+
+				lua.set_function("update_entities_position", [&](std::string entity_group_name, sol::table entity_position_table, sol::this_state s) {
+						sol::state_view lua(s);
+						update_entity_position(entity_group_name, entity_position_table);
+						return emit_lua_update_for_entity_group(entity_group_name, lua.lua_state());
+						});
+
+				lua.set_function("get_view_port_x", [&]() {
+						return get_view_port_x();
+						});
+
+				lua.set_function("get_view_port_y", [&]() {
+						return get_view_port_y();
+						});
+
+				lua.set_function("get_view_port_width", [&]() {
+						return get_view_port_width();
+						});
+
+				lua.set_function("get_view_port_height", [&]() {
+						return get_view_port_height();
+						});
+
+				lua.set_function("update_player_viewport_points", [&]() {
+						update_player_viewport_points();
+						});
+
+				lua.set_function("fov", [&](std::string name, sol::this_state s) {
+						sol::state_view lua(s);
+						lua["_update"]("light_map", get_map(name, true, lua.lua_state()));
+						});
+
+				lua.set_function("get_entity_group_points", [&](std::string entity_group_name, sol::this_state s) {
+						sol::state_view lua(s);
+						return get_entity_group_points(entity_group_name, lua.lua_state());
+						});
+
+				lua.set_function("draw_graphic", [&](std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor) {
+						render_graphic(renderer, path, window_width, x, y, centered, scaled, scaled_factor);
+						});
+
+				lua.set_function("reset", [&](sol::this_state s) {						
+						sol::state_view lua(s);
+						auto lua_init = lua["_init"];
+
+						if (lua_init.valid() && lua_init.get_type() == sol::type::function)
+						{
+								reset(true);
+
+								lua_init();
+						}
+						});
+
+				lua.set_function("get_random_number", [&](int start, int end) {
+						return std::rand() % end + start;
+						});
+
+				lua.set_function("generate_uuid", [&]() {
+						return generate_uuid();
+						});
+		}
+
 		int Engine::game_loop()
 		{
 				// Timer code from : https://enginedev.stackexchange.com/a/163508/18014
-				const int UPDATE_FREQUENCY{ 30 };
+				const int UPDATE_FREQUENCY{ 30 }; // 30 FPS seems fine for what we are doing right now
 				const float CYCLE_TIME{ 1.0f / UPDATE_FREQUENCY };
 				float accumulated_seconds{ 0.0f };
 				static roguely::common::Timer system_timer;
@@ -1703,170 +1882,9 @@ namespace roguely::engine
 
 						if (init_sdl(game_config) < 0) return -1;
 
-						lua.set_function("get_sprite_info", [&](std::string sprite_sheet_name, sol::this_state s) {
-								return get_sprite_info(sprite_sheet_name, s);
-								});
-
-						lua.set_function("draw_text", [&](std::string t, std::string size, int x, int y) {
-								draw_text(renderer, t, size, x, y);
-								});
-
-						lua.set_function("draw_text_with_color", [&](std::string t, std::string size, int x, int y, int r, int g, int b, int a) {
-								draw_text(renderer, t, size, x, y, r, g, b, a);
-								});
-
-						lua.set_function("get_text_extents", [&](std::string t, std::string size, sol::this_state s) {
-								auto extents = get_text_extents(t.c_str(), size);
-								sol::table extents_table = lua.create_table();
-								extents_table.set("width", extents.width);
-								extents_table.set("height", extents.height);
-								return extents_table;
-								});
-
-						lua.set_function("add_sprite_sheet", [&](std::string name, std::string path, int sw, int sh, sol::this_state s) {
-								return add_sprite_sheet(renderer, name, path, sw, sh, s);
-								});
-
-						lua.set_function("draw_sprite", [&](std::string name, int sprite_id, int x, int y) {
-								draw_sprite(renderer, name, sprite_id, x, y, 0, 0);
-								});
-
-						lua.set_function("draw_sprite_scaled", [&](std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height) {
-								draw_sprite(renderer, name, sprite_id, x, y, scaled_width, scaled_height);
-								});
-
-						lua.set_function("play_sound", [&](std::string name) {
-								play_sound(name);
-								});
-
-						lua.set_function("generate_map", [&](std::string name, int map_width, int map_height) {
-								generate_map(name, map_width, map_height);
-								});
-
-						lua.set_function("add_entity", [&](std::string entity_group, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s) {
-								auto id = add_entity(entity_group, entity_type, x, y, components_table);
-								emit_lua_update_for_entity_group(entity_group, id, s);
-								});
-
-						lua.set_function("add_entities", [&](std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s) {
-								// FIXME: this relies on a map to be generated so we can generate x,y's that are not on walls. 
-								// If script writer tries to do this before a map has been generated then we will crash.
-								// Need to handle this!
-
-								return add_entities(entity_group_name, entity_type, components_table, num, s);
-								});
-
-						lua.set_function("remove_entity", [&](std::string entity_group_name, std::string entity_id, sol::this_state s) {
-								remove_entity(entity_group_name, entity_id, s);
-								});
-
-						lua.set_function("get_component_value", [&](std::string entity_group_name, std::string entity_id, std::string component_name, std::string key) {
-								return get_component_value(entity_group_name, entity_id, component_name, key);
-								});
-
-						lua.set_function("set_component_value", [&](std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s) {
-								set_component_value(entity_group_name, entity_id, component_name, key, value, s);
-								});
-
-						lua.set_function("switch_map", [&](std::string name) {
-								switch_map(name);
-								});
-
-						lua.set_function("get_map", [&](std::string name, bool light, sol::this_state s) {
-								return get_map(name, light, s);
-								});
-
-						lua.set_function("generate_random_point", [&](sol::table entity_groups_to_check, sol::this_state s) {
-								return get_random_point(entity_groups_to_check, s);
-								});
-
-						lua.set_function("is_tile_walkable", [&](int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check) {
-								return is_tile_walkable(x, y, direction, who, entity_groups_to_check);
-								});
-
-						lua.set_function("set_draw_color", [&](int r, int g, int b, int a) {
-								set_draw_color(renderer, r, g, b, a);
-								});
-
-						lua.set_function("draw_point", [&](int x, int y) {
-								draw_point(renderer, x, y);
-								});
-
-						lua.set_function("draw_rect", [&](int x, int y, int w, int h) {
-								draw_rect(renderer, x, y, w, h);
-								});
-
-						lua.set_function("draw_filled_rect", [&](int x, int y, int w, int h) {
-								draw_filled_rect(renderer, x, y, w, h);
-								});
-
-						lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
-								auto entity = update_entity_position(entity_group_name, entity_id, x, y);
-								if (entity != nullptr)
-										if (entity_id == "player") rb_fov();
-
-								return emit_lua_update_for_entity(entity, s);
-								});
-
-						lua.set_function("update_entities_position", [&](std::string entity_group_name, sol::table entity_position_table, sol::this_state s) {
-								update_entity_position(entity_group_name, entity_position_table);
-								return emit_lua_update_for_entity_group(entity_group_name, s);
-								});
-
-						lua.set_function("get_view_port_x", [&]() {
-								return get_view_port_x();
-								});
-
-						lua.set_function("get_view_port_y", [&]() {
-								return get_view_port_y();
-								});
-
-						lua.set_function("get_view_port_width", [&]() {
-								return get_view_port_width();
-								});
-
-						lua.set_function("get_view_port_height", [&]() {
-								return get_view_port_height();
-								});
-
-						lua.set_function("update_player_viewport_points", [&]() {
-								update_player_viewport_points();
-								});
-
-						lua.set_function("fov", [&](std::string name, sol::this_state s) {
-								lua["_update"]("light_map", get_map(name, true, s));
-								});
-
-						lua.set_function("get_entity_group_points", [&](std::string entity_group_name, sol::this_state s) {
-								return get_entity_group_points(entity_group_name, s);
-								});
-
-						lua.set_function("draw_graphic", [&](std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor) {
-								render_graphic(renderer, path, window_width, x, y, centered, scaled, scaled_factor);
-								});
-
-						lua.set_function("reset", [&](sol::this_state s) {
-								sol::state_view lua(s);
-								auto lua_init = lua["_init"];
-
-								if (lua_init.valid() && lua_init.get_type() == sol::type::function)
-								{
-										reset(true);
-
-										lua_init();
-								}
-								});
-
-						lua.set_function("get_random_number", [&](int start, int end) {
-								return std::rand() % end + start;
-								});
-
-						lua.set_function("generate_uuid", [&]() {
-								return generate_uuid();
-								});
+						setup_lua_helpers(lua.lua_state());
 
 						auto lua_init = lua["_init"];
-
 						if (lua_init.valid() && lua_init.get_type() == sol::type::function) lua_init();
 
 						bool keep_window_open = true;
