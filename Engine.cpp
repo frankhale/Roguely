@@ -937,6 +937,15 @@ namespace roguely::engine
 								did_update = true;
 						}
 				}
+				else
+				{
+						auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(component);
+						if (lc != nullptr)
+						{
+								lc->set_property(key, value);
+								did_update = true;
+						}
+				}
 
 				return did_update;
 		}
@@ -983,19 +992,29 @@ namespace roguely::engine
 
 		std::shared_ptr<roguely::ecs::Entity> Engine::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value)
 		{
-				if (component_name != "inventory_component") return nullptr;
-
 				if (entity_id == "player" || player->get_id() == entity_id)
 				{
 						auto component = player->find_component_by_name(component_name);
 
 						if (component != nullptr)
 						{
-								auto ic = std::dynamic_pointer_cast<std::shared_ptr<roguely::ecs::InventoryComponent>>(component);
-								if (ic != nullptr)
+								if (component_name == "inventory_component")
 								{
-										(*ic)->upsert_item(value);
-										return player;
+										auto ic = std::static_pointer_cast<roguely::ecs::InventoryComponent>(component);
+										if (ic != nullptr)
+										{
+												ic->upsert_item(value);
+												return player;
+										}
+								}
+								else
+								{
+										auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(component);
+										if (lc != nullptr)
+										{
+												lc->set_property(value.first, value.second);
+												return player;
+										}
 								}
 						}
 				}
@@ -1473,7 +1492,7 @@ namespace roguely::engine
 				SDL_RenderFillRect(renderer, &r);
 		}
 
-		sol::table  Engine::get_random_point(sol::table entity_groups_to_check, sol::this_state s)
+		sol::table Engine::get_random_point(sol::table entity_groups_to_check, sol::this_state s)
 		{
 				sol::state_view lua(s);
 				sol::table point_table = lua.create_table();
@@ -1488,6 +1507,28 @@ namespace roguely::engine
 				}
 
 				auto result = generate_random_point(entity_groups);
+
+				point_table.set("x", result.x);
+				point_table.set("y", result.y);
+
+				return point_table;
+		}
+
+		sol::table Engine::get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s)
+		{
+				sol::state_view lua(s);
+				sol::table point_table = lua.create_table();
+
+				// TODO: We have several APIs that need entity groups. This needs to be put
+				// into it's own function.
+				std::vector<std::string> entity_groups;
+				for (auto& eg : entity_groups_to_check)
+				{
+						if (eg.second.get_type() == sol::type::string)
+								entity_groups.push_back(eg.second.as<std::string>());
+				}
+
+				auto result = get_open_point_for_xy(x, y, entity_groups);
 
 				point_table.set("x", result.x);
 				point_table.set("y", result.y);
@@ -1762,6 +1803,11 @@ namespace roguely::engine
 						return get_random_point(entity_groups_to_check, s);
 						});
 
+				lua.set_function("get_open_point_for_xy", [&](int x, int y, sol::table entity_groups_to_check, sol::this_state s) {
+						sol::state_view lua(s);
+						return get_open_point_for_xy(x, y, entity_groups_to_check, lua.lua_state());
+						});
+
 				lua.set_function("is_tile_walkable", [&](int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check) {
 						return is_tile_walkable(x, y, direction, who, entity_groups_to_check);
 						});
@@ -1831,7 +1877,7 @@ namespace roguely::engine
 						render_graphic(renderer, path, window_width, x, y, centered, scaled, scaled_factor);
 						});
 
-				lua.set_function("reset", [&](sol::this_state s) {						
+				lua.set_function("reset", [&](sol::this_state s) {
 						sol::state_view lua(s);
 						auto lua_init = lua["_init"];
 

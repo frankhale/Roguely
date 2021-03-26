@@ -274,6 +274,8 @@ namespace roguely::ecs
 				auto get_name() const { return name; }
 				auto get_type() const { return type; }
 				auto get_properties() const { return properties; }
+				void set_property(std::string name, int value) { properties.set(name, value); }
+				void set_properties(sol::table props) { properties = props; }
 
 		private:
 				std::string name;
@@ -453,7 +455,7 @@ namespace roguely::engine
 						maps->erase(std::remove_if(maps->begin(), maps->end(),
 								[&](std::shared_ptr<roguely::common::Map> m) {
 										if (m->name == name) return true;
-										
+
 										return false;
 								}), maps->end());
 
@@ -517,17 +519,17 @@ namespace roguely::engine
 				int get_view_port_y() const { return view_port_y; }
 				int get_view_port_width() const { return view_port_width; }
 				int get_view_port_height() const { return view_port_height; }
-				void set_view_port_width(int vpw) 
-				{ 
+				void set_view_port_width(int vpw)
+				{
 						VIEW_PORT_WIDTH = vpw;
-						view_port_width = vpw; 
+						view_port_width = vpw;
 				}
-				void set_view_port_height(int vph) 
-				{ 
+				void set_view_port_height(int vph)
+				{
 						VIEW_PORT_HEIGHT = vph;
-						view_port_height = vph; 
+						view_port_height = vph;
 				}
-				std::vector<std::string> get_entity_group_names() 
+				std::vector<std::string> get_entity_group_names()
 				{
 						std::vector<std::string> results{};
 						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
@@ -566,14 +568,15 @@ namespace roguely::engine
 				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table);
 				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s);
 				void emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s);
-				void emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s);				
-				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);				
+				void emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s);
+				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
 				sol::table get_map(std::string name, bool light, sol::this_state s);
 				void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a);
 				void draw_point(SDL_Renderer* renderer, int x, int y);
 				void draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
 				void draw_filled_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
 				sol::table get_random_point(sol::table entity_groups_to_check, sol::this_state s);
+				sol::table get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s);
 				bool is_tile_walkable(int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check);
 				void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
 				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
@@ -587,7 +590,7 @@ namespace roguely::engine
 		private:
 
 				bool check_game_config(sol::table game_config, sol::this_state s);
-				auto get_text_reference(std::string size) 
+				auto get_text_reference(std::string size)
 				{
 						auto text = &text_small;
 

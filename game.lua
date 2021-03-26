@@ -44,24 +44,28 @@ Game = {
 		combat = "assets/sounds/combat.wav",
 		death = "assets/sounds/death.wav",
 		pickup = "assets/sounds/pickup.wav",
-		warp = "assets/sounds/warp.wav"
+		warp = "assets/sounds/warp.wav",
+		move = "assets/sounds/move.wav"
 	},
+	debug = false,
 	dead = false,
 	started = false,
-	total_enemies_killed = 0,
+	total_enemies_killed = 0, -- TODO: This should be a component on the player
 	won = false,
 	lost = false,
+	-- This is here for easy access
 	player_pos = {
 		-- These is notional because after we generate a map we'll get a randomized
 		-- position to start that is a known good ground tile
 		x = 10,
 		y = 10
 	},
+	-- used for quick reference even though entities have a sprite component
 	sprite_info = {
-		-- used for quick reference even though entities have a sprite component
 		width = 32,
 		height = 32,
 		health_gem = 1,
+		attack_gem = 2,
 		treasure_chest = 13,
 		attack_bonus_gem = 2,
 		player_sprite_id = 3,
@@ -81,27 +85,74 @@ Game = {
 		wall_with_grass_1 = 35,
 		wall_with_grass_2 = 36
 	},
-	health_recovery_time = 0,
+	health_recovery_timer = 0,
+	preemptive_enemy_attack_timer = 0,
+	level_check_timer = 0,
+	--logic_timer = 0,
 	health_recovery = 10,
 	action_log = {},
-	treasure_chest = {
-		components = {
-			sprite_component = {
-				name = "treasure_chest",
-				spritesheet_name = "game-sprites",
-				sprite_id = 13
-			},
-			value_component = {
-				value = 50
-			},
-			enemy_bonus_component = {
-				type = "bonus",
-				properties = {}
-			}
-		}
-	},
 	entities = {
+		player = {
+			components = {
+				sprite_component = {
+					name = "player",
+					spritesheet_name = "game-sprites",
+					sprite_id = 3
+				},
+				health_component = { health = 100 },
+				stats_component = { attack = 1 },
+				score_component = { score = 0 },
+				inventory_component = {
+					items = {
+						health_potion = 3
+					}
+				},
+				level_component =
+				{
+					type = "player-core",
+					properties = {
+						level = 0
+					}
+				}
+			}
+		},
 		items = {
+			attack_gem = {
+				components = {
+					sprite_component = {
+						name = "attackgem",
+						spritesheet_name = "game-sprites",
+						sprite_id = 2
+					}
+				},
+				attack_bonus_component = {
+					type = "powerup",
+					properties = {
+						action = function(group, entity_name, component_name, component_value_name, existing_component_value)
+							local attack_value = 1
+							-- TODO: why are we trying to be generic then hardcoding the player here? LOL!
+							add_action_log("player", "attack", "+", tostring(attack_value .. " attack"), Game.player_pos.x, Game.player_pos.y)
+							set_component_value(group, entity_name, component_name, component_value_name, existing_component_value + attack_value)
+						end
+					}
+				}
+			},
+			treasure_chest = {
+				components = {
+					sprite_component = {
+						name = "treasure_chest",
+						spritesheet_name = "game-sprites",
+						sprite_id = 13
+					},
+					value_component = {
+						value = 50
+					},
+					enemy_bonus_component = {
+						type = "bonus",
+						properties = {}
+					}
+				}
+			},
 			coin = {
 				components = {
 					sprite_component = {
@@ -127,6 +178,7 @@ Game = {
 						properties = {
 							action = function(group, entity_name, component_name, component_value_name, existing_component_value)
 								local health_value = 25
+								-- TODO: why are we trying to be generic then hardcoding the player here? LOL!
 								add_action_log("player", "health", "+", tostring(health_value .. " health"), Game.player_pos.x, Game.player_pos.y)
 								set_component_value(group, entity_name, component_name, component_value_name, existing_component_value + health_value)
 							end
@@ -239,9 +291,7 @@ Game = {
 					},
 					health_component = { health = 85 },
 					stats_component = { attack = 5 },
-					value_component = { value = 5 },
 					value_component = { value = 60 }
-
 				},
 				total = 20
 			},
@@ -311,7 +361,9 @@ function create_entities(entity_table, group, entity_name, entity_type)
 	local entities = {}
 
 	for k,v in pairs(entity_table[group]) do
-		entities = add_entities(group, entity_type, v.components, v.total)
+		if(v.total ~= nil) then
+			entities = add_entities(group, entity_type, v.components, v.total)
+		end
 	end
 
 	return entities
@@ -334,6 +386,21 @@ function xy_falls_within_viewport(x, y)
 	end
 
 	return false
+end
+
+function add_action_log(who, type, multiplier, value, x, y)
+	local id = generate_uuid()
+
+	Game.action_log[id] = {}
+	Game.action_log[id]["show"] = 0
+	Game.action_log[id]["transparancy"] = 255
+	Game.action_log[id]["offset"] = 1
+	Game.action_log[id]["who"] = who
+	Game.action_log[id]["type"] = type
+	Game.action_log[id]["x"] = x
+	Game.action_log[id]["y"] = y
+	Game.action_log[id]["attack_type"] = type
+	Game.action_log[id]["message"] = tostring(multiplier .. value)
 end
 
 function move_enemies()
@@ -381,28 +448,32 @@ function move_enemies()
 	end
 end
 
-function add_action_log(who, type, multiplier, value, x, y)
-	local id = generate_uuid()
+function initiate_enemy_attack(pid)
+	local player_health = Game.player.components.health_component.health
+	local enemy_attack = Game.enemies[pid].enemy.components.stats_component.attack
+	local enemy_crit_chance =  get_random_number(1, 100) <= 20
 
-	Game.action_log[id] = {}
-	Game.action_log[id]["show"] = 0
-	Game.action_log[id]["transparancy"] = 255
-	Game.action_log[id]["offset"] = 1
-	Game.action_log[id]["who"] = who
-	Game.action_log[id]["type"] = type
-	Game.action_log[id]["x"] = x
-	Game.action_log[id]["y"] = y
-	Game.action_log[id]["attack_type"] = type
-	Game.action_log[id]["message"] = tostring(multiplier .. value)
+	-- enemy strikes next
+	if (enemy_crit_chance) then
+		-- do crit attack
+		local damage = enemy_attack + get_random_number(1, 5) * 2
+
+		add_action_log("enemy", "critical", "-", damage, Game.player_pos.x, Game.player_pos.y)
+		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+	else
+		-- do normal attack
+		local damage = enemy_attack + get_random_number(1, 5)
+
+		add_action_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
+		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
+	end
 end
 
 function initiate_attack_sequence(pid)
 	-- generate some random numbers for crit chance (player and enemy)
 	local player_crit_chance = get_random_number(1, 100) <= 20
-	local enemy_crit_chance =  get_random_number(1, 100) <= 20
 	local player_attack = Game.player.components.stats_component.attack
 	local player_health = Game.player.components.health_component.health
-	local enemy_attack = Game.enemies[pid].enemy.components.stats_component.attack
 	local enemy_health = Game.enemies[pid].enemy.components.health_component.health
 	local enemy_id = Game.enemies[pid].enemy.id
 	local enemy_x = Game.enemies[pid].enemy.point.x
@@ -425,6 +496,8 @@ function initiate_attack_sequence(pid)
 
 	-- check to see if enemy died
 	if(enemy_health <= 0) then
+		add_action_log("player", "kill", "+", "1 kill", Game.player_pos.x, Game.player_pos.y - 1)
+
 		local enemy_value = Game.enemies[pid].enemy.components.value_component.value
 		Game.enemies[pid]=nil
 		remove_entity("enemies", enemy_id)
@@ -433,7 +506,7 @@ function initiate_attack_sequence(pid)
 		-- The score value here should be put into a component and not hard coded
 		set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + 25)
 
-		Game.treasure_chest.components.enemy_bonus_component.properties.action = function()
+		Game.entities.items.treasure_chest.components.enemy_bonus_component.properties.action = function()
 			local health_boost = get_random_number(1, 100)
 
 			if (health_boost <= 20) then
@@ -446,28 +519,33 @@ function initiate_attack_sequence(pid)
 			set_component_value("common", "player", "score_component", "score", Game.player.components.score_component.score + enemy_value)
 		end
 
-		add_entity("treasure_chests", "item", enemy_x, enemy_y, Game.treasure_chest.components)
+		add_entity("treasure_chests", "item", enemy_x, enemy_y, Game.entities.items.treasure_chest.components)
 	else
 		-- enemy strikes next
-		if (enemy_crit_chance) then
-			-- do crit attack
-			local damage = player_attack + get_random_number(1, 5) * 2
-
-			add_action_log("enemy", "critical", "-", damage, Game.player_pos.x, Game.player_pos.y)
-			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
-		else
-			-- do normal attack
-			local damage = player_attack + get_random_number(1, 5)
-
-			add_action_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
-			set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
-		end
+		initiate_enemy_attack(pid)
 	end
 
 	-- check to see if player died
 	if (player_health <= 0) then
 		Game.win_lose_message = "You ded son!"
 		Game.lost = true
+	end
+end
+
+function initiate_enemy_preemptive_attack_sequence()
+	for k, e in pairs(Game.enemies) do
+		local ex = e.enemy.point.x
+		local ey = e.enemy.point.y
+
+		-- only move enemies that are within our viewport
+		if(xy_falls_within_viewport(ex, ey)) then
+		 	if((ex == Game.player_pos.x and ey + 1 == Game.player_pos.y) or
+		 	   (ex == Game.player_pos.x and ey - 1 == Game.player_pos.y) or
+		 	   (ex + 1 == Game.player_pos.x and ey == Game.player_pos.y) or
+		 	   (ex - 1 == Game.player_pos.x and ey == Game.player_pos.y)) then
+		 		initiate_enemy_attack(k)
+		 	end
+		end
 	end
 end
 
@@ -488,9 +566,13 @@ end
 function render_info_bar()
 	local player_max_health = Game.player.components.health_component.max_health
 	local player_health = Game.player.components.health_component.health
-	local player_score = tostring(Game.player.components.score_component.score)
-	local score_text_extents = get_text_extents(player_score, "medium")
+	local player_score = tostring("Score: " .. Game.player.components.score_component.score)
+	local player_kills = tostring("Kills: " .. Game.total_enemies_killed)
+	local player_level = tostring("Level: " .. Game.player.components.level_component.properties.level)
+	local player_score_text_extents = get_text_extents(player_score, "medium")
 	local player_health_text_extents = get_text_extents(tostring(player_health), "medium")
+	local player_kills_text_extents = get_text_extents(tostring(player_kills), "medium")
+	local player_level_text_extents = get_text_extents(tostring(player_level), "medium")
 
 	local p_hw = calculate_health_bar_width(player_health, player_max_health, 200)
 
@@ -506,14 +588,18 @@ function render_info_bar()
 	draw_filled_rect(10, 10, math.floor(p_hw), math.floor(player_health_text_extents.height / 2) + 5)
 
 	draw_text(tostring(player_health), "medium", math.floor(110 - player_health_text_extents.width / 2), 2)
-	draw_text(player_score, "medium", math.floor(Game.window_width / 2 - score_text_extents.width / 2), 2)
+	draw_text(player_level, "medium", 330, 2)
+	draw_text(player_kills, "medium", 640, 2)
+	draw_text(player_score, "medium", 960, 2)
 
 	set_draw_color(0, 0, 0, 255)
 end
 
 function render_mini_map()
-	local offset_x = Game["window_width"] - 150
-	local offset_y = 10
+	local window_offset_x = 140
+	local window_offset_y = 140
+	local offset_x = Game["window_width"] - window_offset_x
+	local offset_y = Game["window_height"] - window_offset_y
 	for r = 1, Game["map_height"] do
 		for c = 1, Game["map_width"] do
 			local dx = (c - 1) + offset_x
@@ -527,7 +613,7 @@ function render_mini_map()
 				draw_point(dx, dy)
 			end
 
-			if (dx == Game.goldencandle.point.x + offset_x and dy == Game.goldencandle.point.y) then
+			if (dx == Game.goldencandle.point.x + offset_x and dy == Game.goldencandle.point.y + offset_y) then
 			 	set_draw_color(255, 255, 0, 255)
 			 	draw_filled_rect(dx - 3, dy - 3, 6, 6)
 			end
@@ -641,21 +727,7 @@ end
 function _init()
 	add_sprite_sheet("game-sprites", Game.spritesheet_path, Game.sprite_info.width, Game.sprite_info.height)
 
-	add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, {
-		sprite_component = {
-			name = "player",
-			spritesheet_name = "game-sprites",
-			sprite_id = 3
-		},
-		health_component = { health = 100 },
-		stats_component = { attack = 1 },
-		score_component = { score = 0 },
-		inventory_component = {
-			items = {
-				health_potion = 3
-			}
-		}
-	})
+	add_entity("common", "player", Game.player_pos.x, Game.player_pos.y, Game.entities.player.components)
 
 	generate_map("main", Game.map_width, Game.map_height)
 	switch_map("main")
@@ -699,7 +771,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "down" and started() then
+		elseif data["key"] == "down" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
 				move_enemies()
@@ -712,7 +784,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "left" and started()then
+		elseif data["key"] == "left" and started()then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
 				move_enemies()
@@ -725,7 +797,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "right" and started() then
+		elseif data["key"] == "right" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
 				move_enemies()
@@ -738,7 +810,7 @@ function _update(event, data)
 					play_sound("bump")
 				end
 			end
-		 elseif data["key"] == "space" then
+		elseif data["key"] == "space" then
 			if (started()) then
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
@@ -786,11 +858,15 @@ function _update(event, data)
 	elseif (event == "entity_event") then
 		if (data["player"] ~= nil) then
 			Game.player = data.player
-			Game.player_id = data.player.id --[Game.player_id]
-			Game.player_pos.x = data.player.point.x
-			Game.player_pos.y = data.player.point.y
-			XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
-			fov("main")
+			Game.player_id = data.player.id
+
+			if(Game.player_pos.x ~= data.player.point.x or
+			   Game.player_pos.y ~= data.player.point.y) then
+				Game.player_pos.x = data.player.point.x
+				Game.player_pos.y = data.player.point.y
+				XY_Id = create_pid_from_x_y(Game.player_pos.x,Game.player_pos.y)
+				fov("main")
+			end
 		elseif (data["enemy"] ~= nil) then
 		 	local enemy_pid = create_pid_from_x_y(data.enemy.point.x, data.enemy.point.y)
 		 	Game.enemies[enemy_pid].enemy = data["enemy"]
@@ -844,12 +920,20 @@ function _render(delta_time)
 end
 
 function _tick(delta_time)
-	Game.health_recovery_time = Game.health_recovery_time + delta_time
+	Game.health_recovery_timer = Game.health_recovery_timer + delta_time
+	Game.preemptive_enemy_attack_timer = Game.preemptive_enemy_attack_timer + delta_time
+	Game.level_check_timer = Game.level_check_timer + delta_time
+	--Game.logic_timer = Game.logic_timer + delta_time
 
-	if(Game.health_recovery_time >= 2) then
-		Game.health_recovery_time = 0
-		if(Game.player.components.health_component.health < Game.player.components.health_component.max_health) then
-			set_component_value("common", "player", "health_component", "health", math.floor(Game.player.components.health_component.health + Game.health_recovery))
+	if(Game.health_recovery_timer >= 2) then
+		Game.health_recovery_timer = 0
+
+		if(Game.debug) then
+			set_component_value("common", "player", "health_component", "health", 10000)
+		else
+			if(Game.player.components.health_component.health < Game.player.components.health_component.max_health) then
+				set_component_value("common", "player", "health_component", "health", math.floor(Game.player.components.health_component.health + Game.health_recovery))
+			end
 		end
 	end
 
@@ -864,6 +948,26 @@ function _tick(delta_time)
 
 		if(action_log.show >= 2) then
 			Game.action_log[k] = nil
+		end
+	end
+
+	if(Game.preemptive_enemy_attack_timer >= .5) then
+		Game.preemptive_enemy_attack_timer = 0
+		initiate_enemy_preemptive_attack_sequence()
+	end
+
+	-- if(Game.logic_timer >= 5) then
+	-- 	Game.logic_timer = 0
+	-- 	print("Player level = " .. Game.player.components.level_component.properties.level .. " | Player kills = " .. Game.total_enemies_killed)
+	-- end
+
+	if(Game.level_check_timer >= 5 and Game.total_enemies_killed >= 10) then
+		Game.level_check_timer = 0
+		local level = math.floor(Game.total_enemies_killed / 10)
+
+		if(level >= 1 and Game.player.components.level_component.properties.level < level) then
+			set_component_value("common", "player", "level_component", "level", Game.player.components.level_component.properties.level + 1)
+			set_component_value("common", "player", "stats_component", "attack", Game.player.components.stats_component.attack + 1)
 		end
 	end
 end
