@@ -630,8 +630,9 @@ namespace roguely::engine
 				boost::uuids::random_generator gen;
 				boost::uuids::uuid id = gen();
 				return boost::uuids::to_string(id);
-		}
+		}		
 
+		// ---------------------------- FIX ME ----------------------------------
 		bool Engine::is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir)
 		{
 				return ((dir == roguely::common::MovementDirection::Up && player->y() == y - 1 && player->x() == x) ||
@@ -761,6 +762,30 @@ namespace roguely::engine
 				return generate_random_point(entity_groups_to_check);
 		}
 
+		bool  Engine::is_tile_walkable(int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check)
+		{
+				std::vector<std::string> entity_groups;
+				roguely::common::MovementDirection movement_direction{};
+				roguely::common::WhoAmI who_am_i{};
+
+				for (auto& eg : entity_groups_to_check)
+						if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
+
+				if (direction == "up") { movement_direction = roguely::common::MovementDirection::Up; }
+				else if (direction == "down") { movement_direction = roguely::common::MovementDirection::Down; }
+				else if (direction == "left") { movement_direction = roguely::common::MovementDirection::Left; }
+				else if (direction == "right") { movement_direction = roguely::common::MovementDirection::Right; }
+
+				if (who == "player") { who_am_i = roguely::common::WhoAmI::Player; }
+				else if (who == "enemy") { who_am_i = roguely::common::WhoAmI::Enemy; }
+
+				auto result = is_tile_walkable(x, y, movement_direction, who_am_i, entity_groups);
+
+				return result.walkable;
+		}
+
+		// ^--------------------------- FIX ME ---------------------------------^
+		
 		void Engine::update_player_viewport_points()
 		{
 				view_port_x = player->x() - VIEW_PORT_WIDTH / 2;
@@ -1534,28 +1559,6 @@ namespace roguely::engine
 				point_table.set("y", result.y);
 
 				return point_table;
-		}
-
-		bool  Engine::is_tile_walkable(int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check)
-		{
-				std::vector<std::string> entity_groups;
-				roguely::common::MovementDirection movement_direction{};
-				roguely::common::WhoAmI who_am_i{};
-
-				for (auto& eg : entity_groups_to_check)
-						if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
-
-				if (direction == "up") { movement_direction = roguely::common::MovementDirection::Up; }
-				else if (direction == "down") { movement_direction = roguely::common::MovementDirection::Down; }
-				else if (direction == "left") { movement_direction = roguely::common::MovementDirection::Left; }
-				else if (direction == "right") { movement_direction = roguely::common::MovementDirection::Right; }
-
-				if (who == "player") { who_am_i = roguely::common::WhoAmI::Player; }
-				else if (who == "enemy") { who_am_i = roguely::common::WhoAmI::Enemy; }
-
-				auto result = is_tile_walkable(x, y, movement_direction, who_am_i, entity_groups);
-
-				return result.walkable;
 		}
 
 		void  Engine::emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s)

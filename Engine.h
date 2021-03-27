@@ -501,6 +501,9 @@ namespace roguely::engine
 				// FIXME: There are too many functions to determine if a tile is blocked. 
 				// This needs to be simplified because it's been a constant source of issues
 				// and confusion.
+				//
+				// Pretty sure we just need one function 'is_tile_walkable' to cover 
+				// all cases.
 				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
 				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
 				bool is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities)
@@ -510,9 +513,9 @@ namespace roguely::engine
 				auto is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir);
 				TileWalkableInfo is_tile_walkable(int x, int y, roguely::common::MovementDirection dir, roguely::common::WhoAmI whoAmI, std::vector<std::string> entity_groups_to_check);
 				bool is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check);
-				// -------------------- ^
 				roguely::common::Point generate_random_point(std::vector<std::string> entity_groups_to_check);
 				roguely::common::Point get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check);
+				// ------------------------------------------------------------------ ^
 				void update_player_viewport_points();
 				void rb_fov();
 				int get_view_port_x() const { return view_port_x; }
