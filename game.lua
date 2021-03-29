@@ -47,7 +47,7 @@ Game = {
 		warp = "assets/sounds/warp.wav",
 		move = "assets/sounds/move.wav"
 	},
-	debug = false,
+	debug = true,
 	dead = false,
 	started = false,
 	total_enemies_killed = 0, -- TODO: This should be a component on the player
@@ -213,7 +213,11 @@ Game = {
 					},
 					health_component = { health = 20 },
 					stats_component = { attack = 1 },
-					value_component = { value = 5 }
+					value_component = { value = 5 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 50
 			},
@@ -226,7 +230,11 @@ Game = {
 					},
 					health_component = { health = 30 },
 					stats_component = { attack = 2 },
-					value_component = { value = 10 }
+					value_component = { value = 10 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 30
 			},
@@ -239,7 +247,11 @@ Game = {
 					},
 					health_component = { health = 25 },
 					stats_component = { attack = 2 },
-					value_component = { value = 10 }
+					value_component = { value = 10 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 25
 			},
@@ -252,7 +264,11 @@ Game = {
 					},
 					health_component = { health = 35 },
 					stats_component = { attack = 2 },
-					value_component = { value = 15 }
+					value_component = { value = 15 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 25
 			},
@@ -265,7 +281,11 @@ Game = {
 					},
 					health_component = { health = 75 },
 					stats_component = { attack = 4 },
-					value_component = { value = 40 }
+					value_component = { value = 40 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 25
 			},
@@ -278,7 +298,11 @@ Game = {
 					},
 					health_component = { health = 50 },
 					stats_component = { attack = 3 },
-					value_component = { value = 30 }
+					value_component = { value = 30 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 25
 			},
@@ -291,7 +315,11 @@ Game = {
 					},
 					health_component = { health = 85 },
 					stats_component = { attack = 5 },
-					value_component = { value = 60 }
+					value_component = { value = 60 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 20
 			},
@@ -304,7 +332,11 @@ Game = {
 					},
 					health_component = { health = 95 },
 					stats_component = { attack = 6 },
-					value_component = { value = 75 }
+					value_component = { value = 75 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 15
 			},
@@ -317,7 +349,11 @@ Game = {
 					},
 					health_component = { health = 100 },
 					stats_component = { attack = 7 },
-					value_component = { value = 100 }
+					value_component = { value = 100 },
+					aggro_component = {
+						type = "enemy-combat",
+						properties = { value = 0 }
+					}
 				},
 				total = 10
 			}
@@ -412,9 +448,10 @@ function move_enemies()
 		for k, e in pairs(Game.enemies) do
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
+			local aggro = e.enemy.components.aggro_component.properties.value
 
 			-- only move enemies that are within our viewport
-			if(xy_falls_within_viewport(x, y)) then
+			if(xy_falls_within_viewport(x, y) and aggro ~= true) then
 				local direction = get_random_number(1, 4)
 				local can_move = false
 
@@ -445,6 +482,32 @@ function move_enemies()
 		if (number_of_enemies > 0) then
 			update_entities_position("enemies", enemies_new_positions)
 		end
+	end
+end
+
+function move_aggro_enemies()
+	local number_of_enemies = 0
+	local enemies_new_positions = {}
+
+	for k, e in pairs(Game.enemies) do
+		if(e.enemy.components.aggro_component.properties.value == 1) then
+			local x = e.enemy.point.x
+			local y = e.enemy.point.y
+			local path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
+
+			if(path.x ~= nil and path.y ~= nil) then
+				if(is_xy_blocked(path.x, path.y, { "enemies" }) ~= true) then
+					number_of_enemies = number_of_enemies + 1
+					enemies_new_positions[e.enemy.id] = {}
+					enemies_new_positions[e.enemy.id]["x"] = path.x
+					enemies_new_positions[e.enemy.id]["y"] = path.y
+				end
+			end
+		end
+	end
+
+	if (number_of_enemies > 0) then
+		update_entities_position("enemies", enemies_new_positions)
 	end
 end
 
@@ -545,6 +608,26 @@ function initiate_enemy_preemptive_attack_sequence()
 		 	   (ex - 1 == Game.player_pos.x and ey == Game.player_pos.y)) then
 		 		initiate_enemy_attack(k)
 		 	end
+		end
+	end
+end
+
+function aggro_enemy(distance)
+	for k, e in pairs(Game.enemies) do
+		if(e.enemy.components.aggro_component.properties.value == 0) then
+			local ex = e.enemy.point.x
+			local ey = e.enemy.point.y
+
+			for i = 1, distance do
+				if(xy_falls_within_viewport(ex, ey) and e.enemy.components.aggro_component.properties.value == 0) then
+					if((ex == Game.player_pos.x and ey + i == Game.player_pos.y) or
+					   (ex == Game.player_pos.x and ey - i == Game.player_pos.y) or
+					   (ex + i == Game.player_pos.x and ey == Game.player_pos.y) or
+					   (ex - i == Game.player_pos.x and ey == Game.player_pos.y)) then
+						set_component_value("enemies", e.enemy.id, "aggro_component", "value", 1)
+					end
+				end
+			end
 		end
 	end
 end
@@ -762,6 +845,7 @@ function _update(event, data)
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
 				move_enemies()
+				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("up")
 				if(Game.enemies[pid]) then
@@ -775,6 +859,7 @@ function _update(event, data)
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
 				move_enemies()
+				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("down")
 				if(Game.enemies[pid]) then
@@ -788,6 +873,7 @@ function _update(event, data)
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
 				move_enemies()
+				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("left")
 				if(Game.enemies[pid]) then
@@ -801,6 +887,7 @@ function _update(event, data)
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
 				move_enemies()
+				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("right")
 				if(Game.enemies[pid]) then
@@ -953,16 +1040,21 @@ function _tick(delta_time)
 
 	if(Game.preemptive_enemy_attack_timer >= .5) then
 		Game.preemptive_enemy_attack_timer = 0
+		aggro_enemy(5)
 		initiate_enemy_preemptive_attack_sequence()
 	end
 
 	-- if(Game.logic_timer >= 5) then
 	-- 	Game.logic_timer = 0
-	-- 	print("Player level = " .. Game.player.components.level_component.properties.level .. " | Player kills = " .. Game.total_enemies_killed)
+	-- TODO: Do something here...
 	-- end
 
 	if(Game.level_check_timer >= 5 and Game.total_enemies_killed >= 10) then
 		Game.level_check_timer = 0
+		-- This is a place holder just to figure out how I could work in logic
+		-- to make leveling work on a number of enemies killed basis. This will
+		-- morph into an experience based leveling system with hard to kill
+		-- monsters giving more XP and thereby allowing faster leveling.
 		local level = math.floor(Game.total_enemies_killed / 10)
 
 		if(level >= 1 and Game.player.components.level_component.properties.level < level) then

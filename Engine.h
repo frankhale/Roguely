@@ -34,6 +34,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <iostream>
 #include <mpg123.h>
+#include <queue>
 #include <sstream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -61,8 +62,17 @@ namespace roguely::common
 
 		struct Point
 		{
-				int x = 0;
-				int y = 0;
+				Point() { x = -1; y = -1; }
+				Point(int x, int y)
+				{
+						this->x = x;
+						this->y = y;
+				}
+				
+				bool eq(Point p) { return p.x == x && p.y == y; }
+
+				int x = -1;
+				int y = -1;
 		};
 
 		struct Sound
@@ -107,6 +117,84 @@ namespace roguely::common
 						static const Uint64 TICKS_PER_SECOND{ SDL_GetPerformanceFrequency() };
 						elapsed_seconds = delta / static_cast<float>(TICKS_PER_SECOND);
 				}
+		};
+
+		struct TextExtents
+		{
+				int width, height;
+		};
+
+		class Text
+		{
+		public:
+				Text();
+
+				int load_font(const char* path, int ptsize);
+				void draw_text(SDL_Renderer* renderer, int x, int y, const char* text);
+				void draw_text(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color);
+				TextExtents get_text_extents(const char* text);
+
+		private:
+				TTF_Font* font;
+				SDL_Texture* text_texture;
+
+				SDL_Color text_color = { 0xFF, 0xFF, 0xFF, 0xFF };
+				SDL_Color text_background_color = { 0x00, 0x00, 0x00, 0xFF };
+		};
+
+		struct AStarNode
+		{
+				AStarNode() {}
+				AStarNode(const AStarNode& p, const Point& pos)
+				{
+						if (&parent != nullptr)
+								parent = std::make_shared<AStarNode>(p);
+
+						if (&position != nullptr)
+								position = std::make_shared<Point>(pos);
+				}
+
+				bool eq(const AStarNode& x)
+				{
+						if (&x == nullptr) return false;
+
+						return (position->x == x.position->x &&
+								position->y == x.position->y);
+				}
+
+				std::shared_ptr<AStarNode> parent{};
+				std::shared_ptr<Point> position{};
+				int f = 0;
+				int g = 0;
+				int h = 0;
+		};
+
+		class AStarPathFinder
+		{
+		public:
+				AStarPathFinder(std::shared_ptr<boost::numeric::ublas::matrix<int>> map)
+				{
+						this->map = map; // std::make_shared<boost::numeric::ublas::matrix<int>>(map);
+						max_iterations = (int)(this->map->size1() * this->map->size2());
+				}
+
+				std::shared_ptr<std::queue<Point>> find_path(Point start, Point end, int walkable_tile_id);
+
+		private:
+				std::shared_ptr<boost::numeric::ublas::matrix<int>> map;
+
+				Point pos_array[8] = {
+						{ 0, -1 },
+						{ 0, 1 },
+						{ -1, 0 },
+						{ 1, 0 },
+						{ -1, -1 },
+						{ -1, 1 },
+						{ 1, -1 },
+						{ 1, 1 }
+				};
+
+				int max_iterations = 0;
 		};
 }
 
@@ -270,12 +358,21 @@ namespace roguely::ecs
 		class LuaComponent : public Component
 		{
 		public:
-				LuaComponent(std::string n, std::string t, sol::table props) { name = n; type = t; properties = props; }
+				LuaComponent(std::string n, std::string t, sol::table props, sol::this_state s) { 
+						sol::state_view lua(s);
+						name = n; 
+						type = t; 
+						properties = lua.create_table();
+						for (const auto& p : props)
+						{
+								properties.set(p.first, p.second);
+						}
+				}
 				auto get_name() const { return name; }
 				auto get_type() const { return type; }
 				auto get_properties() const { return properties; }
-				void set_property(std::string name, int value) { properties.set(name, value); }
-				void set_properties(sol::table props) { properties = props; }
+				void set_property(std::string name, int value, sol::this_state s) { properties.set(name, value); }
+				void set_properties(sol::table props, sol::this_state s) { properties = props; }
 
 		private:
 				std::string name;
@@ -406,32 +503,6 @@ namespace roguely::level_generation
 		std::shared_ptr<boost::numeric::ublas::matrix<int>> init_cellular_automata(int map_width, int map_height);
 }
 
-namespace roguely::common
-{
-		struct TextExtents
-		{
-				int width, height;
-		};
-
-		class Text
-		{
-		public:
-				Text();
-
-				int load_font(const char* path, int ptsize);
-				void draw_text(SDL_Renderer* renderer, int x, int y, const char* text);
-				void draw_text(SDL_Renderer* renderer, int x, int y, const char* text, SDL_Color color);
-				TextExtents get_text_extents(const char* text);
-
-		private:
-				TTF_Font* font;
-				SDL_Texture* text_texture;
-
-				SDL_Color text_color = { 0xFF, 0xFF, 0xFF, 0xFF };
-				SDL_Color text_background_color = { 0x00, 0x00, 0x00, 0xFF };
-		};
-}
-
 namespace roguely::engine
 {
 		struct TileWalkableInfo
@@ -483,15 +554,15 @@ namespace roguely::engine
 				void add_score_component(std::shared_ptr<roguely::ecs::Entity> entity, int s);
 				void add_value_component(std::shared_ptr<roguely::ecs::Entity> entity, int v);
 				void add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items);
-				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props);
+				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s);
 				bool remove_entity(std::string entity_group_name, std::string entity_id);
 				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
 				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
 				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
 				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
-				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value);
-				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value);
-				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value);
+				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value, sol::this_state s);
 				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
 				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
 				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
@@ -567,8 +638,8 @@ namespace roguely::engine
 				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);
 				sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
 				sol::table convert_entity_group_to_lua_table(std::string entity_group_name, sol::this_state s);
-				std::string add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table);
-				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, sol::this_state s);
 				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s);
 				void emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s);
 				void emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s);
@@ -623,6 +694,7 @@ namespace roguely::engine
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
+				std::unique_ptr<roguely::common::AStarPathFinder> path_finder{};
 
 				// Corner cut here. This is silly but keeps us going, we need to 
 				// rethink having a reusable Text class for variable size fonts.

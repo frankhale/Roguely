@@ -236,6 +236,95 @@ namespace roguely::common
 				SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
 				SDL_DestroyTexture(text_texture);
 		}
+
+		std::shared_ptr<std::queue<Point>> AStarPathFinder::find_path(Point start, Point end, int walkable_tile_id)
+		{
+				auto path = std::make_shared<std::queue<Point>>();
+
+				AStarNode none{};
+
+				auto start_node = std::make_shared<AStarNode>(none, start);
+				auto end_node = std::make_shared<AStarNode>(none, end);
+				auto open_list = std::make_shared<std::vector<std::shared_ptr<AStarNode>>>();
+				auto closed_list = std::make_shared<std::vector<std::shared_ptr<AStarNode>>>();
+
+				open_list->emplace_back(start_node);
+
+				while (open_list->size() > 0)
+				{
+						auto current_node = open_list->front();
+						int current_index = 0;
+
+						int _index = 0;
+						for (const auto& item : *open_list)
+						{
+								if (item->f < current_node->f)
+								{
+										current_node = item;
+										current_index = _index;
+								}
+								_index++;
+						}
+
+						open_list->erase(open_list->begin() + current_index);
+						closed_list->emplace_back(current_node);
+
+						if (current_node->eq(*end_node))
+						{
+								auto current = current_node;
+								while (current != nullptr && current->position != nullptr)
+								{
+										Point path_point = { current->position->x, current->position->y };
+										path->push(path_point);
+										current = current->parent;
+								}
+
+								return path;
+						}
+
+						auto children = std::make_shared<std::vector<std::shared_ptr<AStarNode>>>();
+
+						for (const auto& new_position : pos_array)
+						{
+								auto node_position = std::make_shared<Point>(current_node->position->x + new_position.x, current_node->position->y + new_position.y);
+
+								if (node_position->x > (map->size2() - 1) || node_position->x < 0 ||
+										node_position->y >(map->size1() - 1) || node_position->y < 0) continue;
+
+								if ((*map)(node_position->y, node_position->x) != walkable_tile_id) continue;
+
+								auto child = std::make_shared<AStarNode>(*current_node, *node_position);
+								children->emplace_back(child);
+						}
+
+						for (const auto& child : *children)
+						{
+								auto closed_list_result = std::find_if(closed_list->begin(), closed_list->end(),
+										[&](const std::shared_ptr<AStarNode>& c) {
+												return c->eq(*child);
+										});
+
+								if (closed_list_result != closed_list->end() && *closed_list_result != nullptr)
+										continue;
+
+								child->g = current_node->g + 1;
+								child->h = (int)pow(child->position->x - end_node->position->x, 2) + (int)pow(child->position->y - end_node->position->y, 2);
+								child->f = child->g + child->h;
+
+								auto open_node_result = std::find_if(open_list->begin(), open_list->end(),
+										[&](const std::shared_ptr<AStarNode>& o) {
+												return child->eq(*o) && child->g >= o->g;
+										});
+
+								if (open_node_result != open_list->end() && *open_node_result != nullptr)
+										continue;
+
+								open_list->emplace_back(child);
+						}
+				}
+
+				return path;
+		}
 }
 
 namespace roguely::engine
@@ -479,6 +568,7 @@ namespace roguely::engine
 
 				if (map != maps->end()) {
 						current_map = *map;
+						path_finder = std::make_unique<roguely::common::AStarPathFinder>(current_map->map);
 				}
 		}
 
@@ -597,9 +687,10 @@ namespace roguely::engine
 				entity->add_component(inventory_component);
 		}
 
-		void Engine::add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props)
+		void Engine::add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s)
 		{
-				auto lua_component = std::make_shared<roguely::ecs::LuaComponent>(n, t, props);
+				sol::state_view lua(s);
+				auto lua_component = std::make_shared<roguely::ecs::LuaComponent>(n, t, props, lua.lua_state());
 				lua_component->set_component_name(n);
 				entity->add_component(lua_component);
 		}
@@ -630,7 +721,7 @@ namespace roguely::engine
 				boost::uuids::random_generator gen;
 				boost::uuids::uuid id = gen();
 				return boost::uuids::to_string(id);
-		}		
+		}
 
 		// ---------------------------- FIX ME ----------------------------------
 		bool Engine::is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir)
@@ -715,7 +806,7 @@ namespace roguely::engine
 		bool Engine::is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check)
 		{
 				if (current_map->map == nullptr) return true;
-				if (player->x() == x || player->y() == y) return true;
+				if (player->x() == x && player->y() == y) return true;
 				if ((*current_map->map)(y, x) == 0) return true;
 
 				bool blocked = true;
@@ -785,7 +876,7 @@ namespace roguely::engine
 		}
 
 		// ^--------------------------- FIX ME ---------------------------------^
-		
+
 		void Engine::update_player_viewport_points()
 		{
 				view_port_x = player->x() - VIEW_PORT_WIDTH / 2;
@@ -934,8 +1025,9 @@ namespace roguely::engine
 				return result;
 		}
 
-		bool Engine::set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value)
+		bool Engine::set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value, sol::this_state s)
 		{
+				sol::state_view lua(s);
 				bool did_update = false;
 
 				if (component->get_component_name() == "score_component") {
@@ -967,7 +1059,7 @@ namespace roguely::engine
 						auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(component);
 						if (lc != nullptr)
 						{
-								lc->set_property(key, value);
+								lc->set_property(key, value, lua.lua_state());
 								did_update = true;
 						}
 				}
@@ -975,15 +1067,17 @@ namespace roguely::engine
 				return did_update;
 		}
 
-		std::shared_ptr<roguely::ecs::Entity> Engine::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value)
+		std::shared_ptr<roguely::ecs::Entity> Engine::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value, sol::this_state s)
 		{
+				sol::state_view lua(s);
+
 				if (entity_id == "player" || player->get_id() == entity_id)
 				{
 						auto component = player->find_component_by_name(component_name);
 
 						if (component != nullptr)
 						{
-								auto did_update = set_component_value(component, key, value);
+								auto did_update = set_component_value(component, key, value, lua.lua_state());
 
 								if (did_update)
 										return player;
@@ -1003,7 +1097,7 @@ namespace roguely::engine
 
 										if (component != nullptr)
 										{
-												auto did_update = set_component_value(component, key, value);
+												auto did_update = set_component_value(component, key, value, lua.lua_state());
 
 												if (did_update)
 														return entity;
@@ -1015,8 +1109,10 @@ namespace roguely::engine
 				return nullptr;
 		}
 
-		std::shared_ptr<roguely::ecs::Entity> Engine::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value)
+		std::shared_ptr<roguely::ecs::Entity> Engine::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value, sol::this_state s)
 		{
+				sol::state_view lua(s);
+
 				if (entity_id == "player" || player->get_id() == entity_id)
 				{
 						auto component = player->find_component_by_name(component_name);
@@ -1037,7 +1133,7 @@ namespace roguely::engine
 										auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(component);
 										if (lc != nullptr)
 										{
-												lc->set_property(value.first, value.second);
+												lc->set_property(value.first, value.second, lua.lua_state());
 												return player;
 										}
 								}
@@ -1231,8 +1327,9 @@ namespace roguely::engine
 				return entity_group_info_table;
 		}
 
-		std::string Engine::add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table)
+		std::string Engine::add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s)
 		{
+				sol::state_view lua(s);
 				auto e_id = generate_uuid();
 				roguely::common::Point e_p = { x, y };
 				roguely::ecs::EntityType e_type{};
@@ -1395,7 +1492,7 @@ namespace roguely::engine
 
 														if (has_type && has_properties)
 														{
-																add_lua_component(entity, key, type, props);
+																add_lua_component(entity, key, type, props, lua.lua_state());
 														}
 												}
 										}
@@ -1406,11 +1503,12 @@ namespace roguely::engine
 				return e_id;
 		}
 
-		std::string  Engine::add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table)
+		std::string  Engine::add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, sol::this_state s)
 		{
+				sol::state_view lua(s);
 				auto entity_groups = get_entity_group_names();
 				auto random_point = generate_random_point(entity_groups);
-				return add_entity(entity_group_name, entity_type, random_point.x, random_point.y, components_table);
+				return add_entity(entity_group_name, entity_type, random_point.x, random_point.y, components_table, lua.lua_state());
 		}
 
 		sol::table Engine::add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
@@ -1418,7 +1516,7 @@ namespace roguely::engine
 				sol::state_view lua(s);
 
 				for (int i = 0; i < num; i++)
-						add_entity(entity_group_name, entity_type, components_table);
+						add_entity(entity_group_name, entity_type, components_table, lua.lua_state());
 
 				return convert_entity_group_to_lua_table(entity_group_name, lua.lua_state());
 		}
@@ -1578,11 +1676,12 @@ namespace roguely::engine
 
 		void  Engine::set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s)
 		{
+				sol::state_view lua(s);
 				std::shared_ptr<roguely::ecs::Entity> entity{};
 
 				if (value.get_type() == sol::type::number)
 				{
-						entity = set_component_value(entity_group_name, entity_id, component_name, key, value.as<int>());
+						entity = set_component_value(entity_group_name, entity_id, component_name, key, value.as<int>(), lua.lua_state());
 				}
 				else if (value.get_type() == sol::type::table)
 				{
@@ -1591,7 +1690,7 @@ namespace roguely::engine
 								if (kvp.first.get_type() == sol::type::string && kvp.second.get_type() == sol::type::number)
 								{
 										std::pair p{ kvp.first.as<std::string>(), kvp.second.as<int>() };
-										entity = set_component_value(entity_group_name, entity_id, component_name, key, p);
+										entity = set_component_value(entity_group_name, entity_id, component_name, key, p, lua.lua_state());
 								}
 						}
 				}
@@ -1721,6 +1820,38 @@ namespace roguely::engine
 		{
 				sol::state_view lua(s);
 
+				lua.set_function("find_path", [&](int start_x, int start_y, int end_x, int end_y, int walkable_tile_id, sol::this_state s) {
+						sol::state_view lua(s);
+						auto path = path_finder->find_path({ start_x, start_y }, { end_x, end_y }, walkable_tile_id);
+
+						sol::table path_table = lua.create_table();
+
+						roguely::common::Point start{ start_x, start_y };
+						roguely::common::Point end{ end_x, end_y };
+
+
+						while (!path->empty())
+						{
+								roguely::common::Point p = path->front();
+
+								if (!p.eq(start) && !p.eq(end))
+								{
+										/*std::cout << "player->x = " << end_x << " and player->y = " << end_y << std::endl;
+										std::cout << "x = " << p.x << " and y = " << p.y << std::endl;*/
+
+										// FIXME: our queue  is in the wrong order and we are going 
+										// to just run through the queue until we get to the last 
+										// element. This is horrible.
+
+										path_table.set("x", p.x);
+										path_table.set("y", p.y);
+								}
+								path->pop();
+						}
+
+						return path_table;
+						});
+
 				lua.set_function("get_sprite_info", [&](std::string sprite_sheet_name, sol::this_state s) {
 						sol::state_view lua(s);
 						return get_sprite_info(sprite_sheet_name, lua.lua_state());
@@ -1766,7 +1897,7 @@ namespace roguely::engine
 
 				lua.set_function("add_entity", [&](std::string entity_group, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s) {
 						sol::state_view lua(s);
-						auto id = add_entity(entity_group, entity_type, x, y, components_table);
+						auto id = add_entity(entity_group, entity_type, x, y, components_table, lua.lua_state());
 						emit_lua_update_for_entity_group(entity_group, id, lua.lua_state());
 						});
 
@@ -1809,6 +1940,15 @@ namespace roguely::engine
 				lua.set_function("get_open_point_for_xy", [&](int x, int y, sol::table entity_groups_to_check, sol::this_state s) {
 						sol::state_view lua(s);
 						return get_open_point_for_xy(x, y, entity_groups_to_check, lua.lua_state());
+						});
+
+				lua.set_function("is_xy_blocked", [&](int x, int y, sol::table entity_groups_to_check) {
+						std::vector<std::string> entity_groups;
+
+						for (auto& eg : entity_groups_to_check)
+								if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
+
+						return is_xy_blocked(x, y, entity_groups);
 						});
 
 				lua.set_function("is_tile_walkable", [&](int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check) {
