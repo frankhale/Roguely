@@ -902,6 +902,7 @@ function _update(event, data)
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
 				update_entity_position("common", "player", pos.x, pos.y)
+				update_entities("enemies", "aggro_component", "value", 0)
 			elseif (Game.won == true or Game.lost == true) then
 				Game.lost = false
 				Game.won = false

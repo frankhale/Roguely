@@ -921,6 +921,28 @@ namespace roguely::engine
 				return entity;
 		}
 
+		void Engine::update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s)
+		{
+				sol::state_view lua(s);
+				auto entity_group = get_entity_group(entity_group_name);
+
+				if (entity_group != nullptr)
+				{
+						for (const auto& entity : *entity_group->entities)
+						{
+								auto component = entity->find_component_by_name(component_name);
+
+								if (value.get_type() == sol::type::number)
+								{
+										int val = value.as<int>();
+
+										if (component != nullptr)
+												set_component_value(component, key, val, lua.lua_state());
+								}
+						}
+				}
+		}
+
 		void Engine::update_entity_position(std::string entity_group_name, sol::table entity_positions)
 		{
 				auto entity_group = get_entity_group(entity_group_name);
@@ -1978,6 +2000,12 @@ namespace roguely::engine
 								if (entity_id == "player") rb_fov();
 
 						return emit_lua_update_for_entity(entity, lua.lua_state());
+						});
+
+				lua.set_function("update_entities", [&](std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s) {
+						sol::state_view lua(s);
+						update_entities(entity_group_name, component_name, key, value, lua.lua_state());
+						return emit_lua_update_for_entity_group(entity_group_name, lua.lua_state());
 						});
 
 				lua.set_function("update_entities_position", [&](std::string entity_group_name, sol::table entity_position_table, sol::this_state s) {

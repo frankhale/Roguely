@@ -557,6 +557,7 @@ namespace roguely::engine
 				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s);
 				bool remove_entity(std::string entity_group_name, std::string entity_id);
 				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
+				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
 				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
 				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
 				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
