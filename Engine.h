@@ -213,6 +213,13 @@ namespace roguely::ecs
 				Wall
 		};
 
+		struct TileWalkableInfo
+		{
+				bool walkable = false;
+				roguely::common::Point point{};
+				roguely::ecs::EntityType entity_type{};
+		};
+
 		// There are some built in components and the rest are defined in Lua 
 		// through the LuaComponent.
 		//
@@ -460,6 +467,60 @@ namespace roguely::ecs
 				std::unique_ptr<std::vector<std::shared_ptr<Component>>> components{};
 				std::string _id{};
 		};
+
+		class EntityManager
+		{
+		public:
+				EntityManager()
+				{
+						entity_groups = std::make_unique<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
+				}
+
+				std::vector<std::string> get_entity_group_names()
+				{
+						std::vector<std::string> results{};
+						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
+						return results;
+				}
+				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
+				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
+				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);
+				bool remove_entity(std::string entity_group_name, std::string entity_id);
+				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
+				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
+				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);		
+				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
+				void add_sprite_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string spritesheet_name, int sprite_in_spritesheet_id, std::string sprite_name);
+				void add_health_component(std::shared_ptr<roguely::ecs::Entity> entity, int h);
+				void add_stats_component(std::shared_ptr<roguely::ecs::Entity> entity, int a);
+				void add_score_component(std::shared_ptr<roguely::ecs::Entity> entity, int s);
+				void add_value_component(std::shared_ptr<roguely::ecs::Entity> entity, int v);
+				void add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items);
+				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s);
+				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
+				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value, sol::this_state s);
+				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
+				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
+				sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
+				sol::table convert_entity_group_to_lua_table(std::string entity_group_name, sol::this_state s);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, sol::this_state s);
+				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s);
+				void emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s);
+				void emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s);
+				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
+				void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
+				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
+				std::string generate_uuid();
+				bool is_xy_player_xy(int x, int y, roguely::common::MovementDirection dir);
+				roguely::common::Point generate_random_point(std::vector<std::string> entity_groups_to_check);
+		private:
+				std::string player_id{};
+				std::shared_ptr<roguely::ecs::Entity> player{};
+				std::unique_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
+		};
 }
 
 namespace roguely::sprites
@@ -494,8 +555,8 @@ namespace roguely::sprites
 
 namespace roguely::level_generation
 {
-		// Quick and dirty cellular automata that I learned about from YouTube
-		// We can do more but currently are just doing the very least to get a 
+		// Quick and dirty cellular automata that I learned about from YouTube. We 
+		// can do more but currently are just doing the very least to get a 
 		// playable level.
 
 		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y);
@@ -505,18 +566,67 @@ namespace roguely::level_generation
 
 namespace roguely::engine
 {
-		struct TileWalkableInfo
-		{
-				bool walkable = false;
-				roguely::common::Point point{};
-				roguely::ecs::EntityType entity_type{};
-		};
+		// TODO: Remove the entity functions below and move them to the new 
+		// EntityGroup class. The entity functions should be refactored to not
+		// need any Sol related objects. We will have intermediary functions to
+		// do the Lua/Sol bridging.
 
 		class Engine
 		{
 		public:
-				Engine();
+				// ENTITY FUNCTIONS THAT WILL MOVE TO ENTITYMANAGER
+				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
+				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
+				std::vector<std::string> get_entity_group_names()
+				{
+						std::vector<std::string> results{};
+						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
+						return results;
+				}
+				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
+				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
+				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);
+				bool remove_entity(std::string entity_group_name, std::string entity_id);
+				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
+				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
+				void add_sprite_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string spritesheet_name, int sprite_in_spritesheet_id, std::string sprite_name);
+				void add_health_component(std::shared_ptr<roguely::ecs::Entity> entity, int h);
+				void add_stats_component(std::shared_ptr<roguely::ecs::Entity> entity, int a);
+				void add_score_component(std::shared_ptr<roguely::ecs::Entity> entity, int s);
+				void add_value_component(std::shared_ptr<roguely::ecs::Entity> entity, int v);
+				void add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items);
+				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s);
+				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
+				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
+				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value, sol::this_state s);
+				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
+				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
+				std::string generate_uuid();
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+				Engine();
+									
+				// FIXME: There are too many functions to determine if a tile is 
+				// blocked. This needs to be simplified because it's been a constant 
+				// source of issues and confusion.
+				//
+				// Pretty sure we just need one function 'is_tile_walkable' to cover 
+				// all cases.
+				bool is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities)
+				{
+						return !(std::any_of(entities->begin(), entities->end(), [&](std::shared_ptr<roguely::ecs::Entity> elem) { return elem->x() == x && elem->y() == y; }));
+				}
+				auto is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir);
+				bool is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check);
+				roguely::common::Point generate_random_point(std::vector<std::string> entity_groups_to_check);
+				roguely::common::Point get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check);
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
+				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
+				void switch_map(std::string map_name);
 				void generate_map_for_testing();
 				void generate_map(std::string name, int map_width, int map_height)
 				{
@@ -548,46 +658,6 @@ namespace roguely::engine
 						maps->emplace_back(std::make_shared<roguely::common::Map>(name, map_width, map_height, map));
 				}
 				std::shared_ptr<roguely::common::Map> get_map(std::string name);
-				void add_sprite_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string spritesheet_name, int sprite_in_spritesheet_id, std::string sprite_name);
-				void add_health_component(std::shared_ptr<roguely::ecs::Entity> entity, int h);
-				void add_stats_component(std::shared_ptr<roguely::ecs::Entity> entity, int a);
-				void add_score_component(std::shared_ptr<roguely::ecs::Entity> entity, int s);
-				void add_value_component(std::shared_ptr<roguely::ecs::Entity> entity, int v);
-				void add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items);
-				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s);
-				bool remove_entity(std::string entity_group_name, std::string entity_id);
-				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
-				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
-				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
-				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
-				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
-				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value, sol::this_state s);
-				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value, sol::this_state s);
-				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value, sol::this_state s);
-				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
-				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
-				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
-				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);
-				std::string generate_uuid();
-				void switch_map(std::string map_name);
-				// FIXME: There are too many functions to determine if a tile is blocked. 
-				// This needs to be simplified because it's been a constant source of issues
-				// and confusion.
-				//
-				// Pretty sure we just need one function 'is_tile_walkable' to cover 
-				// all cases.
-				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
-				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
-				bool is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities)
-				{
-						return !(std::any_of(entities->begin(), entities->end(), [&](std::shared_ptr<roguely::ecs::Entity> elem) { return elem->x() == x && elem->y() == y; }));
-				}
-				auto is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir);
-				TileWalkableInfo is_tile_walkable(int x, int y, roguely::common::MovementDirection dir, roguely::common::WhoAmI whoAmI, std::vector<std::string> entity_groups_to_check);
-				bool is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check);
-				roguely::common::Point generate_random_point(std::vector<std::string> entity_groups_to_check);
-				roguely::common::Point get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check);
-				// ------------------------------------------------------------------ ^
 				void update_player_viewport_points();
 				void rb_fov();
 				int get_view_port_x() const { return view_port_x; }
@@ -603,13 +673,7 @@ namespace roguely::engine
 				{
 						VIEW_PORT_HEIGHT = vph;
 						view_port_height = vph;
-				}
-				std::vector<std::string> get_entity_group_names()
-				{
-						std::vector<std::string> results{};
-						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
-						return results;
-				}
+				}			
 				void add_spritesheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh);
 				std::shared_ptr<roguely::sprites::SpriteSheet> find_spritesheet(std::string name) {
 						auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
@@ -634,7 +698,7 @@ namespace roguely::engine
 				int init_sdl(sol::table game_config);
 				int game_loop();
 
-				// Lua helpers
+				// ENTITY LUA HELPERS
 				sol::table get_sprite_info(std::string name, sol::this_state s);
 				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);
 				sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
@@ -644,23 +708,26 @@ namespace roguely::engine
 				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s);
 				void emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s);
 				void emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s);
-				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
+				void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);				
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+				void setup_lua_helpers(sol::this_state s);
 				sol::table get_map(std::string name, bool light, sol::this_state s);
+				sol::table get_random_point(sol::table entity_groups_to_check, sol::this_state s);
+				sol::table get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s);
+				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
+
+				// SDL2 WRAPPER FUNCTIONS
 				void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a);
 				void draw_point(SDL_Renderer* renderer, int x, int y);
 				void draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
 				void draw_filled_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
-				sol::table get_random_point(sol::table entity_groups_to_check, sol::this_state s);
-				sol::table get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s);
-				bool is_tile_walkable(int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check);
-				void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
-				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
+				bool is_tile_walkable(int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check);							
 				void send_key_event(std::string key, sol::this_state s);
 				void render(float delta_time, sol::this_state s);
-				void tick(float delta_time, sol::this_state s);
-				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
+				void tick(float delta_time, sol::this_state s);				
 				void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);
-				void setup_lua_helpers(sol::this_state s);
+				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		private:
 

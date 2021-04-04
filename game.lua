@@ -88,7 +88,7 @@ Game = {
 	health_recovery_timer = 0,
 	preemptive_enemy_attack_timer = 0,
 	level_check_timer = 0,
-	--logic_timer = 0,
+	logic_timer = 0,
 	health_recovery = 10,
 	action_log = {},
 	entities = {
@@ -844,8 +844,6 @@ function _update(event, data)
 		if data["key"] == "up" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "up", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y - 1)
-				move_enemies()
-				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("up")
 				if(Game.enemies[pid]) then
@@ -858,8 +856,6 @@ function _update(event, data)
 		elseif data["key"] == "down" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "down", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x, Game.player_pos.y + 1)
-				move_enemies()
-				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("down")
 				if(Game.enemies[pid]) then
@@ -872,8 +868,6 @@ function _update(event, data)
 		elseif data["key"] == "left" and started()then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "left", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x - 1, Game.player_pos.y)
-				move_enemies()
-				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("left")
 				if(Game.enemies[pid]) then
@@ -886,8 +880,6 @@ function _update(event, data)
 		elseif data["key"] == "right" and started() then
 			if(is_tile_walkable(Game.player_pos.x, Game.player_pos.y, "right", "player", { "common", "enemies" })) then
 				update_entity_position("common", "player", Game.player_pos.x + 1, Game.player_pos.y)
-				move_enemies()
-				move_aggro_enemies()
 			else
 				local pid = get_player_movement_direction_pid("right")
 				if(Game.enemies[pid]) then
@@ -1011,7 +1003,7 @@ function _tick(delta_time)
 	Game.health_recovery_timer = Game.health_recovery_timer + delta_time
 	Game.preemptive_enemy_attack_timer = Game.preemptive_enemy_attack_timer + delta_time
 	Game.level_check_timer = Game.level_check_timer + delta_time
-	--Game.logic_timer = Game.logic_timer + delta_time
+	Game.logic_timer = Game.logic_timer + delta_time
 
 	if(Game.health_recovery_timer >= 2) then
 		Game.health_recovery_timer = 0
@@ -1045,10 +1037,11 @@ function _tick(delta_time)
 		initiate_enemy_preemptive_attack_sequence()
 	end
 
-	-- if(Game.logic_timer >= 5) then
-	-- 	Game.logic_timer = 0
-	-- TODO: Do something here...
-	-- end
+	if(Game.logic_timer >= .5) then
+		Game.logic_timer = 0
+		move_enemies()
+		move_aggro_enemies()
+	end
 
 	if(Game.level_check_timer >= 5 and Game.total_enemies_killed >= 10) then
 		Game.level_check_timer = 0
