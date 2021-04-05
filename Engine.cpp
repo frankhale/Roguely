@@ -1988,6 +1988,11 @@ namespace roguely::engine
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		// ---------------------------- FIX ME BELOW ------------------------------
+
+		// TODO: The functions dealing with entities will be refactored and moved 
+		// to the EntityManager class. Functions dealing with the map will remain
+		// here
+
 		auto Engine::is_entity_location_traversable(int x, int y, std::shared_ptr<std::vector<std::shared_ptr<roguely::ecs::Entity>>> entities, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir)
 		{
 				roguely::ecs::TileWalkableInfo twi{
