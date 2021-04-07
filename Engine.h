@@ -585,8 +585,7 @@ namespace roguely::engine
 
 				bool is_xy_blocked(int x, int y);
 				roguely::common::Point generate_random_point();
-				roguely::common::Point get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check);
-
+				roguely::common::Point get_open_point_for_xy(int x, int y);
 				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
 				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
 				void switch_map(std::string map_name);
@@ -666,7 +665,7 @@ namespace roguely::engine
 				void setup_lua_helpers(sol::this_state s);
 				sol::table get_map(std::string name, bool light, sol::this_state s);
 				sol::table get_random_point(sol::this_state s);
-				sol::table get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s);
+				sol::table get_open_point_for_xy(int x, int y, sol::this_state s);
 				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
 
 				void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a);

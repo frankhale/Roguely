@@ -496,7 +496,7 @@ function move_aggro_enemies()
 			local path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
 
 			if(path.x ~= nil and path.y ~= nil) then
-				if(is_xy_blocked(path.x, path.y, { "enemies" }) ~= true) then
+				if(is_xy_blocked(path.x, path.y) ~= true) then
 					number_of_enemies = number_of_enemies + 1
 					enemies_new_positions[e.enemy.id] = {}
 					enemies_new_positions[e.enemy.id]["x"] = path.x

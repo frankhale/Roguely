@@ -1416,7 +1416,7 @@ namespace roguely::engine
 				return blocked;
 		}
 
-		roguely::common::Point Engine::get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check)
+		roguely::common::Point Engine::get_open_point_for_xy(int x, int y)
 		{
 				int left = x - 1;
 				int right = x + 1;
@@ -1639,21 +1639,12 @@ namespace roguely::engine
 				return point_table;
 		}
 
-		sol::table Engine::get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s)
+		sol::table Engine::get_open_point_for_xy(int x, int y, sol::this_state s)
 		{
 				sol::state_view lua(s);
 				sol::table point_table = lua.create_table();
 
-				// TODO: We have several APIs that need entity groups. This needs to be put
-				// into it's own function.
-				std::vector<std::string> entity_groups;
-				for (auto& eg : entity_groups_to_check)
-				{
-						if (eg.second.get_type() == sol::type::string)
-								entity_groups.push_back(eg.second.as<std::string>());
-				}
-
-				auto result = get_open_point_for_xy(x, y, entity_groups);
+				auto result = get_open_point_for_xy(x, y);
 
 				point_table.set("x", result.x);
 				point_table.set("y", result.y);
@@ -1944,8 +1935,6 @@ namespace roguely::engine
 						});
 
 				lua.set_function("add_entities", [&](std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s) {
-						// TODO: Need to fix this because add_entities no longer gets generated x,y.
-						//			 Right now after entities are added they have a an X,Y of -1.
 						sol::state_view lua(s);
 						return entity_manager->add_entities(entity_group_name, entity_type, components_table, num, [&]() {
 								return generate_random_point();
@@ -1983,17 +1972,10 @@ namespace roguely::engine
 
 				lua.set_function("get_open_point_for_xy", [&](int x, int y, sol::table entity_groups_to_check, sol::this_state s) {
 						sol::state_view lua(s);
-						return get_open_point_for_xy(x, y, entity_groups_to_check, lua.lua_state());
+						return get_open_point_for_xy(x, y, lua.lua_state());
 						});
 
-				lua.set_function("is_xy_blocked", [&](int x, int y, sol::table entity_groups_to_check) {
-						std::vector<std::string> entity_groups;
-
-						// FIXME: Remove the sol::table entity_groups_to_check
-
-						for (auto& eg : entity_groups_to_check)
-								if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
-
+				lua.set_function("is_xy_blocked", [&](int x, int y) {
 						return is_xy_blocked(x, y);
 						});
 
