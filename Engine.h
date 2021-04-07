@@ -198,6 +198,47 @@ namespace roguely::common
 		};
 }
 
+namespace roguely::sprites
+{
+		class SpriteSheet
+		{
+		public:
+				SpriteSheet(SDL_Renderer* renderer, std::string n, std::string p, int sw, int sh);
+				~SpriteSheet()
+				{
+						SDL_DestroyTexture(spritesheet_texture);
+				}
+
+				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y);
+				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height);
+
+				SDL_Texture* get_spritesheet_texture() const { return spritesheet_texture; }
+
+				auto get_name() const { return name; }
+
+				sol::table get_sprites_as_lua_table(sol::this_state s);
+
+		private:
+				std::string name;
+				std::string path;
+				int sprite_width = 0;
+				int sprite_height = 0;
+				std::unique_ptr<std::vector<std::shared_ptr<SDL_Rect>>> sprites{};
+				SDL_Texture* spritesheet_texture{};
+		};
+}
+
+namespace roguely::level_generation
+{
+		// Quick and dirty cellular automata that I learned about from YouTube. We 
+		// can do more but currently are just doing the very least to get a 
+		// playable level.
+
+		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y);
+		void perform_cellular_automaton(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int passes);
+		std::shared_ptr<boost::numeric::ublas::matrix<int>> init_cellular_automata(int map_width, int map_height);
+}
+
 namespace roguely::ecs
 {
 		// We aren't using all these yet. I am simply putting them in place for
@@ -398,12 +439,12 @@ namespace roguely::ecs
 		class Entity
 		{
 		public:
-				Entity(std::shared_ptr<EntityGroup> entityGroup, std::string id, roguely::common::Point point, EntityType entityType)
+				Entity(std::shared_ptr<EntityGroup> eg, std::string id, roguely::common::Point p, EntityType et)
 				{
-						_id = id;
-						_point = point;
-						_entityGroup = entityGroup;
-						_entityType = entityType;
+						this->id = id;
+						point = p;
+						entity_group = eg;
+						entity_type = et;
 						components = std::make_unique<std::vector<std::shared_ptr<Component>>>();
 				}
 
@@ -444,28 +485,28 @@ namespace roguely::ecs
 						return nullptr;
 				}
 
-				auto x() const { return _point.x; }
-				auto y() const { return _point.y; }
+				auto x() const { return point.x; }
+				auto y() const { return point.y; }
 
-				auto get_point() const { return _point; }
+				auto get_point() const { return point; }
 				void set_point(roguely::common::Point p) {
-						_point = p;
+						point = p;
 				}
 
-				auto get_id() const { return _id; }
-				auto get_entity_type() const { return _entityType; }
-				auto get_entity_group() const { return _entityGroup; }
-				void set_entity_group(std::shared_ptr<EntityGroup> entityGroup) { _entityGroup = entityGroup; }
+				auto get_id() const { return id; }
+				auto get_entity_type() const { return entity_type; }
+				auto get_entity_group() const { return entity_group; }
+				void set_entity_group(std::shared_ptr<EntityGroup> eg) { entity_group = eg; }
 				void add_component(std::shared_ptr<Component> c) { components->emplace_back(c); }
 				void add_components(std::unique_ptr<std::vector<std::shared_ptr<Component>>> c) { components->insert(components->end(), c->begin(), c->end()); }
 				void for_each_component(std::function<void(std::shared_ptr<Component>&)> fc) { for (auto& c : *components) fc(c); }
 
 		private:
-				std::shared_ptr<EntityGroup> _entityGroup{};
-				roguely::common::Point _point{};
-				EntityType _entityType{};
+				std::shared_ptr<EntityGroup> entity_group{};
+				roguely::common::Point point{};
+				EntityType entity_type{};
 				std::unique_ptr<std::vector<std::shared_ptr<Component>>> components{};
-				std::string _id{};
+				std::string id{};
 		};
 
 		class EntityManager
@@ -523,55 +564,16 @@ namespace roguely::ecs
 				void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
 
 				std::string add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s);
-				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, sol::this_state s);
-				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, std::function<roguely::common::Point()> get_random_point, sol::this_state s);
+				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, std::function<roguely::common::Point()> get_random_point, sol::this_state s);
+
+				auto get_player_point() const { return player->get_point(); }
 
 		private:
 				std::string player_id{};
 				std::shared_ptr<roguely::ecs::Entity> player{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>> entity_groups{};
 		};
-}
-
-namespace roguely::sprites
-{
-		class SpriteSheet
-		{
-		public:
-				SpriteSheet(SDL_Renderer* renderer, std::string n, std::string p, int sw, int sh);
-				~SpriteSheet()
-				{
-						SDL_DestroyTexture(spritesheet_texture);
-				}
-
-				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y);
-				void draw_sprite(SDL_Renderer* renderer, int sprite_id, int x, int y, int scaled_width, int scaled_height);
-
-				SDL_Texture* get_spritesheet_texture() const { return spritesheet_texture; }
-
-				auto get_name() const { return name; }
-
-				sol::table get_sprites_as_lua_table(sol::this_state s);
-
-		private:
-				std::string name;
-				std::string path;
-				int sprite_width = 0;
-				int sprite_height = 0;
-				std::unique_ptr<std::vector<std::shared_ptr<SDL_Rect>>> sprites{};
-				SDL_Texture* spritesheet_texture{};
-		};
-}
-
-namespace roguely::level_generation
-{
-		// Quick and dirty cellular automata that I learned about from YouTube. We 
-		// can do more but currently are just doing the very least to get a 
-		// playable level.
-
-		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y);
-		void perform_cellular_automaton(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int passes);
-		std::shared_ptr<boost::numeric::ublas::matrix<int>> init_cellular_automata(int map_width, int map_height);
 }
 
 namespace roguely::engine
@@ -581,8 +583,8 @@ namespace roguely::engine
 		public:
 				Engine();
 
-				bool is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check);
-				roguely::common::Point generate_random_point(std::vector<std::string> entity_groups_to_check);
+				bool is_xy_blocked(int x, int y);
+				roguely::common::Point generate_random_point();
 				roguely::common::Point get_open_point_for_xy(int x, int y, std::vector<std::string> entity_groups_to_check);
 
 				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
@@ -663,11 +665,10 @@ namespace roguely::engine
 				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);
 				void setup_lua_helpers(sol::this_state s);
 				sol::table get_map(std::string name, bool light, sol::this_state s);
-				sol::table get_random_point(sol::table entity_groups_to_check, sol::this_state s);
+				sol::table get_random_point(sol::this_state s);
 				sol::table get_open_point_for_xy(int x, int y, sol::table entity_groups_to_check, sol::this_state s);
 				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
 
-				// SDL2 WRAPPER FUNCTIONS
 				void set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a);
 				void draw_point(SDL_Renderer* renderer, int x, int y);
 				void draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h);
@@ -676,8 +677,7 @@ namespace roguely::engine
 				void send_key_event(std::string key, sol::this_state s);
 				void render(float delta_time, sol::this_state s);
 				void tick(float delta_time, sol::this_state s);
-				void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);
-				// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+				void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);				
 
 		private:
 
@@ -706,8 +706,7 @@ namespace roguely::engine
 
 				std::string player_id{};
 
-				std::shared_ptr<roguely::common::Map> current_map{};
-				std::shared_ptr<roguely::ecs::Entity> player{};
+				std::shared_ptr<roguely::common::Map> current_map{};				
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};				
 				std::unique_ptr<roguely::ecs::EntityManager> entity_manager{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};

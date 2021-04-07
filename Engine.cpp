@@ -468,8 +468,8 @@ namespace roguely::ecs
 				{
 						player->set_point({ x, y });
 
-						//update_player_viewport_points();
-						//rb_fov();
+						/*update_player_viewport_points();
+						rb_fov();*/
 						entity = player;
 				}
 				else
@@ -1050,20 +1050,21 @@ namespace roguely::ecs
 				return e_id;
 		}
 
-		std::string EntityManager::add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, sol::this_state s)
+		std::string EntityManager::add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, std::function<roguely::common::Point()> get_random_point, sol::this_state s)
 		{
 				sol::state_view lua(s);
-				auto entity_groups = get_entity_group_names();
-				// We can add the entity but the X,Y will need to be set later
-				return add_entity(entity_group_name, entity_type, -1, -1, components_table, lua.lua_state());
+				auto random_point = get_random_point();
+				return add_entity(entity_group_name, entity_type, random_point.x, random_point.y, components_table, lua.lua_state());
 		}
 
-		sol::table EntityManager::add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, sol::this_state s)
+		sol::table EntityManager::add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, std::function<roguely::common::Point()> get_random_point, sol::this_state s)
 		{
 				sol::state_view lua(s);
 
-				for (int i = 0; i < num; i++)
-						add_entity(entity_group_name, entity_type, components_table, lua.lua_state());
+				for (int i = 0; i < num; i++) {
+						auto random_point = get_random_point();
+						add_entity(entity_group_name, entity_type, random_point.x, random_point.y, components_table, lua.lua_state());
+				}
 
 				return convert_entity_group_to_lua_table(entity_group_name, lua.lua_state());
 		}
@@ -1344,18 +1345,20 @@ namespace roguely::engine
 
 		void Engine::reset(bool reset_ptr) {
 				if (reset_ptr) {
-						maps.reset();						
+						maps.reset();
 						entity_manager.reset();
 				}
 
-				maps = std::make_unique<std::vector<std::shared_ptr<roguely::common::Map>>>();				
+				maps = std::make_unique<std::vector<std::shared_ptr<roguely::common::Map>>>();
 				entity_manager = std::make_unique<roguely::ecs::EntityManager>();
 		}
 
 		void Engine::update_player_viewport_points()
 		{
-				view_port_x = player->x() - VIEW_PORT_WIDTH / 2;
-				view_port_y = player->y() - VIEW_PORT_HEIGHT / 2;
+				auto player_position = entity_manager->get_player_point();
+
+				view_port_x = player_position.x - VIEW_PORT_WIDTH / 2;
+				view_port_y = player_position.y - VIEW_PORT_HEIGHT / 2;
 
 				if (view_port_x < 0) view_port_x = std::max(0, view_port_x);
 				if (view_port_x > (current_map->width - VIEW_PORT_WIDTH)) view_port_x = (current_map->width - VIEW_PORT_WIDTH);
@@ -1383,23 +1386,28 @@ namespace roguely::engine
 
 		bool Engine::is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir)
 		{
-				return ((dir == roguely::common::MovementDirection::Up && player->y() == y - 1 && player->x() == x) ||
-						(dir == roguely::common::MovementDirection::Down && player->y() == y + 1 && player->x() == x) ||
-						(dir == roguely::common::MovementDirection::Left && player->y() == y && player->x() == x - 1) ||
-						(dir == roguely::common::MovementDirection::Right && player->y() == y && player->x() == x + 1));
+				auto player_position = entity_manager->get_player_point();
+
+				return ((dir == roguely::common::MovementDirection::Up && player_position.y == y - 1 && player_position.x == x) ||
+						(dir == roguely::common::MovementDirection::Down && player_position.y == y + 1 && player_position.x == x) ||
+						(dir == roguely::common::MovementDirection::Left && player_position.y == y && player_position.x == x - 1) ||
+						(dir == roguely::common::MovementDirection::Right && player_position.y == y && player_position.x == x + 1));
 		}
 
-		bool Engine::is_xy_blocked(int x, int y, std::vector<std::string> entity_groups_to_check)
+		bool Engine::is_xy_blocked(int x, int y)
 		{
 				if (current_map->map == nullptr) return true;
 				if ((*current_map->map)(y, x) == 0) return true;
-				if (player->x() == x && player->y() == y) return true;
+				
+				auto player_position = entity_manager->get_player_point();
+				if (player_position.x == x && player_position.y == y) return true;
 
 				bool blocked = true;
 
+				auto entity_groups_to_check = entity_manager->get_entity_group_names();
+
 				for (auto& egtc : entity_groups_to_check)
-				{
-						//auto group = entity_manager->get_entity_group(egtc);
+				{						
 						blocked = (entity_manager->is_entity_location_traversable(x, y, egtc)) ? false : true;
 
 						if (blocked) break;
@@ -1415,12 +1423,12 @@ namespace roguely::engine
 				int up = y - 1;
 				int down = y + 1;
 
-				if (!is_xy_blocked(left, y, entity_groups_to_check)) return { left, y };
-				else if (!is_xy_blocked(right, y, entity_groups_to_check)) return { right, y };
-				else if (!is_xy_blocked(x, up, entity_groups_to_check)) return { x, up };
-				else if (!is_xy_blocked(x, down, entity_groups_to_check)) return { x, down };
+				if (!is_xy_blocked(left, y)) return { left, y };
+				else if (!is_xy_blocked(right, y)) return { right, y };
+				else if (!is_xy_blocked(x, up)) return { x, up };
+				else if (!is_xy_blocked(x, down)) return { x, down };
 
-				return generate_random_point(entity_groups_to_check);
+				return generate_random_point();
 		}
 
 		bool Engine::is_tile_walkable(int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check)
@@ -1454,18 +1462,20 @@ namespace roguely::engine
 				return result;
 		}
 
-		roguely::common::Point Engine::generate_random_point(std::vector<std::string> entity_groups_to_check)
+		roguely::common::Point Engine::generate_random_point()
 		{
 				if (current_map->map == nullptr) return {};
 
 				int c = 0;
 				int r = 0;
 
+				auto entity_groups = entity_manager->get_entity_group_names();
+
 				do
 				{
 						c = std::rand() % (current_map->width - 1);
 						r = std::rand() % (current_map->height - 1);
-				} while (is_xy_blocked(c, r, entity_groups_to_check));
+				} while (is_xy_blocked(c, r));
 
 				return { c, r };
 		}
@@ -1507,13 +1517,15 @@ namespace roguely::engine
 						}
 				}*/
 
+				auto player_position = entity_manager->get_player_point();
+
 				for (int i = 0; i < 360; i++)
 				{
 						x = (float)std::cos(i * 0.01745f);
 						y = (float)std::sin(i * 0.01745f);
 
-						float ox = (float)player->x() + 0.5f;
-						float oy = (float)player->y() + 0.5f;
+						float ox = (float)player_position.x + 0.5f;
+						float oy = (float)player_position.y + 0.5f;
 
 						for (int j = 0; j < 40; j++)
 						{
@@ -1613,21 +1625,13 @@ namespace roguely::engine
 				SDL_RenderFillRect(renderer, &r);
 		}
 
-		sol::table Engine::get_random_point(sol::table entity_groups_to_check, sol::this_state s)
+		sol::table Engine::get_random_point(sol::this_state s)
 		{
 				sol::state_view lua(s);
 				sol::table point_table = lua.create_table();
+				std::vector<std::string> entity_groups = entity_manager->get_entity_group_names();
 
-				// TODO: We have several APIs that need entity groups. This needs to be put
-				// into it's own function.
-				std::vector<std::string> entity_groups;
-				for (auto& eg : entity_groups_to_check)
-				{
-						if (eg.second.get_type() == sol::type::string)
-								entity_groups.push_back(eg.second.as<std::string>());
-				}
-
-				auto result = generate_random_point(entity_groups);
+				auto result = generate_random_point();
 
 				point_table.set("x", result.x);
 				point_table.set("y", result.y);
@@ -1943,7 +1947,10 @@ namespace roguely::engine
 						// TODO: Need to fix this because add_entities no longer gets generated x,y.
 						//			 Right now after entities are added they have a an X,Y of -1.
 						sol::state_view lua(s);
-						return entity_manager->add_entities(entity_group_name, entity_type, components_table, num, lua.lua_state());
+						return entity_manager->add_entities(entity_group_name, entity_type, components_table, num, [&]() {
+								return generate_random_point();
+								},
+								lua.lua_state());
 						});
 
 				lua.set_function("remove_entity", [&](std::string entity_group_name, std::string entity_id, sol::this_state s) {
@@ -1971,7 +1978,7 @@ namespace roguely::engine
 
 				lua.set_function("generate_random_point", [&](sol::table entity_groups_to_check, sol::this_state s) {
 						sol::state_view lua(s);
-						return get_random_point(entity_groups_to_check, s);
+						return get_random_point(s);
 						});
 
 				lua.set_function("get_open_point_for_xy", [&](int x, int y, sol::table entity_groups_to_check, sol::this_state s) {
@@ -1982,10 +1989,12 @@ namespace roguely::engine
 				lua.set_function("is_xy_blocked", [&](int x, int y, sol::table entity_groups_to_check) {
 						std::vector<std::string> entity_groups;
 
+						// FIXME: Remove the sol::table entity_groups_to_check
+
 						for (auto& eg : entity_groups_to_check)
 								if (eg.second.get_type() == sol::type::string) entity_groups.push_back(eg.second.as<std::string>());
 
-						return is_xy_blocked(x, y, entity_groups);
+						return is_xy_blocked(x, y);
 						});
 
 				lua.set_function("is_tile_walkable", [&](int x, int y, std::string direction, std::string who, sol::table entity_groups_to_check) {
@@ -2011,6 +2020,8 @@ namespace roguely::engine
 				lua.set_function("update_entity_position", [&](std::string entity_group_name, std::string entity_id, int x, int y, sol::this_state s) {
 						sol::state_view lua(s);
 						auto entity = entity_manager->update_entity_position(entity_group_name, entity_id, x, y);
+						update_player_viewport_points();
+						rb_fov();
 						if (entity != nullptr)
 								if (entity_id == "player") rb_fov();
 
