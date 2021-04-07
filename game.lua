@@ -532,6 +532,10 @@ function initiate_enemy_attack(pid)
 	end
 end
 
+function started()
+	return Game.started == true and Game.won == false and Game.lost == false
+end
+
 function initiate_attack_sequence(pid)
 	-- generate some random numbers for crit chance (player and enemy)
 	local player_crit_chance = get_random_number(1, 100) <= 20
@@ -630,10 +634,6 @@ function aggro_enemy(distance)
 			end
 		end
 	end
-end
-
-function started()
-	return Game.started == true and Game.won == false and Game.lost == false
 end
 
 function calculate_health_bar_width(health, starting_health, health_bar_max_width)
