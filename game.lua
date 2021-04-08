@@ -363,6 +363,10 @@ Game = {
 
 ERROR = false
 
+function started()
+	return Game.started == true and Game.won == false and Game.lost == false
+end
+
 -- A PID is an X,Y identitier we use as a key into the entities table. This
 -- saves us a for loop which is really slow! PID stands for position ID.
 -- This function is used to get a PID for a direction the player wants to move.
@@ -489,22 +493,54 @@ function move_aggro_enemies()
 	local number_of_enemies = 0
 	local enemies_new_positions = {}
 
+	-- TODO:
+	-- This is silly what we are doing here. When the game was turned based we
+	-- effectively only executed the first step in each path. Now that enemies
+	-- can move on their own we should make this a little smarter. We need to
+	-- store the path we found in the enemies aggro component as well as the
+	-- players position when we found the path. This way we can avoid a path
+	-- lookup if the player has not moved and execute more steps of the path.
+
 	for k, e in pairs(Game.enemies) do
 		if(e.enemy.components.aggro_component.properties.value == 1) then
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
 			local path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
 
-			if(path.x ~= nil and path.y ~= nil) then
+			-- TODO: On hold, see note below
+			-- if(e.enemy.components.aggro_component.properties.pathinfo ~= nil and
+			--    e.enemy.components.aggro_component.properties.pathinfo.player_pos ~= nil and
+			--    e.enemy.components.aggro_component.properties.pathinfo.player_pos.x ~= Game.player_pos.x and
+			--    e.enemy.components.aggro_component.properties.pathinfo.player_pos.y ~= Game.player_pos.y) then
+			-- 	path = e.enemy.components.aggro_component.properties.path
+			-- else
+			-- 	path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
+			-- end
+
+			if(path.x ~= nil) then
 				if(is_xy_blocked(path.x, path.y) ~= true) then
 					number_of_enemies = number_of_enemies + 1
-					enemies_new_positions[e.enemy.id] = {}
-					enemies_new_positions[e.enemy.id]["x"] = path.x
-					enemies_new_positions[e.enemy.id]["y"] = path.y
+					enemies_new_positions[e.enemy.id] = {
+						x = path.x,
+						y = path.y
+					}
 				end
 			end
 		end
 	end
+
+	-- We don't want to do this like this. We'll create a new API similar to
+	-- update_entities_position that takes a table that consists of the enemy
+	-- id and data about the component needing updating and then do it in bulk
+	-- on the C++ side.
+	--
+	-- set_component_value("enemies", e.enemy.id, "aggro_component", "pathinfo", {
+	-- 	player_pos = {
+	-- 		x = Game.player_pos.x,
+	-- 		y = Game.player_pos.y
+	-- 	},
+	-- 	path = path
+	-- })
 
 	if (number_of_enemies > 0) then
 		update_entities_position("enemies", enemies_new_positions)
@@ -530,10 +566,6 @@ function initiate_enemy_attack(pid)
 		add_action_log("enemy", "normal", "-", damage, Game.player_pos.x, Game.player_pos.y)
 		set_component_value("common", "player", "health_component", "health", math.floor(player_health - damage))
 	end
-end
-
-function started()
-	return Game.started == true and Game.won == false and Game.lost == false
 end
 
 function initiate_attack_sequence(pid)
