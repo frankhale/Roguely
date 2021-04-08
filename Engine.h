@@ -515,35 +515,7 @@ namespace roguely::engine
 				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
 				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
 				void switch_map(std::string map_name);				
-				void generate_map(std::string name, int map_width, int map_height)
-				{
-						auto map = roguely::level_generation::init_cellular_automata(map_width, map_height);
-						roguely::level_generation::perform_cellular_automaton(map, map_width, map_height, 10);
-
-						maps->erase(std::remove_if(maps->begin(), maps->end(),
-								[&](std::shared_ptr<roguely::common::Map> m) {
-										if (m->name == name) return true;
-
-										return false;
-								}), maps->end());
-
-						//for (int row = 0; row < 40; row++)
-						//{
-						//		for (int column = 0; column < 100; column++)
-						//		{
-						//				if ((*map)(row, column) == 0) {
-						//						std::cout << "#";
-						//				}
-						//				else if ((*map)(row, column) == 9) {
-						//						std::cout << ".";
-						//				}
-						//		}
-
-						//		std::cout << std::endl;
-						//}
-
-						maps->emplace_back(std::make_shared<roguely::common::Map>(name, map_width, map_height, map));
-				}
+				void generate_map(std::string name, int map_width, int map_height);
 				std::shared_ptr<roguely::common::Map> get_map(std::string name);
 				void update_player_viewport_points();
 				void rb_fov();
@@ -551,30 +523,10 @@ namespace roguely::engine
 				int get_view_port_y() const { return view_port_y; }
 				int get_view_port_width() const { return view_port_width; }
 				int get_view_port_height() const { return view_port_height; }
-				void set_view_port_width(int vpw)
-				{
-						VIEW_PORT_WIDTH = vpw;
-						view_port_width = vpw;
-				}
-				void set_view_port_height(int vph)
-				{
-						VIEW_PORT_HEIGHT = vph;
-						view_port_height = vph;
-				}
+				void set_view_port_width(int vpw) { VIEW_PORT_WIDTH = vpw; view_port_width = vpw; }
+				void set_view_port_height(int vph) { VIEW_PORT_HEIGHT = vph; view_port_height = vph; }
 				void add_spritesheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh);
-				std::shared_ptr<roguely::sprites::SpriteSheet> find_spritesheet(std::string name) {
-						auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
-								[&](const std::shared_ptr<roguely::sprites::SpriteSheet>& ss) {
-										return ss->get_name() == name;
-								});
-
-						if (sheet != sprite_sheets->end())
-						{
-								return *sheet;
-						}
-
-						return nullptr;
-				}
+				std::shared_ptr<roguely::sprites::SpriteSheet> find_spritesheet(std::string name);
 				void draw_sprite(SDL_Renderer* renderer, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height);
 				void draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y);
 				void draw_text(SDL_Renderer* renderer, std::string t, std::string size, int x, int y, int r, int g, int b, int a);

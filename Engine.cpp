@@ -112,9 +112,9 @@ namespace roguely::sprites
 
 namespace roguely::level_generation
 {
-		// Quick and dirty cellular automata that I learned about from YouTube
-		// We can do more but currently are just doing the very least to get a 
-		// playable level.
+		// NOTE: Quick and dirty cellular automata that I learned about from 
+		// YouTube. We can do more but currently are just doing the very least to 
+		// get a playable level.
 
 		int get_neighbor_wall_count(std::shared_ptr<boost::numeric::ublas::matrix<int>> map, int map_width, int map_height, int x, int y)
 		{
@@ -1067,11 +1067,11 @@ namespace roguely::ecs
 				auto lua_update = lua["_update"];
 				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
 				{
-						sol::table data_table = lua.create_table();
-						data_table.set("entity_group_name", entity_group_name);
-						data_table.set("entity_id", entity_id);
-						data_table.set("entity_group", convert_entity_group_to_lua_table(entity_group_name, lua.lua_state()));
-
+						auto data_table = lua.create_table_with(
+								"entity_group_name", entity_group_name,
+								"entity_id", entity_id,
+								"entity_group", convert_entity_group_to_lua_table(entity_group_name, lua.lua_state())
+						);
 						lua_update("entity_event", data_table);
 				}
 		}
@@ -1082,10 +1082,10 @@ namespace roguely::ecs
 				auto lua_update = lua["_update"];
 				if (lua_update.valid() && lua_update.get_type() == sol::type::function)
 				{
-						sol::table data_table = lua.create_table();
-						data_table.set("entity_group_name", entity_group_name);
-						data_table.set("entity_group", convert_entity_group_to_lua_table(entity_group_name, lua.lua_state()));
-
+						auto data_table = lua.create_table_with(
+								"entity_group_name", entity_group_name,
+								"entity_group", convert_entity_group_to_lua_table(entity_group_name, lua.lua_state())
+						);
 						lua_update("entity_event", data_table);
 				}
 		}
@@ -1109,8 +1109,7 @@ namespace roguely::ecs
 		{
 				sol::state_view lua(s);
 				std::string entity_type{};
-
-				// Don't @ me bruh!
+				
 				if (entity->get_entity_type() == roguely::ecs::EntityType::Player) entity_type = "player";
 				else if (entity->get_entity_type() == roguely::ecs::EntityType::Enemy) entity_type = "enemy";
 				else if (entity->get_entity_type() == roguely::ecs::EntityType::NPC) entity_type = "npc";
@@ -1136,43 +1135,42 @@ namespace roguely::ecs
 										auto sc = std::dynamic_pointer_cast<roguely::ecs::SpriteComponent>(c);
 										if (sc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["sprite_component"] = lua.create_table();
-												entity_info_table[entity_type]["components"]["sprite_component"]["name"] = sc->get_name();
-												entity_info_table[entity_type]["components"]["sprite_component"]["sprite_id"] = sc->get_sprite_id();
-												entity_info_table[entity_type]["components"]["sprite_component"]["spritesheet_name"] = sc->get_spritesheet_name();
+												entity_info_table[entity_type]["components"]["sprite_component"] = lua.create_table_with(
+														"name", sc->get_name(),
+														"sprite_id", sc->get_sprite_id(),
+														"spritesheet_name", sc->get_spritesheet_name()
+												);
 										}
 								}
 								else if (c->get_component_name() == "score_component") {
 										auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
 										if (sc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["score_component"] = lua.create_table();
-												entity_info_table[entity_type]["components"]["score_component"]["score"] = sc->get_score();
+												entity_info_table[entity_type]["components"]["score_component"] = lua.create_table_with("score", sc->get_score());												
 										}
 								}
 								else if (c->get_component_name() == "health_component") {
 										auto hc = std::static_pointer_cast<roguely::ecs::HealthComponent>(c);
 										if (hc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["health_component"] = lua.create_table();
-												entity_info_table[entity_type]["components"]["health_component"]["health"] = hc->get_health();
-												entity_info_table[entity_type]["components"]["health_component"]["max_health"] = hc->get_max_health();
+												entity_info_table[entity_type]["components"]["health_component"] = lua.create_table_with(
+														"health", hc->get_health(),
+														"max_health", hc->get_max_health()
+												);
 										}
 								}
 								else if (c->get_component_name() == "stats_component") {
 										auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(c);
 										if (sc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["stats_component"] = lua.create_table();
-												entity_info_table[entity_type]["components"]["stats_component"]["attack"] = sc->get_attack();
+												entity_info_table[entity_type]["components"]["stats_component"] = lua.create_table_with("attack", sc->get_attack());												
 										}
 								}
 								else if (c->get_component_name() == "value_component") {
 										auto vc = std::static_pointer_cast<roguely::ecs::ValueComponent>(c);
 										if (vc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["value_component"] = lua.create_table();
-												entity_info_table[entity_type]["components"]["value_component"]["value"] = vc->get_value();
+												entity_info_table[entity_type]["components"]["value_component"] = lua.create_table_with("value", vc->get_value());												
 										}
 								}
 								else if (c->get_component_name() == "inventory_component")
@@ -1193,9 +1191,7 @@ namespace roguely::ecs
 										if (lc != nullptr)
 										{
 												auto name = lc->get_name();
-
-												entity_info_table[entity_type]["components"][name] = lua.create_table();
-												entity_info_table[entity_type]["components"][name]["properties"] = lc->get_properties();
+												entity_info_table[entity_type]["components"][name] = lua.create_table_with("properties", lc->get_properties());												
 										}
 								}
 						}
@@ -1450,14 +1446,10 @@ namespace roguely::engine
 		{
 				if (current_map->map == nullptr) return false;
 
-				bool result = true;
-
-				if (dir == roguely::common::MovementDirection::Up && (*current_map->map)((size_t)y - 1, x) == tileId) result = false;
-				else if (dir == roguely::common::MovementDirection::Down && (*current_map->map)((size_t)y + 1, x) == tileId) result = false;
-				else if (dir == roguely::common::MovementDirection::Left && (*current_map->map)(y, (size_t)x - 1) == tileId) result = false;
-				else if (dir == roguely::common::MovementDirection::Right && (*current_map->map)(y, (size_t)x + 1) == tileId) result = false;
-
-				return result;
+				return (!((dir == roguely::common::MovementDirection::Up && (*current_map->map)((size_t)y - 1, x) == tileId) ||
+								 (dir == roguely::common::MovementDirection::Down && (*current_map->map)((size_t)y + 1, x) == tileId) ||
+								 (dir == roguely::common::MovementDirection::Left && (*current_map->map)(y, (size_t)x - 1) == tileId) ||
+								 (dir == roguely::common::MovementDirection::Right && (*current_map->map)(y, (size_t)x + 1) == tileId)));
 		}
 
 		bool Engine::is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir)
@@ -1585,14 +1577,6 @@ namespace roguely::engine
 
 				current_map->light_map = std::make_shared<boost::numeric::ublas::matrix<int>>(current_map->height, current_map->width, 0);
 
-				/*for (int r = 0; r < current_map->height; r++)
-				{
-						for (int c = 0; c < current_map->width; c++)
-						{
-								(*current_map->light_map)(r, c) = 0;
-						}
-				}*/
-
 				auto player_position = entity_manager->get_player_point();
 
 				for (int i = 0; i < 360; i++)
@@ -1607,9 +1591,7 @@ namespace roguely::engine
 						{
 								(*current_map->light_map)((int)oy, (int)ox) = 2;
 
-								if ((*current_map->map)((int)oy, (int)ox) == 0 ||
-										(*current_map->map)((int)oy, (int)ox) == 35 ||
-										(*current_map->map)((int)oy, (int)ox) == 36) // if tile is a wall
+								if ((*current_map->map)((int)oy, (int)ox) == 0) // if tile is a wall
 										break;
 
 								ox += x;
@@ -1806,6 +1788,20 @@ namespace roguely::engine
 				sprite_sheets->emplace_back(ss);
 		}
 
+		std::shared_ptr<roguely::sprites::SpriteSheet> Engine::find_spritesheet(std::string name) {
+				auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
+						[&](const std::shared_ptr<roguely::sprites::SpriteSheet>& ss) {
+								return ss->get_name() == name;
+						});
+
+				if (sheet != sprite_sheets->end())
+				{
+						return *sheet;
+				}
+
+				return nullptr;
+		}
+
 		void Engine::draw_sprite(SDL_Renderer* renderer, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height)
 		{
 				if (!(name.length() > 0)) return;
@@ -1853,6 +1849,21 @@ namespace roguely::engine
 						current_map = *map;
 						path_finder = std::make_unique<roguely::common::AStarPathFinder>(current_map->map);
 				}
+		}
+
+		void Engine::generate_map(std::string name, int map_width, int map_height)
+		{
+				auto map = roguely::level_generation::init_cellular_automata(map_width, map_height);
+				roguely::level_generation::perform_cellular_automaton(map, map_width, map_height, 10);
+
+				maps->erase(std::remove_if(maps->begin(), maps->end(),
+						[&](std::shared_ptr<roguely::common::Map> m) {
+								if (m->name == name) return true;
+
+								return false;
+						}), maps->end());
+
+				maps->emplace_back(std::make_shared<roguely::common::Map>(name, map_width, map_height, map));
 		}
 
 		std::shared_ptr<roguely::common::Map> Engine::get_map(std::string name)
