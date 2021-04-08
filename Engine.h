@@ -313,6 +313,7 @@ namespace roguely::ecs
 				auto get_score() const { return score; }
 				void update_score(int s) { score += s; }
 				void set_score(int s) { score = s; }
+
 		private:
 				int score = 0;
 		};
@@ -342,6 +343,7 @@ namespace roguely::ecs
 		public:
 				ValueComponent(int v) { value = v; }
 				auto get_value() const { return value; }
+
 		private:
 				int value = 0;
 		};
@@ -352,51 +354,9 @@ namespace roguely::ecs
 		public:
 				InventoryComponent() { inventory = std::make_unique<std::vector<std::shared_ptr<std::pair<std::string, int>>>>(); }
 
-				void upsert_item(std::pair<std::string, int> item_key_value_pair)
-				{
-						auto item = std::find_if(inventory->begin(), inventory->end(),
-								[&](const std::shared_ptr<std::pair<std::string, int>>& i) {
-										return (*i).first == item_key_value_pair.first;
-								});
-
-						if (item != inventory->end())
-						{
-								(*item)->second = item_key_value_pair.second;
-						}
-						else
-						{
-								add_item(item_key_value_pair.first, item_key_value_pair.second);
-						}
-				}
-
-				void add_item(std::string name, int count)
-				{
-						std::pair item{ name, count };
-						auto p_item = std::make_shared<std::pair<std::string, int>>(item);
-						inventory->push_back(p_item);
-				};
-
-				void remove_item(std::string name, int count)
-				{
-						auto item = std::find_if(inventory->begin(), inventory->end(),
-								[&](const std::shared_ptr<std::pair<std::string, int>>& i) {
-										return (*i).first == name;
-								});
-
-						if (item != inventory->end())
-						{
-								(*item)->second -= count;
-
-								if ((*item)->second <= 0) {
-										inventory->erase(std::remove_if(inventory->begin(), inventory->end(),
-												[&](const std::shared_ptr < std::pair<std::string, int>> i) {
-														return (*i).first == name;
-												}),
-												inventory->end());
-								}
-						}
-				};
-
+				void upsert_item(std::pair<std::string, int> item_key_value_pair);
+				void add_item(std::string name, int count);
+				void remove_item(std::string name, int count);
 				void for_each_item(std::function<void(std::shared_ptr<std::pair<std::string, int>>&)> fi) { for (auto& i : *inventory) fi(i); }
 
 		private:
@@ -449,50 +409,13 @@ namespace roguely::ecs
 				}
 
 				template<typename T>
-				std::shared_ptr<T> find_component_by_type()
-				{
-						auto found_component = std::find_if(components->begin(), components->end(),
-								[](const auto& c) {
-										return std::dynamic_pointer_cast<T>(c) != nullptr;
-								});
-
-						std::shared_ptr<T> t_component = nullptr;
-
-						if (found_component != components->end())
-						{
-								t_component = std::dynamic_pointer_cast<T>(*found_component);
-
-								if (t_component != nullptr)
-								{
-										return t_component;
-								}
-						}
-
-						return nullptr;
-				}
-
-				std::shared_ptr<Component> find_component_by_name(std::string name) const {
-						auto component = std::find_if(components->begin(), components->end(),
-								[&](const std::shared_ptr<roguely::ecs::Component>& x) {
-										return x->get_component_name() == name;
-								});
-
-						if (component != components->end())
-						{
-								return *component;
-						}
-
-						return nullptr;
-				}
+				std::shared_ptr<T> find_component_by_type();
+				std::shared_ptr<Component> find_component_by_name(std::string name) const;
 
 				auto x() const { return point.x; }
 				auto y() const { return point.y; }
-
 				auto get_point() const { return point; }
-				void set_point(roguely::common::Point p) {
-						point = p;
-				}
-
+				void set_point(roguely::common::Point p) { point = p; }
 				auto get_id() const { return id; }
 				auto get_entity_type() const { return entity_type; }
 				auto get_entity_group() const { return entity_group; }
@@ -517,20 +440,6 @@ namespace roguely::ecs
 						entity_groups = std::make_unique<std::vector<std::shared_ptr<roguely::ecs::EntityGroup>>>();
 				}
 
-				std::vector<std::string> get_entity_group_names()
-				{
-						std::vector<std::string> results{};
-						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
-						return results;
-				}
-				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
-				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
-				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);
-				bool remove_entity(std::string entity_group_name, std::string entity_id);
-				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
-				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
-				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
-				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
 				void add_sprite_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string spritesheet_name, int sprite_in_spritesheet_id, std::string sprite_name);
 				void add_health_component(std::shared_ptr<roguely::ecs::Entity> entity, int h);
 				void add_stats_component(std::shared_ptr<roguely::ecs::Entity> entity, int a);
@@ -538,17 +447,35 @@ namespace roguely::ecs
 				void add_value_component(std::shared_ptr<roguely::ecs::Entity> entity, int v);
 				void add_inventory_component(std::shared_ptr<roguely::ecs::Entity> entity, std::vector<std::pair<std::string, int>> items);
 				void add_lua_component(std::shared_ptr<roguely::ecs::Entity> entity, std::string n, std::string t, sol::table props, sol::this_state s);
+
+				std::shared_ptr<roguely::ecs::EntityGroup> create_entity_group(std::string name);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s);
+				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, std::function<roguely::common::Point()> get_random_point, sol::this_state s);
+				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, std::function<roguely::common::Point()> get_random_point, sol::this_state s);
+				std::shared_ptr<roguely::ecs::Entity> add_entity_to_group(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, roguely::ecs::EntityType entity_type, std::string id, roguely::common::Point point);
+				bool remove_entity(std::string entity_group_name, std::string entity_id);
+				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
+
 				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
+				void update_entity_position(std::string entity_group_name, sol::table entity_positions);				
+				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
+				
+				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
+				std::vector<std::string> get_entity_group_names()
+				{
+						std::vector<std::string> results{};
+						for (auto& eg : *entity_groups) { results.push_back(eg->name); }
+						return results;
+				}
+				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
+				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);				
+				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
+				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
+				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
 				bool set_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key, int value, sol::this_state s);
 				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, int value, sol::this_state s);
 				std::shared_ptr<roguely::ecs::Entity> set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, std::pair<std::string, int> value, sol::this_state s);
-				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
-				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
-				sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
-				sol::table convert_entity_group_to_lua_table(std::string entity_group_name, sol::this_state s);
-				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
-				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
-				std::string generate_uuid();
+
 				bool is_xy_player_xy(int x, int y, roguely::common::MovementDirection dir);
 				bool is_entity_location_traversable(int x, int y, std::string entity_group_name)
 				{
@@ -557,17 +484,16 @@ namespace roguely::ecs
 
 						return !(std::any_of(entity_group->entities->begin(), entity_group->entities->end(), [&](std::shared_ptr<roguely::ecs::Entity> elem) { return elem->x() == x && elem->y() == y; }));
 				}
-				auto is_entity_location_traversable(int x, int y, std::string entity_group_name, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir);
+				std::shared_ptr<roguely::ecs::TileWalkableInfo> is_entity_location_traversable(int x, int y, std::string entity_group_name, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir);
 
 				void emit_lua_update_for_entity_group(std::string entity_group_name, std::string entity_id, sol::this_state s);
 				void emit_lua_update_for_entity_group(std::string entity_group_name, sol::this_state s);
 				void emit_lua_update_for_entity(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
+				sol::table convert_entity_to_lua_table(std::shared_ptr<roguely::ecs::Entity> entity, sol::this_state s);
+				sol::table convert_entity_group_to_lua_table(std::string entity_group_name, sol::this_state s);
 
-				std::string add_entity(std::string entity_group_name, std::string entity_type, int x, int y, sol::table components_table, sol::this_state s);
-				std::string add_entity(std::string entity_group_name, std::string entity_type, sol::table components_table, std::function<roguely::common::Point()> get_random_point, sol::this_state s);
-				sol::table add_entities(std::string entity_group_name, std::string entity_type, sol::table components_table, int num, std::function<roguely::common::Point()> get_random_point, sol::this_state s);
-
-				auto get_player_point() const { return player->get_point(); }
+				std::string generate_uuid();
+				roguely::common::Point get_player_point() const { return player->get_point(); }
 
 		private:
 				std::string player_id{};
@@ -588,8 +514,7 @@ namespace roguely::engine
 				roguely::common::Point get_open_point_for_xy(int x, int y);
 				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
 				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
-				void switch_map(std::string map_name);
-				void generate_map_for_testing();
+				void switch_map(std::string map_name);				
 				void generate_map(std::string name, int map_width, int map_height)
 				{
 						auto map = roguely::level_generation::init_cellular_automata(map_width, map_height);
@@ -676,7 +601,7 @@ namespace roguely::engine
 				void send_key_event(std::string key, sol::this_state s);
 				void render(float delta_time, sol::this_state s);
 				void tick(float delta_time, sol::this_state s);
-				void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);				
+				void render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor);
 
 		private:
 
@@ -705,8 +630,8 @@ namespace roguely::engine
 
 				std::string player_id{};
 
-				std::shared_ptr<roguely::common::Map> current_map{};				
-				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};				
+				std::shared_ptr<roguely::common::Map> current_map{};
+				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
 				std::unique_ptr<roguely::ecs::EntityManager> entity_manager{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
