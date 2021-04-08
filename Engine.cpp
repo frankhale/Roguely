@@ -1221,10 +1221,12 @@ namespace roguely::ecs
 
 		bool EntityManager::is_xy_player_xy(int x, int y, roguely::common::MovementDirection dir)
 		{
-				return ((dir == roguely::common::MovementDirection::Up && player->y() == y - 1 && player->x() == x) ||
-						(dir == roguely::common::MovementDirection::Down && player->y() == y + 1 && player->x() == x) ||
-						(dir == roguely::common::MovementDirection::Left && player->y() == y && player->x() == x - 1) ||
-						(dir == roguely::common::MovementDirection::Right && player->y() == y && player->x() == x + 1));
+				auto player_pos = player->get_point();
+
+				return ((dir == roguely::common::MovementDirection::Up && player_pos.y == y - 1 && player_pos.x == x) ||
+						(dir == roguely::common::MovementDirection::Down && player_pos.y == y + 1 && player_pos.x == x) ||
+						(dir == roguely::common::MovementDirection::Left && player_pos.y == y && player_pos.x == x - 1) ||
+						(dir == roguely::common::MovementDirection::Right && player_pos.y == y && player_pos.x == x + 1));
 		}
 
 		std::shared_ptr<roguely::ecs::TileWalkableInfo> EntityManager::is_entity_location_traversable(int x, int y, std::string entity_group_name, roguely::common::WhoAmI whoAmI, roguely::common::MovementDirection dir)
@@ -1686,13 +1688,12 @@ namespace roguely::engine
 		sol::table Engine::get_random_point(sol::this_state s)
 		{
 				sol::state_view lua(s);
-				sol::table point_table = lua.create_table();
-				std::vector<std::string> entity_groups = entity_manager->get_entity_group_names();
-
 				auto result = generate_random_point();
-
-				point_table.set("x", result.x);
-				point_table.set("y", result.y);
+				std::vector<std::string> entity_groups = entity_manager->get_entity_group_names();
+				sol::table point_table = lua.create_table_with(
+						"x", result.x,
+						"y", result.y
+				);
 
 				return point_table;
 		}
@@ -1700,13 +1701,12 @@ namespace roguely::engine
 		sol::table Engine::get_open_point_for_xy(int x, int y, sol::this_state s)
 		{
 				sol::state_view lua(s);
-				sol::table point_table = lua.create_table();
-
 				auto result = get_open_point_for_xy(x, y);
-
-				point_table.set("x", result.x);
-				point_table.set("y", result.y);
-
+				auto point_table = lua.create_table_with(
+						"x", result.x,
+						"y", result.y
+				);
+				
 				return point_table;
 		}
 
