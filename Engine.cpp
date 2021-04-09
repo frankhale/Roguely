@@ -763,6 +763,39 @@ namespace roguely::ecs
 				}
 		}
 
+		void EntityManager::update_entities(std::string entity_group_name, sol::table entity_positions)
+		{
+				auto entity_group = get_entity_group(entity_group_name);
+
+				if (entity_group != nullptr)
+				{
+						for (auto& c : entity_positions)
+						{
+								std::string key = c.first.as<std::string>();
+								sol::table value_table = c.second.as<sol::table>();
+
+								if (value_table.valid() && key.size() > 0)
+								{
+										int x = -1;
+										int y = -1;
+										
+										for (auto& cc : value_table)
+										{
+												if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::table)
+												{
+														// the key is the entity id
+														// the value is a table of that has the following fields:
+														//
+														// component_name, key, value
+												}
+										}
+
+										// TODO: update entity here...
+								}
+						}
+				}
+		}
+
 		void EntityManager::update_entity_position(std::string entity_group_name, sol::table entity_positions)
 		{
 				auto entity_group = get_entity_group(entity_group_name);
@@ -778,8 +811,7 @@ namespace roguely::ecs
 								{
 										int x = -1;
 										int y = -1;
-
-										// find the entity in the group (key is the id of the entity)
+										
 										for (auto& cc : value_table)
 										{
 												if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
