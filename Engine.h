@@ -380,6 +380,7 @@ namespace roguely::ecs
 				auto get_type() const { return type; }
 				auto get_properties() const { return properties; }
 				void set_property(std::string name, int value, sol::this_state s) { properties.set(name, value); }
+				void set_property(std::string name, sol::object value, sol::this_state s) { properties.set(name, value); }
 				void set_properties(sol::table props, sol::this_state s) { properties = props; }
 
 		private:
@@ -456,8 +457,9 @@ namespace roguely::ecs
 				bool remove_entity(std::string entity_group_name, std::string entity_id);
 				void remove_entity(std::string entity_group_name, std::string entity_id, sol::this_state s);
 
+				void update_entity(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
 				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
-				void update_entities(std::string entity_group_name, sol::table entity_positions);
+				void update_entities(std::string entity_group_name, sol::table entity_properties, sol::this_state s);
 				void update_entity_position(std::string entity_group_name, sol::table entity_positions);				
 				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
 				

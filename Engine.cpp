@@ -741,6 +741,36 @@ namespace roguely::ecs
 				return entity;
 		}
 
+		void EntityManager::update_entity(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s)
+		{
+				sol::state_view lua(s);
+				auto entity_group = get_entity_group(entity_group_name);
+
+				if (entity_group != nullptr)
+				{
+						auto entity = get_entity(entity_group, entity_id);
+
+						if (entity != nullptr)
+						{
+								auto component = entity->find_component_by_name(component_name);
+
+								if (value.get_type() == sol::type::number)
+								{
+										int val = value.as<int>();
+
+										if (component != nullptr)
+												set_component_value(component, key, val, lua.lua_state());
+								}
+								else if(value.get_type() == sol::type::table)
+								{
+										auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(component);
+										if (lc != nullptr) 
+												lc->set_property(key, value, lua.lua_state());
+								}
+						}
+				}
+		}
+
 		void EntityManager::update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s)
 		{
 				sol::state_view lua(s);
@@ -763,34 +793,66 @@ namespace roguely::ecs
 				}
 		}
 
-		void EntityManager::update_entities(std::string entity_group_name, sol::table entity_positions)
+		void EntityManager::update_entities(std::string entity_group_name, sol::table entity_properties, sol::this_state s)
 		{
+				sol::state_view lua(s);
 				auto entity_group = get_entity_group(entity_group_name);
 
 				if (entity_group != nullptr)
 				{
-						for (auto& c : entity_positions)
+						for (auto& c : entity_properties)
 						{
-								std::string key = c.first.as<std::string>();
+								std::string entity_id = c.first.as<std::string>();
 								sol::table value_table = c.second.as<sol::table>();
 
-								if (value_table.valid() && key.size() > 0)
+								if (value_table.valid() && entity_id.size() > 0)
 								{
-										int x = -1;
-										int y = -1;
-										
+										std::string component_name{};
+										std::string component_key_name{};
+										sol::object component_value{};
+										int entity_pos_x = -1;
+										int entity_pos_y = -1;
+
 										for (auto& cc : value_table)
 										{
-												if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::table)
+												// the key is the entity id
+												// the value is a table of that has the following fields:
+												//
+												// component_name, key, value
+												if (cc.first.as<std::string>() == "component_name") {
+														component_name = cc.second.as<std::string>();
+												}
+												else if (cc.first.as<std::string>() == "component_key") {
+														component_key_name = cc.second.as<std::string>();
+												}
+												else if (cc.first.as<std::string>() == "component_value") {
+														component_value = cc.second.as<sol::object>();
+												}
+												else if (cc.first.as<std::string>() == "position" && cc.second.get_type() == sol::type::table)
 												{
-														// the key is the entity id
-														// the value is a table of that has the following fields:
-														//
-														// component_name, key, value
+														sol::table entity_position = cc.second.as<sol::table>();
+
+														for (auto& ep : entity_position)
+														{
+																if (ep.first.get_type() == sol::type::string && ep.second.get_type() == sol::type::number)
+																{
+																		if (ep.first.as<std::string>() == "x") entity_pos_x = ep.second.as<int>();
+																		else if (ep.first.as<std::string>() == "y") entity_pos_y = ep.second.as<int>();
+																}
+														}
 												}
 										}
 
-										// TODO: update entity here...
+										if (component_name.length() > 0 && component_key_name.length() > 0)
+												update_entity(entity_group_name, entity_id, component_name, component_key_name, component_value, lua.lua_state());
+
+										if (entity_pos_x > -1 && entity_pos_y > -1)
+										{
+												auto entity = get_entity(entity_group, entity_id);
+
+												if (entity != nullptr)
+														entity->set_point({ entity_pos_x, entity_pos_y });
+										}
 								}
 						}
 				}
@@ -811,7 +873,7 @@ namespace roguely::ecs
 								{
 										int x = -1;
 										int y = -1;
-										
+
 										for (auto& cc : value_table)
 										{
 												if (cc.first.get_type() == sol::type::string && cc.second.get_type() == sol::type::number)
@@ -1141,7 +1203,7 @@ namespace roguely::ecs
 		{
 				sol::state_view lua(s);
 				std::string entity_type{};
-				
+
 				if (entity->get_entity_type() == roguely::ecs::EntityType::Player) entity_type = "player";
 				else if (entity->get_entity_type() == roguely::ecs::EntityType::Enemy) entity_type = "enemy";
 				else if (entity->get_entity_type() == roguely::ecs::EntityType::NPC) entity_type = "npc";
@@ -1178,7 +1240,7 @@ namespace roguely::ecs
 										auto sc = std::dynamic_pointer_cast<roguely::ecs::ScoreComponent>(c);
 										if (sc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["score_component"] = lua.create_table_with("score", sc->get_score());												
+												entity_info_table[entity_type]["components"]["score_component"] = lua.create_table_with("score", sc->get_score());
 										}
 								}
 								else if (c->get_component_name() == "health_component") {
@@ -1195,14 +1257,14 @@ namespace roguely::ecs
 										auto sc = std::static_pointer_cast<roguely::ecs::StatsComponent>(c);
 										if (sc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["stats_component"] = lua.create_table_with("attack", sc->get_attack());												
+												entity_info_table[entity_type]["components"]["stats_component"] = lua.create_table_with("attack", sc->get_attack());
 										}
 								}
 								else if (c->get_component_name() == "value_component") {
 										auto vc = std::static_pointer_cast<roguely::ecs::ValueComponent>(c);
 										if (vc != nullptr)
 										{
-												entity_info_table[entity_type]["components"]["value_component"] = lua.create_table_with("value", vc->get_value());												
+												entity_info_table[entity_type]["components"]["value_component"] = lua.create_table_with("value", vc->get_value());
 										}
 								}
 								else if (c->get_component_name() == "inventory_component")
@@ -1223,7 +1285,7 @@ namespace roguely::ecs
 										if (lc != nullptr)
 										{
 												auto name = lc->get_name();
-												entity_info_table[entity_type]["components"][name] = lua.create_table_with("properties", lc->get_properties());												
+												entity_info_table[entity_type]["components"][name] = lua.create_table_with("properties", lc->get_properties());
 										}
 								}
 						}
@@ -1481,9 +1543,9 @@ namespace roguely::engine
 				if (current_map->map == nullptr) return false;
 
 				return (!((dir == roguely::common::MovementDirection::Up && (*current_map->map)((size_t)y - 1, x) == tileId) ||
-								 (dir == roguely::common::MovementDirection::Down && (*current_map->map)((size_t)y + 1, x) == tileId) ||
-								 (dir == roguely::common::MovementDirection::Left && (*current_map->map)(y, (size_t)x - 1) == tileId) ||
-								 (dir == roguely::common::MovementDirection::Right && (*current_map->map)(y, (size_t)x + 1) == tileId)));
+						(dir == roguely::common::MovementDirection::Down && (*current_map->map)((size_t)y + 1, x) == tileId) ||
+						(dir == roguely::common::MovementDirection::Left && (*current_map->map)(y, (size_t)x - 1) == tileId) ||
+						(dir == roguely::common::MovementDirection::Right && (*current_map->map)(y, (size_t)x + 1) == tileId)));
 		}
 
 		bool Engine::is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir)
@@ -1500,7 +1562,7 @@ namespace roguely::engine
 		{
 				if (current_map->map == nullptr) return true;
 				if ((*current_map->map)(y, x) == 0) return true;
-				
+
 				auto player_position = entity_manager->get_player_point();
 				if (player_position.x == x && player_position.y == y) return true;
 
@@ -1509,7 +1571,7 @@ namespace roguely::engine
 				auto entity_groups_to_check = entity_manager->get_entity_group_names();
 
 				for (auto& egtc : entity_groups_to_check)
-				{						
+				{
 						blocked = (entity_manager->is_entity_location_traversable(x, y, egtc)) ? false : true;
 
 						if (blocked) break;
@@ -1738,7 +1800,7 @@ namespace roguely::engine
 						"x", result.x,
 						"y", result.y
 				);
-				
+
 				return point_table;
 		}
 
@@ -2103,7 +2165,13 @@ namespace roguely::engine
 						return entity_manager->emit_lua_update_for_entity(entity, lua.lua_state());
 						});
 
-				lua.set_function("update_entities", [&](std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s) {
+				lua.set_function("update_entities", [&](std::string entity_group_name, sol::table entity_properties, sol::this_state s) {
+						sol::state_view lua(s);
+						entity_manager->update_entities(entity_group_name, entity_properties, lua.lua_state());
+						return entity_manager->emit_lua_update_for_entity_group(entity_group_name, lua.lua_state());
+						});
+
+				lua.set_function("update_all_entities", [&](std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s) {
 						sol::state_view lua(s);
 						entity_manager->update_entities(entity_group_name, component_name, key, value, lua.lua_state());
 						return entity_manager->emit_lua_update_for_entity_group(entity_group_name, lua.lua_state());

@@ -31,7 +31,6 @@ Game = {
 	map_height = 125,
 	view_port_width = 40,
 	view_port_height = 24,
-	music = true,
 	spritesheet_path = "assets/roguelike.png",
 	soundtrack_path = "assets/ExitExitProper.mp3",
 	font_path = "assets/VT323-Regular.ttf",
@@ -47,12 +46,13 @@ Game = {
 		warp = "assets/sounds/warp.wav",
 		move = "assets/sounds/move.wav"
 	},
+	music = true,
 	debug = true,
 	dead = false,
 	started = false,
-	total_enemies_killed = 0, -- TODO: This should be a component on the player
 	won = false,
 	lost = false,
+	total_enemies_killed = 0, -- TODO: This should be a component on the player
 	-- This is here for easy access
 	player_pos = {
 		-- These is notional because after we generate a map we'll get a randomized
@@ -491,59 +491,59 @@ end
 
 function move_aggro_enemies()
 	local number_of_enemies = 0
-	local enemies_new_positions = {}
-
-	-- TODO:
-	-- This is silly what we are doing here. When the game was turned based we
-	-- effectively only executed the first step in each path. Now that enemies
-	-- can move on their own we should make this a little smarter. We need to
-	-- store the path we found in the enemies aggro component as well as the
-	-- players position when we found the path. This way we can avoid a path
-	-- lookup if the player has not moved and execute more steps of the path.
+	local enemy_changes = {}
 
 	for k, e in pairs(Game.enemies) do
-		if(e.enemy.components.aggro_component.properties.value == 1) then
+		if(e.enemy.components.aggro_component.properties ~= nil and
+		   e.enemy.components.aggro_component.properties.value == 1) then
 			local x = e.enemy.point.x
 			local y = e.enemy.point.y
-			local path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
+			local path = {}
 
-			-- TODO: On hold, see note below
+			-- TODO:
+			-- We are now storing the path in the aggro_component so it can be
+			-- reused if the player has not moved. The remaining thing we need
+			-- to account for is iterating over path so that we can get the
+			-- next step otherwise the enemy will not traverse the path
+
 			-- if(e.enemy.components.aggro_component.properties.pathinfo ~= nil and
-			--    e.enemy.components.aggro_component.properties.pathinfo.player_pos ~= nil and
-			--    e.enemy.components.aggro_component.properties.pathinfo.player_pos.x ~= Game.player_pos.x and
-			--    e.enemy.components.aggro_component.properties.pathinfo.player_pos.y ~= Game.player_pos.y) then
-			-- 	path = e.enemy.components.aggro_component.properties.path
-			-- else
-			-- 	path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
+			--    (Game.player_pos.x == e.enemy.components.aggro_component.properties.pathinfo.player_pos.x and
+			--     Game.player_pos.y == e.enemy.components.aggro_component.properties.pathinfo.player_pos.y)) then
+			-- 	print("using path already stored")
+			-- 	path = e.enemy.components.aggro_component.properties.pathinfo.path
 			-- end
 
-			if(path.x ~= nil) then
+			--if(next(path) == nil) then
+			path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
+
+			if(path.x ~= nil and path.y ~= nil) then
+				--print("finding new path")
+
 				if(is_xy_blocked(path.x, path.y) ~= true) then
 					number_of_enemies = number_of_enemies + 1
-					enemies_new_positions[e.enemy.id] = {
-						x = path.x,
-						y = path.y
+					enemy_changes[e.enemy.id] = {
+						component_name = "aggro_component",
+						component_key = "pathinfo",
+						component_value = {
+							player_pos = {
+								x = Game.player_pos.x,
+								y = Game.player_pos.y
+							},
+							path = path
+						},
+						position = {
+							x = path.x,
+							y = path.y
+						}
 					}
 				end
 			end
+			--end
 		end
 	end
 
-	-- We don't want to do this like this. We'll create a new API similar to
-	-- update_entities_position that takes a table that consists of the enemy
-	-- id and data about the component needing updating and then do it in bulk
-	-- on the C++ side.
-	--
-	-- set_component_value("enemies", e.enemy.id, "aggro_component", "pathinfo", {
-	-- 	player_pos = {
-	-- 		x = Game.player_pos.x,
-	-- 		y = Game.player_pos.y
-	-- 	},
-	-- 	path = path
-	-- })
-
 	if (number_of_enemies > 0) then
-		update_entities_position("enemies", enemies_new_positions)
+		update_entities("enemies", enemy_changes)
 	end
 end
 
@@ -926,7 +926,7 @@ function _update(event, data)
 				play_sound("warp")
 				local pos = generate_random_point({ "common" })
 				update_entity_position("common", "player", pos.x, pos.y)
-				update_entities("enemies", "aggro_component", "value", 0)
+				update_all_entities("enemies", "aggro_component", "value", 0)
 			elseif (Game.won == true or Game.lost == true) then
 				Game.lost = false
 				Game.won = false
