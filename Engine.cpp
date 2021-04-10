@@ -761,10 +761,10 @@ namespace roguely::ecs
 										if (component != nullptr)
 												set_component_value(component, key, val, lua.lua_state());
 								}
-								else if(value.get_type() == sol::type::table)
+								else if (value.get_type() == sol::type::table)
 								{
 										auto lc = std::static_pointer_cast<roguely::ecs::LuaComponent>(component);
-										if (lc != nullptr) 
+										if (lc != nullptr)
 												lc->set_property(key, value, lua.lua_state());
 								}
 						}
@@ -2025,16 +2025,22 @@ namespace roguely::engine
 						roguely::common::Point start{ start_x, start_y };
 						roguely::common::Point end{ end_x, end_y };
 
+						int counter = 0;
+
 						while (!path->empty())
 						{
 								roguely::common::Point p = path->front();
 
 								if (!p.eq(start) && !p.eq(end))
 								{
-										path_table.set("x", p.x);
-										path_table.set("y", p.y);
+										auto path_step = lua.create_table_with(
+												"x", p.x,
+												"y", p.y);
+
+										path_table.set(counter, path_step);
 								}
 								path->pop();
+								counter++;
 						}
 
 						return path_table;

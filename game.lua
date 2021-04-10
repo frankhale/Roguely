@@ -500,11 +500,15 @@ function move_aggro_enemies()
 			local y = e.enemy.point.y
 			local path = {}
 
-			-- TODO:
-			-- We are now storing the path in the aggro_component so it can be
-			-- reused if the player has not moved. The remaining thing we need
-			-- to account for is iterating over path so that we can get the
-			-- next step otherwise the enemy will not traverse the path
+			-- FIXME: When the game was turn based it didn't make sense to
+			-- return and entire path. This is because we could only ever
+			-- execute one step in the path before the player moved again and
+			-- the path would have to be recomputed. Now that enemies can move
+			-- on their own without the need for the player to first move we
+			-- can excute more steps in the path if the player has not moved.
+			--
+			--
+			-- THIS NEEDS TO BE REFACTORED
 
 			-- if(e.enemy.components.aggro_component.properties.pathinfo ~= nil and
 			--    (Game.player_pos.x == e.enemy.components.aggro_component.properties.pathinfo.player_pos.x and
@@ -513,38 +517,38 @@ function move_aggro_enemies()
 			-- 	path = e.enemy.components.aggro_component.properties.pathinfo.path
 			-- end
 
-			--if(next(path) == nil) then
-			path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
+			-- if(next(path) == nil) then
+			-- 	path = find_path(x, y, Game.player_pos.x, Game.player_pos.y, 9)
 
-			if(path.x ~= nil and path.y ~= nil) then
-				--print("finding new path")
+			-- 	if(path.x ~= nil and path.y ~= nil) then
+			-- 		--print("finding new path")
 
-				if(is_xy_blocked(path.x, path.y) ~= true) then
-					number_of_enemies = number_of_enemies + 1
-					enemy_changes[e.enemy.id] = {
-						component_name = "aggro_component",
-						component_key = "pathinfo",
-						component_value = {
-							player_pos = {
-								x = Game.player_pos.x,
-								y = Game.player_pos.y
-							},
-							path = path
-						},
-						position = {
-							x = path.x,
-							y = path.y
-						}
-					}
-				end
-			end
-			--end
+			-- 		if(is_xy_blocked(path.x, path.y) ~= true) then
+			-- 			number_of_enemies = number_of_enemies + 1
+			-- 			enemy_changes[e.enemy.id] = {
+			-- 				component_name = "aggro_component",
+			-- 				component_key = "pathinfo",
+			-- 				component_value = {
+			-- 					player_pos = {
+			-- 						x = Game.player_pos.x,
+			-- 						y = Game.player_pos.y
+			-- 					},
+			-- 					path = path
+			-- 				},
+			-- 				position = {
+			-- 					x = path.x,
+			-- 					y = path.y
+			-- 				}
+			-- 			}
+			-- 		end
+			-- 	end
+			-- end
 		end
 	end
 
-	if (number_of_enemies > 0) then
-		update_entities("enemies", enemy_changes)
-	end
+	-- if (number_of_enemies > 0) then
+	-- 	update_entities("enemies", enemy_changes)
+	-- end
 end
 
 function initiate_enemy_attack(pid)
