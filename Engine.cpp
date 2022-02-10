@@ -222,17 +222,12 @@ namespace roguely::common
 				if (strlen(text) <= 0) return;
 
 				text_texture = nullptr;
-
-				SDL_Rect text_rect;
+								
 				SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, color);
-				text_rect.x = x;
-				text_rect.y = y;
-				text_rect.w = text_surface->w;
-				text_rect.h = text_surface->h;
+				SDL_Rect text_rect(x, y, text_surface->w, text_surface->h);
 
 				text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
 				SDL_FreeSurface(text_surface);
-
 				SDL_RenderCopy(renderer, text_texture, NULL, &text_rect);
 				SDL_DestroyTexture(text_texture);
 		}
@@ -2012,7 +2007,7 @@ namespace roguely::engine
 				return result;
 		}
 
-		void Engine::setup_lua_helpers(sol::this_state s)
+		void Engine::setup_lua_api(sol::this_state s)
 		{
 				sol::state_view lua(s);
 
@@ -2274,7 +2269,7 @@ namespace roguely::engine
 
 						if (init_sdl(game_config) < 0) return -1;
 
-						setup_lua_helpers(lua.lua_state());
+						setup_lua_api(lua.lua_state());
 
 						auto lua_init = lua["_init"];
 						if (lua_init.valid() && lua_init.get_type() == sol::type::function) lua_init();

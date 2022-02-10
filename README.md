@@ -2,8 +2,6 @@
 
 ![Roguely Logo](assets/roguely-logo.png)
 
-NOTE: This is a work in progress...
-
 Roguely is a very simple Roguelike in SDL/C++/Lua.
 
 The game is using very simple cellular automata to generate maps. Each time you
@@ -110,6 +108,58 @@ Roguely has the following dependencies:
 - Sol2
 - Boost (using boost/uuid, boost/numeric)
 
+## How to use the game engine
+
+**NOTE:** This is gonna be rough for a bit because I don't know how I want to
+write this.
+
+The engine expects that the game logic will reside in `game.lua`. There are a
+number of functions that will be called by the framework automatically based on
+game loop updates.
+
+The engine expects that the `game.lua` file will have a global table called
+`Game` which at the least defines the following properties:
+
+**NOTE: This is a mess and needs to be cleaned up**
+
+```window_title = "Roguely - A simple Roguelike in SDL2/C++/Lua",
+window_icon_path = "assets/icon.png",
+window_width = 1280,
+window_height = 768,
+map_width = 125,
+map_height = 125,
+view_port_width = 40,
+view_port_height = 24,
+spritesheet_path = "assets/roguelike.png",
+soundtrack_path = "assets/soundtrack.mp3",
+font_path = "assets/VT323-Regular.ttf"
+```
+
+The functions the framework calls are:
+
+`_init`: This is used to set up things before `_render` and `_update` are
+called. This can be used to set up your entities. You can also generate levels
+if you like.
+
+`_update`: This is called on each game loop and should be used to update game
+entities, update state. This function should not be used for rendering sprites.
+
+`_render`: This is called on each game loop and should only be used to render
+sprites. This function should not be used to perform update logic or other game
+logic.
+
+`_tick`: This is called on each game loop and should be used to manage logic
+that should happen on each game tick.
+
+`_error`: This is called when the Lua script has an error in it.
+
+```lua
+function _error(err)
+	ERROR = true
+	print("An error occurred: " .. err)
+end
+```
+
 ## License
 
 MIT
@@ -132,4 +182,4 @@ Frank Hale &lt;frankhaledevelops@gmail.com&gt;
 
 ## Date
 
-25 March 2021
+10 February 2022

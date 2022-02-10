@@ -541,8 +541,7 @@ namespace roguely::engine
 				int game_loop();
 
 				sol::table get_sprite_info(std::string name, sol::this_state s);
-				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);
-				void setup_lua_helpers(sol::this_state s);
+				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);				
 				sol::table get_map(std::string name, bool light, sol::this_state s);
 				sol::table get_random_point(sol::this_state s);
 				sol::table get_open_point_for_xy(int x, int y, sol::this_state s);
@@ -560,6 +559,7 @@ namespace roguely::engine
 
 		private:
 
+				void setup_lua_api(sol::this_state s);
 				bool check_game_config(sol::table game_config, sol::this_state s);
 				auto get_text_reference(std::string size)
 				{
