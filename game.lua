@@ -1202,12 +1202,10 @@ function _tick(delta_time)
         -- to make leveling work on a number of enemies killed basis. This will
         -- morph into an experience based leveling system with hard to kill
         -- monsters giving more XP and thereby allowing faster leveling.
-        local level = math.floor(Game.total_enemies_killed / 10)
-
-        --print(level)
-
-        if (level >= 1 and
+        if (math.floor(Game.total_enemies_killed / 10) >= 1 and
             Game.player.components.level_component.properties.level < level) then
+            set_component_value("common", "player", "health_component",
+                                "health", Game.player.components.health_component.health + 100)
             set_component_value("common", "player", "level_component", "level",
                                 Game.player.components.level_component
                                     .properties.level + 1)

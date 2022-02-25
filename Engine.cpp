@@ -222,7 +222,7 @@ namespace roguely::common
 				if (strlen(text) <= 0) return;
 
 				text_texture = nullptr;
-								
+
 				SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, color);
 				SDL_Rect text_rect(x, y, text_surface->w, text_surface->h);
 
@@ -1374,6 +1374,7 @@ namespace roguely::engine
 				Mix_VolumeMusic(2);
 
 				sprite_sheets = std::make_unique<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>>();
+				spritesheet_lookup_helper = std::make_unique<std::unordered_map<std::string, std::shared_ptr<roguely::sprites::SpriteSheet>>>();
 				sounds = std::make_unique<std::vector<std::shared_ptr<roguely::common::Sound>>>();
 
 				reset(false);
@@ -1480,9 +1481,7 @@ namespace roguely::engine
 											Mix_LoadWAV(sound.second.as<std::string>().c_str())
 										};
 
-										auto ss = std::make_shared<roguely::common::Sound>(s);
-
-										sounds->emplace_back(ss);
+										sounds->emplace_back(std::make_shared<roguely::common::Sound>(s));
 								}
 						}
 				}
@@ -1719,7 +1718,7 @@ namespace roguely::engine
 				return lua.create_table();
 		}
 
-		sol::table  Engine::get_map(std::string name, bool light, sol::this_state s)
+		sol::table Engine::get_map(std::string name, bool light, sol::this_state s)
 		{
 				sol::state_view lua(s);
 
@@ -1752,23 +1751,23 @@ namespace roguely::engine
 				return map_table;
 		}
 
-		void  Engine::set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a)
+		void Engine::set_draw_color(SDL_Renderer* renderer, int r, int g, int b, int a)
 		{
 				SDL_SetRenderDrawColor(renderer, r, g, b, a);
 		}
 
-		void  Engine::draw_point(SDL_Renderer* renderer, int x, int y)
+		void Engine::draw_point(SDL_Renderer* renderer, int x, int y)
 		{
 				SDL_RenderDrawPoint(renderer, x, y);
 		}
 
-		void  Engine::draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h)
+		void Engine::draw_rect(SDL_Renderer* renderer, int x, int y, int w, int h)
 		{
 				SDL_Rect r = { x, y, w, h };
 				SDL_RenderDrawRect(renderer, &r);
 		}
 
-		void  Engine::draw_filled_rect(SDL_Renderer* renderer, int x, int y, int w, int h)
+		void Engine::draw_filled_rect(SDL_Renderer* renderer, int x, int y, int w, int h)
 		{
 				SDL_Rect r = { x, y, w, h };
 				SDL_RenderFillRect(renderer, &r);
@@ -1799,7 +1798,7 @@ namespace roguely::engine
 				return point_table;
 		}
 
-		void  Engine::send_key_event(std::string key, sol::this_state s)
+		void Engine::send_key_event(std::string key, sol::this_state s)
 		{
 				sol::state_view lua(s);
 				auto lua_update = lua["_update"];
@@ -1812,7 +1811,7 @@ namespace roguely::engine
 				}
 		}
 
-		void  Engine::render(float delta_time, sol::this_state s)
+		void Engine::render(float delta_time, sol::this_state s)
 		{
 				sol::state_view lua(s);
 				auto lua_render = lua["_render"];
@@ -1821,7 +1820,7 @@ namespace roguely::engine
 						lua_render(delta_time);
 		}
 
-		void  Engine::tick(float delta_time, sol::this_state s)
+		void Engine::tick(float delta_time, sol::this_state s)
 		{
 				sol::state_view lua(s);
 				auto lua_tick = lua["_tick"];
@@ -1830,7 +1829,7 @@ namespace roguely::engine
 						lua_tick(delta_time);
 		}
 
-		void  Engine::render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor)
+		void Engine::render_graphic(SDL_Renderer* renderer, std::string path, int window_width, int x, int y, bool centered, bool scaled, float scaled_factor)
 		{
 				auto graphic = IMG_Load(path.c_str());
 				auto graphic_texture = SDL_CreateTextureFromSurface(renderer, graphic);
@@ -1878,13 +1877,18 @@ namespace roguely::engine
 		}
 
 		std::shared_ptr<roguely::sprites::SpriteSheet> Engine::find_spritesheet(std::string name) {
+				auto sheet_exists = spritesheet_lookup_helper->find(name);
+				
+				if (sheet_exists != spritesheet_lookup_helper->end())						
+						return sheet_exists->second;
+				
 				auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
 						[&](const std::shared_ptr<roguely::sprites::SpriteSheet>& ss) {
 								return ss->get_name() == name;
 						});
 
-				if (sheet != sprite_sheets->end())
-				{
+				if (sheet != sprite_sheets->end()) {
+						spritesheet_lookup_helper->insert(std::pair<std::string, std::shared_ptr<roguely::sprites::SpriteSheet>>(name, *sheet));
 						return *sheet;
 				}
 
@@ -1893,16 +1897,12 @@ namespace roguely::engine
 
 		void Engine::draw_sprite(SDL_Renderer* renderer, std::string name, int sprite_id, int x, int y, int scaled_width, int scaled_height)
 		{
-				if (!(name.length() > 0)) return;
+				if (name.length() <= 0) return;
 
-				auto sheet = std::find_if(sprite_sheets->begin(), sprite_sheets->end(),
-						[&](const std::shared_ptr<roguely::sprites::SpriteSheet>& ss) {
-								return ss->get_name() == name;
-						});
-
-				if (sheet != sprite_sheets->end())
+				auto sheet = find_spritesheet(name);
+				if (sheet != nullptr)
 				{
-						(*sheet)->draw_sprite(renderer, sprite_id, x, y, scaled_width, scaled_height);
+						sheet->draw_sprite(renderer, sprite_id, x, y, scaled_width, scaled_height);
 				}
 		}
 

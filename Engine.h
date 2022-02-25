@@ -460,9 +460,9 @@ namespace roguely::ecs
 				void update_entity(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
 				void update_entities(std::string entity_group_name, std::string component_name, std::string key, sol::object value, sol::this_state s);
 				void update_entities(std::string entity_group_name, sol::table entity_properties, sol::this_state s);
-				void update_entity_position(std::string entity_group_name, sol::table entity_positions);				
+				void update_entity_position(std::string entity_group_name, sol::table entity_positions);
 				std::shared_ptr<roguely::ecs::Entity> update_entity_position(std::string entity_group_name, std::string entity_id, int x, int y);
-				
+
 				sol::table get_entity_group_points(std::string entity_group_name, sol::this_state s);
 				std::vector<std::string> get_entity_group_names()
 				{
@@ -471,7 +471,7 @@ namespace roguely::ecs
 						return results;
 				}
 				std::shared_ptr<roguely::ecs::EntityGroup> get_entity_group(std::string name);
-				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);				
+				std::shared_ptr<roguely::ecs::Entity> get_entity(std::shared_ptr<roguely::ecs::EntityGroup> entity_group, std::string entity_id);
 				int get_component_value(std::shared_ptr<roguely::ecs::Component> component, std::string key);
 				int get_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key);
 				void set_component_value(std::string entity_group_name, std::string entity_id, std::string component_name, std::string key, sol::object value, sol::this_state s);
@@ -517,7 +517,7 @@ namespace roguely::engine
 				roguely::common::Point get_open_point_for_xy(int x, int y);
 				bool is_tile_player_tile(int x, int y, roguely::common::MovementDirection dir);
 				bool is_tile_on_map_traversable(int x, int y, roguely::common::MovementDirection dir, int tileId);
-				void switch_map(std::string map_name);				
+				void switch_map(std::string map_name);
 				void generate_map(std::string name, int map_width, int map_height);
 				std::shared_ptr<roguely::common::Map> get_map(std::string name);
 				void update_player_viewport_points();
@@ -541,7 +541,7 @@ namespace roguely::engine
 				int game_loop();
 
 				sol::table get_sprite_info(std::string name, sol::this_state s);
-				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);				
+				sol::table add_sprite_sheet(SDL_Renderer* renderer, std::string name, std::string path, int sw, int sh, sol::this_state s);
 				sol::table get_map(std::string name, bool light, sol::this_state s);
 				sol::table get_random_point(sol::this_state s);
 				sol::table get_open_point_for_xy(int x, int y, sol::this_state s);
@@ -588,6 +588,7 @@ namespace roguely::engine
 				std::shared_ptr<roguely::common::Map> current_map{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Map>>> maps{};
 				std::unique_ptr<roguely::ecs::EntityManager> entity_manager{};
+				std::unique_ptr<std::unordered_map<std::string, std::shared_ptr<roguely::sprites::SpriteSheet>>> spritesheet_lookup_helper{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::sprites::SpriteSheet>>> sprite_sheets{};
 				std::unique_ptr<std::vector<std::shared_ptr<roguely::common::Sound>>> sounds{};
 				std::unique_ptr<roguely::common::AStarPathFinder> path_finder{};
@@ -598,9 +599,9 @@ namespace roguely::engine
 				std::unique_ptr<roguely::common::Text> text_medium{};
 				std::unique_ptr<roguely::common::Text> text_small{};
 
-				SDL_Window* window = nullptr;
-				SDL_Surface* window_surface = nullptr;
-				SDL_Renderer* renderer = nullptr;
+				SDL_Window* window{};
+				SDL_Surface* window_surface{};
+				SDL_Renderer* renderer{};
 				Mix_Music* soundtrack{};
 		};
 }
