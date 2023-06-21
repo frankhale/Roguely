@@ -18,10 +18,12 @@ of the sprite sheet. Not all sprites in this screenshot are currently being used
 in the game. There is still a lot of work still left to do.
 
 ![Roguely Logo](screenshots/sprite-sandbox.png)
+
 ## Next Steps
 
 This concluded during rewrite.
 
+- [x] REWRITE!!!
 - [x] Switch from manual dependency configuration to `vcpkg`
 - [x] Refactor current code so we can:
   - [x] Integrate Lua
@@ -63,13 +65,13 @@ Combat Text:
 
 Current Gameplay:
 
-![Old](screenshots/seventh.png)
-
-We have cellular automata level generation and a minimap now
-
-![Old](screenshots/sixth.png)
+![Current](screenshots/current.png)
 
 Older gameplay showing how it evolved:
+
+![Old](screenshots/seventh.png)
+
+![Old](screenshots/sixth.png)
 
 ![Old](screenshots/fifth.png)
 
@@ -91,14 +93,17 @@ My first screenshot when I was able to render sprites:
 
 ## Building
 
-I'm using `Visual Studio 2019 Community Preview Edition` but you can just use
-regular `Visual Studio 2019 Community Edition` to build this code.
+This code uses `vcpkg` and for dependencies management and `cmake` to build. This expects a sand build environment to be installed. I've installed `Visual Studio 2022` and use `Visual Studio Code` to develop the game.
 
-Get `Visual Studio 2019` from here: [https://visualstudio.microsoft.com/vs/](https://visualstudio.microsoft.com/vs/)
+You can get `vckpg` here: [https://github.com/Microsoft/vcpkg](https://github.com/Microsoft/vcpkg)
 
-I'm using `vcpkg` for dependencies management. You can get `vckpg` here: [https://github.com/Microsoft/vcpkg](https://github.com/Microsoft/vcpkg)
+You can get `Visual Studio` here:
+[https://visualstudio.microsoft.com/downloads/](https://visualstudio.microsoft.com/downloads/)
 
-Roguely has the following dependencies:
+You can get `Visual Studio Code` here:
+[https://code.visualstudio.com/](https://code.visualstudio.com/)
+
+Roguely has the following dependencies which are managed by `vcpkg`:
 
 - SDL2
 - SDL_image
@@ -106,57 +111,107 @@ Roguely has the following dependencies:
 - SDL_ttf
 - Lua
 - Sol2
-- Boost (using boost/uuid, boost/numeric)
+- Boost (using boost/uuid, boost/matrix)
+- magic_enum
+- fmt
 
 ## How to use the game engine
 
-**NOTE:** This is gonna be rough for a bit because I don't know how I want to
-write this.
+This engine provides a simple Entity Component System and exposes that to Lua.
+Since this engine uses SDL2 it also exposes several SDL2 functions to Lua to
+make creating grid turn based games easier. The engines primary design is to
+make creating grid turn based games easier.
 
-The engine expects that the game logic will reside in `game.lua`. There are a
-number of functions that will be called by the framework automatically based on
-game loop updates.
-
-The engine expects that the `game.lua` file will have a global table called
+The engine expects that the `roguely.lua` file will have a global table called
 `Game` which at the least defines the following properties:
 
-**NOTE: This is a mess and needs to be cleaned up**
-
-```window_title = "Roguely - A simple Roguelike in SDL2/C++/Lua",
-window_icon_path = "assets/icon.png",
-window_width = 1280,
-window_height = 768,
-map_width = 125,
-map_height = 125,
-view_port_width = 40,
-view_port_height = 24,
-spritesheet_path = "assets/roguelike.png",
-soundtrack_path = "assets/soundtrack.mp3",
-font_path = "assets/VT323-Regular.ttf"
+```lua
+Game = {
+  window_title = "Roguely (2023 Edition) - A simple Roguelike in C++/Lua/SDL2",
+  window_icon_path = "assets/icon.png",
+  window_width = 1280,
+  window_height = 640,
+  map_width = 100,
+  map_height = 100,
+  spritesheet_name = "roguely-x",
+  spritesheet_path = "assets/roguely-x.png",
+  spritesheet_sprite_width = 8,
+  spritesheet_sprite_height = 8,
+  spritesheet_sprite_scale_factor = 4,
+  font_path = "assets/NESCyrillic.ttf",
+  soundtrack_path = "assets/ExitExitProper.mp3",
+  logo_image_path = "assets/roguely-logo.png",
+  start_game_image_path = "assets/press-space-bar-to-play.png",
+  credit_image_path = "assets/credits.png",
+  sounds = {
+      coin = "assets/sounds/coin.wav",
+      bump = "assets/sounds/bump.wav",
+      combat = "assets/sounds/combat.wav",
+      death = "assets/sounds/death.wav",
+      pickup = "assets/sounds/pickup.wav",
+      warp = "assets/sounds/warp.wav",
+      walk = "assets/sounds/walk.wav"
+  },
+  entities = {
+    player = {
+      components = {
+          sprite_component = {
+              name = "player",
+              spritesheet_name = "roguely-x",
+              sprite_id = 15,
+              blink = false,
+              render = function(self, game, player, dx, dy, scale_factor)
+                  -- handle sprite player render here
+              end
+          },
+          position_component = { x = 0, y = 0 },
+          stats_component = {
+              max_health = 50,
+              health = 50,
+              health_recovery = 10,
+              attack = 5,
+              crit_chance = 2,
+              crit_multiplier = 2,
+              score = 0,
+              kills = 0,
+              level = 0,
+              experience = 0,
+          },
+          healthbar_component = {
+            -- handle render of health bar
+          },
+          tick_component = {
+            -- handle what occurs during a game tick (every one second)
+          }
+      }
+    }
+  }
+}
 ```
 
-The functions the framework calls are:
+When games are started up the engine first looks to make sure required
+properties are in the `Game` table and then it calls `_init()`. This function
+can be used to setup your game. You can spawn entities, set up your maps, etc...
 
-`_init`: This is used to set up things before `_render` and `_update` are
-called. This can be used to set up your entities. You can also generate levels
-if you like.
+It's expected that during the intialization you will add various system
+functions that will be called in order to handle game entities.
 
-`_update`: This is called on each game loop and should be used to update game
-entities, update state. This function should not be used for rendering sprites.
-
-`_render`: This is called on each game loop and should only be used to render
-sprites. This function should not be used to perform update logic or other game
-logic.
-
-`_tick`: This is called on each game loop and should be used to manage logic
-that should happen on each game tick.
-
-`_error`: This is called when the Lua script has an error in it.
+For instance:
 
 ```lua
-function _error(err)
-	ERROR = true
-	print("An error occurred: " .. err)
+add_system("render_system", render_system)
+add_system("keyboard_input_system", keyboard_input_system)
+add_system("combat_system", combat_system)
+add_system("leveling_system", leveling_system)
+add_system("loot system", loot_system)
+add_system("tick_system", tick_system)
+add_system("mob_movement_system", mob_movement_system)
+```
+
+Systems are just functions that look like:
+
+```lua
+function keyboard_input_system(key, player, entities, entities_in_viewport)
 end
 ```
 
@@ -172,14 +227,14 @@ Music track `Exit Exit Proper - Pipe Choir` from:
 - [https://soundcloud.com/pipe-choir-three](https://soundcloud.com/pipe-choir-three)
 - [https://freemusicarchive.org/music/P_C_III](https://freemusicarchive.org/music/P_C_III)
 
-Creative Commons License: http://www.pipechoir.com/music-licenses.html
+Creative Commons License: <http://www.pipechoir.com/music-licenses.html>
 
 The sounds in the `assets/sounds` folder came from [https://opengameart.org/](https://opengameart.org/)
 
 ## Author(s)
 
-Frank Hale &lt;frankhaledevelops@gmail.com&gt;
+Frank Hale &lt;<frankhaledevelops@gmail.com>&gt;
 
 ## Date
 
-10 February 2022
+21 June 2023
