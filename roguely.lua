@@ -776,8 +776,6 @@ function _init()
     for level = 1, Game.level_cap do
         local experience = math.floor(Game.level_xp_start * (Game.level_growth_rate ^ (level - 1)))
         Game.level_data[level] = { level = level, experience = experience }
-
-        -- print("level: " .. level .. " experience: " .. experience)
     end
 
     add_font("large", Game.font_path, 32)
