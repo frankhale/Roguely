@@ -175,6 +175,95 @@ function keyboard_input_system(key, player, entities, entities_in_viewport)
 end
 ```
 
+Have a look at `roguely.lua` to see how more about how to use the engine.
+
+## Lua APIs
+
+`get_sprite_info` - Returns a Lua table with information about sprites in a
+sprite sheet.
+
+`draw_text` - Draws white text to the screen.
+
+`draw_text_with_color` - Draws text to the screen with a specific color.
+
+`draw_sprite` - Draws a sprite to the screen.
+
+`draw_sprite_scaled` - Draws a sprite to the screen scaled by a factor.
+
+`draw_sprite_sheet` - Draws a sprite sheet to the screen.
+
+`set_draw_color` - Sets the draw color.
+
+`draw_point` - Draws a point to the screen.
+
+`draw_rect` - Draws a rectangle to the screen.
+
+`draw_filled_rect` - Draws a filled rectangle to the screen.
+
+`draw_filled_rect_with_color` - Draws a filled rectangle to the screen with a specific color.
+
+`draw_graphic` - Draws a graphic to the screen.
+
+`play_sound` - Plays a sound.
+
+`get_random_number` - Returns a random number.
+
+`generate_uuid` - Returns a UUID.
+
+`generate_map` - Generates a map using a cellular automata algorithm.
+
+`get_random_point_on_map` - Returns a random open point on the map (eg not a
+wall).
+
+`set_map` - Sets the map.
+
+`draw_visible_map` - Draws the visible map (eg. what's visible in the current
+viewport).
+
+`draw_full_map` - Draws the full map (great for minimaps).
+
+`add_entity` - Adds an entity to the game.
+
+`remove_entity` - Removes an entity from the game.
+
+`remove_component` - Removes a component from an entity.
+
+`get_component_value` - Returns the value of a component (deprecated).
+
+`set_component_value` - Sets the value of a component (deprecated).
+
+`update_player_viewport` - Updates the player viewport.
+
+`get_text_extents` - Returns the width and height of a string.
+
+`add_system` - Adds a system to the game.
+
+`get_random_key_from_table` - Returns a random key from a table.
+
+`find_entity_with_name` - Returns an entity with a specific name (finds based on starts with).
+
+`get_overlapping_points` - Returns a list of points that overlap with a given
+point.
+
+`get_blocked_points` - Returns a list of points that are blocked (eg. walls).
+
+`is_within_viewport` - Returns true if a point is within the viewport.
+
+`force_redraw_map` - Forces a redraw of the map.
+
+`add_font` - Adds a font.
+
+`set_font` - Sets the font.
+
+`get_adjacent_points` - Returns a list of points that are adjacent to a given
+point (up, down, left and right).
+
+`map_to_world` - Converts a map point to a world point.
+
+`set_highlight_color` - Sets the highlight color.
+
+`reset_highlight_color` - Resets the highlight color.
+
 ## License
 
 MIT
