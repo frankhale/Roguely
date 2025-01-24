@@ -5,6 +5,7 @@
 
 out/
 .vscode/
+cmake-build-debug-visual-studio/
 
 # User-specific files
 *.rsuser

@@ -24,7 +24,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <mpg123.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -284,6 +284,21 @@ namespace roguely::ecs
   private:
     std::string id{};
 
+  public:
+    template <typename T>
+    std::vector<std::shared_ptr<T>> find_component_by_type(std::function<bool(std::shared_ptr<T>)> predicate)
+    {
+        std::vector<std::shared_ptr<T>> results;
+        for (const auto &component : *components)
+        {
+            if (auto casted_component = std::dynamic_pointer_cast<T>(component); casted_component && predicate(casted_component))
+            {
+                results.emplace_back(casted_component);
+            }
+        }
+        return results;
+    }
+
   protected:
     std::string name = {"unnamed entity"};
     std::unique_ptr<std::vector<std::shared_ptr<Component>>> components{};
@@ -298,7 +313,7 @@ namespace roguely::ecs
   class EntityManager
   {
   public:
-    EntityManager(sol::this_state s)
+    explicit EntityManager(sol::this_state s)
     {
       sol::state_view lua(s);
       entity_groups = std::make_unique<std::vector<std::shared_ptr<EntityGroup>>>();
@@ -315,10 +330,9 @@ namespace roguely::ecs
     std::shared_ptr<Entity> create_entity_in_group(const std::string &group_name, const std::string &entity_name);
     void remove_entity(const std::string &entity_group_name, const std::string &entity_id);
 
-    std::vector<std::string> get_entity_group_names()
-    {
+    [[nodiscard]] std::vector<std::string> get_entity_group_names() const {
       std::vector<std::string> results{};
-      for (auto &eg : *entity_groups)
+      for (const auto &eg : *entity_groups)
       {
         results.emplace_back(eg->name);
       }
@@ -355,8 +369,7 @@ namespace roguely::ecs
       std::vector<std::shared_ptr<Entity>> matches{};
       for (auto &e : *group->entities)
       {
-        auto result = e->find_component_by_type<T>(predicate);
-        if (result.size() > 0)
+        if (auto result = e->find_component_by_type<T>(predicate); result.size() > 0)
         {
           matches.emplace_back(e);
         }
