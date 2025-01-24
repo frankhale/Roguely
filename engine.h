@@ -82,7 +82,7 @@ namespace roguely::common {
 
     void draw_text(SDL_Renderer *renderer, int x, int y, const std::string &text, SDL_Color color);
 
-    Size get_text_extents(const std::string &text);
+    Size get_text_extents(const std::string &text) const;
 
   private:
     TTF_Font *font{};
@@ -287,7 +287,7 @@ namespace roguely::ecs {
       add_entity_to_group(entity_group_name_to_string(group_name), e, s);
     }
 
-    std::shared_ptr<EntityGroup> create_entity_group(const std::string &group_name);
+    std::shared_ptr<EntityGroup> create_entity_group(const std::string &group_name) const;
 
     std::shared_ptr<Entity> create_entity_in_group(const std::string &group_name, const std::string &entity_name);
 
@@ -301,13 +301,13 @@ namespace roguely::ecs {
       return results;
     }
 
-    std::shared_ptr<EntityGroup> get_entity_group(const std::string &group_name);
+    std::shared_ptr<EntityGroup> get_entity_group(const std::string &group_name) const;
 
     std::shared_ptr<EntityGroup> get_entity_group(EntityGroupName group_name) {
       return get_entity_group(entity_group_name_to_string(group_name));
     }
 
-    std::shared_ptr<std::vector<std::shared_ptr<Entity> > > get_entities_in_group(const std::string &group_name);
+    std::shared_ptr<std::vector<std::shared_ptr<Entity> > > get_entities_in_group(const std::string &group_name) const;
 
     std::shared_ptr<std::vector<std::shared_ptr<Entity> > > get_entities_in_group(EntityGroupName group_name) {
       return get_entities_in_group(entity_group_name_to_string(group_name));
@@ -345,7 +345,7 @@ namespace roguely::ecs {
       const std::string &entity_group, std::function<bool(std::shared_ptr<Entity>)> predicate);
 
     std::shared_ptr<Entity> find_entity(const std::string &entity_group,
-                                        std::function<bool(std::shared_ptr<Entity>)> predicate);
+                                        std::function<bool(std::shared_ptr<Entity>)> predicate) const;
 
     std::shared_ptr<Entity> find_entity(EntityGroupName entity_group,
                                         std::function<bool(std::shared_ptr<Entity>)> predicate) {
@@ -386,16 +386,16 @@ namespace roguely::ecs {
       }
     }
 
-    bool lua_entities_for_each(std::function<bool(sol::table)> predicate);
+    bool lua_entities_for_each(const std::function<bool(sol::table)> &predicate) const;
 
-    bool lua_is_point_unique(roguely::common::Point point);
+    bool lua_is_point_unique(roguely::common::Point point) const;
 
-    void lua_for_each_overlapping_point(const std::string &entity_name, int x, int y, sol::function point_callback);
+    void lua_for_each_overlapping_point(const std::string &entity_name, int x, int y, const sol::function &point_callback) const;
 
     sol::table get_lua_blocked_points(const std::string &entity_group, int x, int y, const std::string &direction,
-                                      sol::this_state s);
+                                      sol::this_state s) const;
 
-    sol::table get_lua_entities_in_viewport(std::function<bool(int x, int y)> predicate, sol::this_state s);
+    sol::table get_lua_entities_in_viewport(std::function<bool(int x, int y)> predicate, sol::this_state s) const;
 
     static sol::table copy_table(const sol::table &original, sol::this_state s) {
       sol::state_view lua(original.lua_state());
@@ -480,7 +480,7 @@ namespace roguely::sprites {
 
     void draw_sprite(SDL_Renderer *renderer, int sprite_id, int x, int y);
 
-    void draw_sprite(SDL_Renderer *renderer, int sprite_id, int x, int y, int scale_factor);
+    void draw_sprite(SDL_Renderer *renderer, int sprite_id, int x, int y, int scale_factor) const;
 
     void draw_sprite_sheet(SDL_Renderer *renderer, int x, int y);
 
@@ -491,7 +491,7 @@ namespace roguely::sprites {
     auto get_sprite_height() const { return sprite_height; }
     auto get_scale_factor() const { return scale_factor; }
 
-    sol::table get_sprites_as_lua_table(sol::this_state s);
+    sol::table get_sprites_as_lua_table(sol::this_state s) const;
 
     auto get_size_of_sprites() const { return sprites->size(); }
 
@@ -533,14 +533,14 @@ namespace roguely::map {
     };
 
     void draw_map(SDL_Renderer *renderer,
-                  roguely::common::Dimension dimensions,
-                  std::shared_ptr<roguely::sprites::SpriteSheet> sprite_sheet,
-                  std::function<void(int, int, int, int, int, int, int)> draw_hook);
+                  const roguely::common::Dimension &dimensions,
+                  const std::shared_ptr<roguely::sprites::SpriteSheet> &sprite_sheet,
+                  const std::function<void(int, int, int, int, int, int, int)> &draw_hook);
 
-    void draw_map(SDL_Renderer *renderer, roguely::common::Dimension dimensions, int x, int y, int a,
-                  std::function<void(int, int, int)> draw_hook);
+    void draw_map(SDL_Renderer *renderer, const roguely::common::Dimension &dimensions, int x, int y, int a,
+                  const std::function<void(int, int, int)> &draw_hook);
 
-    void calculate_field_of_view(roguely::common::Dimension dimensions);
+    void calculate_field_of_view(const roguely::common::Dimension &dimensions);
 
     auto get_name() const { return name; }
     auto get_width() const { return width; }
@@ -576,7 +576,7 @@ namespace roguely::map {
     //   return roguely::common::Point{dx, dy};
     // }
 
-    roguely::common::Point get_random_point(std::set<int> off_limit_sprites_ids);
+    roguely::common::Point get_random_point(std::set<int> off_limit_sprites_ids) const;
 
     void trigger_redraw() { current_map_segment_dimension = {}; }
 
@@ -612,7 +612,7 @@ namespace roguely::map {
 
   private:
     // Heuristic function for estimating the distance between two points
-    int heuristic(int x1, int y1, int x2, int y2) {
+    static int heuristic(const int x1, const int y1, const int x2, const  int y2) {
       return std::abs(x1 - x2) + std::abs(y1 - y2);
     }
 
@@ -640,7 +640,7 @@ namespace roguely::engine {
 
     void setup_lua_api(sol::this_state s);
 
-    bool check_game_config(sol::table game_config, sol::this_state s);
+    static bool check_game_config(sol::table game_config, sol::this_state s);
 
     sol::function check_if_lua_function_defined(sol::this_state s, const std::string &name);
 
@@ -691,7 +691,7 @@ namespace roguely::engine {
       return {view_port_x, view_port_y, player_position.x, player_position.y, view_port_width, view_port_height};
     }
 
-    std::shared_ptr<roguely::map::Map> find_map(const std::string &name) {
+    std::shared_ptr<roguely::map::Map> find_map(const std::string &name) const {
       auto it = std::ranges::find_if(*maps, [&name](const std::shared_ptr<roguely::map::Map> &map) {
         return map->get_name() == name;
       });
@@ -699,7 +699,7 @@ namespace roguely::engine {
       return nullptr;
     }
 
-    bool is_within_viewport(int x, int y) {
+    bool is_within_viewport(const int x, const int y) const {
       if ((x >= view_port_x && x <= view_port_width - 1) &&
           (y >= view_port_y && y <= view_port_height - 1))
         return true;
