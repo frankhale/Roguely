@@ -1,13 +1,23 @@
 #include "engine.h"
 
+#include <ranges>
+#include <map>
+#include <queue>
+#include <random>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <mpg123.h>
+#include <SDL2/SDL_image.h>
+#include <fmt/ranges.h>
+
 std::string generate_uuid()
 {
   boost::uuids::random_generator gen;
-  boost::uuids::uuid id = gen();
-  return boost::uuids::to_string(id);
+  const boost::uuids::uuid id = gen();
+  return to_string(id);
 }
 
-int generate_random_int(int min, int max)
+int generate_random_int(const int min, const int max)
 {
   std::random_device rd;
   std::mt19937 gen(rd());
