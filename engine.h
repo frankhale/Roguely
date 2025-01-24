@@ -680,7 +680,7 @@ namespace roguely::engine {
 
       // fmt::println("(update_player_viewport): view_port_x: {}, view_port_y: {}, view_port_width: {}, view_port_height: {}", view_port_x, view_port_y, view_port_width, view_port_height);
 
-      auto dimensions = roguely::common::Dimension{
+      const auto dimensions = roguely::common::Dimension{
         view_port_x, view_port_y, player_position.x, player_position.y, view_port_width, view_port_height
       };
 
