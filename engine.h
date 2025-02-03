@@ -43,21 +43,21 @@ namespace roguely::level_generation {
 
 namespace roguely::common {
   struct Point {
-    bool eq(const Point p) const;
+    bool eq(Point p) const;
 
     int x{};
     int y{};
   };
 
   struct Size {
-    bool eq(const Size s) const;
+    bool eq(Size s) const;
 
     int width{};
     int height{};
   };
 
   struct Dimension {
-    [[nodiscard]] bool eq(const Dimension &d) const;
+    bool eq(const Dimension &d) const;
 
     Point point{};
     Point supplimental_point{}; // this is a hack for our Janky map drawing optimization
@@ -548,7 +548,7 @@ namespace roguely::map {
     [[nodiscard]] auto get_light_map() const { return light_map; }
 
     static auto map_to_world(const int x, const int y, const common::Dimension &dimensions,
-                             const std::shared_ptr<roguely::sprites::SpriteSheet>& sprite_sheet) {
+                             const std::shared_ptr<sprites::SpriteSheet>& sprite_sheet) {
       const int scale_factor = sprite_sheet->get_scale_factor();
       const int sprite_width = sprite_sheet->get_sprite_width();
       const int sprite_height = sprite_sheet->get_sprite_height();
@@ -557,6 +557,8 @@ namespace roguely::map {
                (dimensions.point.x * sprite_width * scale_factor);
       const int dy = (y * sprite_height * scale_factor) -
                (dimensions.point.y * sprite_height * scale_factor);
+
+      //fmt::print("map_to_world: x: {}, y: {}, dx: {}, dy: {}\n", x, y, dx, dy);
 
       return common::Point{dx, dy};
     }
@@ -636,7 +638,7 @@ namespace roguely::engine {
 
     void tear_down_sdl();
 
-    void setup_lua_api(sol::this_state s);
+    void setup_lua_api(sol::this_state _s);
 
     static bool check_game_config(sol::table game_config, sol::this_state s);
 

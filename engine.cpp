@@ -23,12 +23,6 @@ int generate_random_int(const int min, const int max) {
   return dis(gen);
 }
 
-bool roguely::common::Point::eq(const Point p) const { return p.x == x && p.y == y; }
-
-bool roguely::common::Size::eq(const Size s) const { return s.width == width && s.height == height; }
-
-bool roguely::common::Dimension::eq(const Dimension &d) const { return d.point.eq(point) && d.supplimental_point.eq(supplimental_point) && d.size.eq(size); }
-
 namespace roguely::level_generation {
   int get_neighbor_wall_count(const std::shared_ptr<boost::numeric::ublas::matrix<int> > &map, const int map_width,
                               const int map_height,
@@ -86,6 +80,12 @@ namespace roguely::level_generation {
 }
 
 namespace roguely::common {
+  bool Point::eq(const Point p) const { return p.x == x && p.y == y; }
+
+  bool Size::eq(const Size s) const { return s.width == width && s.height == height; }
+
+  bool Dimension::eq(const Dimension &d) const { return d.point.eq(point) && d.supplimental_point.eq(supplimental_point) && d.size.eq(size); }
+
   int Text::load_font(const std::string &path, const int ptsize) {
     font = TTF_OpenFont(path.c_str(), ptsize);
 
@@ -107,11 +107,11 @@ namespace roguely::common {
     return {};
   }
 
-  void Text::draw_text(SDL_Renderer *renderer, int x, int y, const std::string &text) {
+  void Text::draw_text(SDL_Renderer *renderer, const int x, const int y, const std::string &text) {
     draw_text(renderer, x, y, text, text_color);
   }
 
-  void Text::draw_text(SDL_Renderer *renderer, int x, int y, const std::string &t, const SDL_Color color) {
+  void Text::draw_text(SDL_Renderer *renderer, const int x, const int y, const std::string &t, const SDL_Color color) {
     if (t.empty())
       return;
 
@@ -1115,7 +1115,7 @@ namespace roguely::engine {
   }
 
   void Engine::draw_filled_rect(SDL_Renderer *renderer, const int x, const int y, const int w, const int h) {
-    SDL_Rect r = {x, y, w, h};
+    const SDL_Rect r = {x, y, w, h};
     SDL_RenderFillRect(renderer, &r);
   }
 
@@ -1194,53 +1194,53 @@ namespace roguely::engine {
     return lua_func;
   }
 
-  void Engine::setup_lua_api(const sol::this_state s) {
-    sol::state_view lua(s);
+  void Engine::setup_lua_api(const sol::this_state _s) {
+    sol::state_view _lua(_s);
 
-    lua.set_function("get_sprite_info",
-                     [&](const std::string &sprite_sheet_name, const sol::this_state state) {
+    _lua.set_function("get_sprite_info",
+                     [&](const std::string &sprite_sheet_name, const sol::this_state s) {
                        if (sprite_sheets->contains(sprite_sheet_name)) {
-                         return (*sprite_sheets)[sprite_sheet_name]->get_sprites_as_lua_table(state);
+                         return (*sprite_sheets)[sprite_sheet_name]->get_sprites_as_lua_table(s);
                        }
-                       return lua.create_table();
+                       return _lua.create_table();
                      });
 
-    lua.set_function("draw_text", [&](const std::string &t, const int x, const int y) { draw_text(t, x, y); });
-    lua.set_function("draw_text_with_color", [&](const std::string &t, const int x, const int y, const int r, const int g, const int b, const int a) {
+    _lua.set_function("draw_text", [&](const std::string &t, const int x, const int y) { draw_text(t, x, y); });
+    _lua.set_function("draw_text_with_color", [&](const std::string &t, const int x, const int y, const int r, const int g, const int b, const int a) {
       draw_text(t, x, y, r, g, b, a);
     });
-    lua.set_function("draw_sprite", [&](const std::string &spritesheet_name, const int sprite_id, const int x, const int y) {
+    _lua.set_function("draw_sprite", [&](const std::string &spritesheet_name, const int sprite_id, const int x, const int y) {
       draw_sprite(spritesheet_name, sprite_id, x, y, 0);
     });
-    lua.set_function("draw_sprite_scaled",
+    _lua.set_function("draw_sprite_scaled",
                      [&](const std::string &spritesheet_name, const int sprite_id, const int x, const int y, const int scale_factor) {
                        draw_sprite(spritesheet_name, sprite_id, x, y, scale_factor);
                      });
-    lua.set_function("draw_sprite_sheet", [&](const std::string &spritesheet_name, const int x, const int y) {
+    _lua.set_function("draw_sprite_sheet", [&](const std::string &spritesheet_name, const int x, const int y) {
       if (const auto ss_i = sprite_sheets->find(spritesheet_name); ss_i != sprite_sheets->end()) { ss_i->second->draw_sprite_sheet(renderer, x, y); }
     });
-    lua.set_function("set_draw_color", [&](int const r, const int g, const int b, const int a) { set_draw_color(renderer, r, g, b, a); });
-    lua.set_function("draw_point", [&](int const x, const int y) { draw_point(renderer, x, y); });
-    lua.set_function("draw_rect", [&](int const x, int const y, const int w, const int h) { draw_rect(renderer, x, y, w, h); });
-    lua.set_function("draw_filled_rect", [&](const int x, const int y, const int w, const int h) { draw_filled_rect(renderer, x, y, w, h); });
-    lua.set_function("draw_filled_rect_with_color", [&](const int x, const int y, const int w, const int h, const int r, const int g, const int b, const int a) {
+    _lua.set_function("set_draw_color", [&](int const r, const int g, const int b, const int a) { set_draw_color(renderer, r, g, b, a); });
+    _lua.set_function("draw_point", [&](int const x, const int y) { draw_point(renderer, x, y); });
+    _lua.set_function("draw_rect", [&](int const x, int const y, const int w, const int h) { draw_rect(renderer, x, y, w, h); });
+    _lua.set_function("draw_filled_rect", [&](const int x, const int y, const int w, const int h) { draw_filled_rect(renderer, x, y, w, h); });
+    _lua.set_function("draw_filled_rect_with_color", [&](const int x, const int y, const int w, const int h, const int r, const int g, const int b, const int a) {
       draw_filled_rect_with_color(renderer, x, y, w, h, r, g, b, a);
     });
-    lua.set_function("draw_graphic",
+    _lua.set_function("draw_graphic",
                      [&](const std::string &path, const int window_width, const int x, const int y, const bool centered, const int scale_factor) {
                        draw_graphic(renderer, path, window_width, x, y, centered, scale_factor);
                      });
-    lua.set_function("play_sound", [&](const std::string &name) { play_sound(name); });
-    lua.set_function("get_random_number", [&](const int min, const int max) { return generate_random_int(min, max); });
-    lua.set_function("generate_uuid", [&]() { return generate_uuid(); });
-    lua.set_function("generate_map", [&](const std::string &name, const int map_width, const int map_height) {
-      auto map = generate_map(name, map_width, map_height);
+    _lua.set_function("play_sound", [&](const std::string &name) { play_sound(name); });
+    _lua.set_function("get_random_number", [&](const int min, const int max) { return generate_random_int(min, max); });
+    _lua.set_function("generate_uuid", [&]() { return generate_uuid(); });
+    _lua.set_function("generate_map", [&](const std::string &name, const int map_width, const int map_height) {
+      const auto map = generate_map(name, map_width, map_height);
       current_map_info.name = name;
       current_map_info.map = map;
       maps->push_back(map);
     });
-    lua.set_function("get_random_point_on_map", [&](const sol::this_state state) {
-      sol::state_view _lua(state);
+    _lua.set_function("get_random_point_on_map", [&](const sol::this_state s) {
+      sol::state_view lua(s);
       if (current_map_info.map != nullptr) {
         roguely::common::Point point{0, 0};
 
@@ -1248,17 +1248,17 @@ namespace roguely::engine {
           point = current_map_info.map->get_random_point({0});
         } while (!entity_manager->lua_is_point_unique(point));
 
-        return _lua.create_table_with("x", point.x, "y", point.y);
+        return lua.create_table_with("x", point.x, "y", point.y);
       }
-      return _lua.create_table();
+      return lua.create_table();
     });
-    lua.set_function("set_map", [&](const std::string &name) {
+    _lua.set_function("set_map", [&](const std::string &name) {
       if (const auto map = find_map(name); map != nullptr) {
         current_map_info.map = map;
         current_map_info.name = name;
       }
     });
-    lua.set_function("draw_visible_map",
+    _lua.set_function("draw_visible_map",
                      [&](const std::string &name, const std::string &ss_name, const sol::function &draw_map_callback) {
                        if (current_map_info.name != name) {
                          if (const auto map = find_map(name); map != nullptr) {
@@ -1280,7 +1280,7 @@ namespace roguely::engine {
                                                         });
                        }
                      });
-    lua.set_function("draw_full_map",
+    _lua.set_function("draw_full_map",
                      [&](const std::string &name, const int x, const int y, const int a, const sol::function &draw_map_callback) {
                        if (current_map_info.name != name) {
                          if (const auto map = find_map(name); map != nullptr) {
@@ -1301,38 +1301,38 @@ namespace roguely::engine {
                                                         });
                        }
                      });
-    lua.set_function("add_entity",
+    _lua.set_function("add_entity",
                      [&](const std::string &group_name, const std::string &name, const sol::table &components,
-                         sol::this_state state) {
+                         sol::this_state s) {
                        const auto entity = std::make_shared<ecs::Entity>(name);
-                       auto components_copy = ecs::EntityManager::copy_table(components, state);
+                       auto components_copy = ecs::EntityManager::copy_table(components, s);
                        const auto lua_component = std::make_shared<roguely::components::LuaComponent>(
-                         "lua component", components_copy, state);
+                         "lua component", components_copy, s);
                        entity->add_component(lua_component);
-                       entity_manager->add_entity_to_group(group_name, entity, state);
+                       entity_manager->add_entity_to_group(group_name, entity, s);
                      });
-    lua.set_function("remove_entity", [&](const std::string &entity_group_name, const std::string &entity_id) {
+    _lua.set_function("remove_entity", [&](const std::string &entity_group_name, const std::string &entity_id) {
       entity_manager->remove_entity(entity_group_name, entity_id);
     });
-    lua.set_function("remove_component",
+    _lua.set_function("remove_component",
                      [&](const std::string &entity_group_name, const std::string &entity_name,
                          const std::string &component_name) {
                        entity_manager->remove_lua_component(entity_group_name, entity_name, component_name);
                      });
-    lua.set_function("get_component_value",
+    _lua.set_function("get_component_value",
                      [&](const std::string &entity_group_name, const std::string &entity_name,
-                         const std::string &component_name, const std::string &key, const sol::this_state state) {
-                       sol::state_view _lua(state);
+                         const std::string &component_name, const std::string &key, const sol::this_state s) {
+                       sol::state_view lua(s);
                        if (const auto entity = entity_manager->get_entity_by_name(entity_group_name, entity_name); entity != nullptr) {
-                         if (const auto component = entity->find_first_component_by_type<roguely::components::LuaComponent>(); component != nullptr) {
+                         if (const auto component = entity->find_first_component_by_type<components::LuaComponent>(); component != nullptr) {
                            if (auto lua_component = component->get_property<sol::table>(component_name); lua_component != sol::nil) {
                              return static_cast<sol::object>(lua_component[key]);
                            }
                          }
                        }
-                       return static_cast<sol::object>(_lua.create_table());
+                       return static_cast<sol::object>(lua.create_table());
                      });
-    lua.set_function("set_component_value",
+    _lua.set_function("set_component_value",
                      [&](const std::string &entity_group_name, const std::string &entity_name,
                          const std::string &component_name, const std::string &key, const sol::object& value) {
                        if (const auto entity = entity_manager->get_entity_by_name(entity_group_name, entity_name); entity != nullptr) {
@@ -1343,15 +1343,15 @@ namespace roguely::engine {
                          }
                        }
                      });
-    lua.set_function("update_player_viewport",
+    _lua.set_function("update_player_viewport",
       [&](const int x, const int y, const int width, const int height) {
       current_dimension = update_player_viewport(
-        {x, y},
-        {current_map_info.map->get_width(), current_map_info.map->get_height()});
+                   {x, y},
+                   {current_map_info.map->get_width(), current_map_info.map->get_height()});
     });
-    lua.set_function("get_text_extents", [&](const std::string &t, const sol::this_state state) {
-      sol::state_view _lua(state);
-      sol::table extents_table = _lua.create_table();
+    _lua.set_function("get_text_extents", [&](const std::string &t, const sol::this_state s) {
+      sol::state_view lua(s);
+      sol::table extents_table = lua.create_table();
       if (!default_font.expired()) {
         auto [width, height] = default_font.lock()->get_text_extents(t);
         extents_table.set("width", width);
@@ -1359,10 +1359,10 @@ namespace roguely::engine {
       }
       return extents_table;
     });
-    lua.set_function("add_system", [&](const std::string &name, const sol::function& system_callback) {
+    _lua.set_function("add_system", [&](const std::string &name, const sol::function& system_callback) {
       systems->insert({name, system_callback});
     });
-    lua.set_function("get_random_key_from_table", [&](const sol::table &table) {
+    _lua.set_function("get_random_key_from_table", [&](const sol::table &table) {
       if (table.valid()) {
         std::vector<std::string> keys = {};
         table.for_each([&](const sol::object &key, const sol::object&) { keys.push_back(key.as<std::string>()); });
@@ -1373,39 +1373,39 @@ namespace roguely::engine {
       }
       return std::string{};
     });
-    lua.set_function("find_entity_with_name", [&](const std::string &group_name, const std::string &name) {
+    _lua.set_function("find_entity_with_name", [&](const std::string &group_name, const std::string &name) {
       return entity_manager->get_lua_entity(group_name, name);
     });
-    lua.set_function("get_overlapping_points",
-                     [&](const std::string &entity_name, int x, int y, const sol::function &point_callback) {
+    _lua.set_function("get_overlapping_points",
+                     [&](const std::string &entity_name, const int x, const int y, const sol::function &point_callback) {
                        return entity_manager->lua_for_each_overlapping_point(entity_name, x, y, point_callback);
                      });
-    lua.set_function("get_blocked_points",
+    _lua.set_function("get_blocked_points",
                      [&](const std::string &entity_group, const int x, const int y, const std::string &direction,
-                         const sol::this_state state) {
-                       auto blocked_points = entity_manager->get_lua_blocked_points(entity_group, x, y, direction, state);
+                         const sol::this_state s) {
+                       auto blocked_points = entity_manager->get_lua_blocked_points(entity_group, x, y, direction, s);
                        if (!blocked_points.empty() && current_map_info.map != nullptr) {
                          current_map_info.map->trigger_redraw();
                        }
                        return blocked_points;
                      });
-    lua.set_function("is_within_viewport", [&](const int x, const int y) { return is_within_viewport(x, y); });
-    lua.set_function("force_redraw_map", [&]() {
+    _lua.set_function("is_within_viewport", [&](const int x, const int y) { return is_within_viewport(x, y); });
+    _lua.set_function("force_redraw_map", [&]() {
       if (current_map_info.map != nullptr) { current_map_info.map->trigger_redraw(); }
     });
-    lua.set_function("add_font", [&](const std::string &name, const std::string &font_path, const int font_size) {
+    _lua.set_function("add_font", [&](const std::string &name, const std::string &font_path, const int font_size) {
       auto text = std::make_shared<roguely::common::Text>();
       text->load_font(font_path, font_size);
       texts->insert({name, std::move(text)});
       default_font = text;
     });
-    lua.set_function("set_font", [&](const std::string &name) {
+    _lua.set_function("set_font", [&](const std::string &name) {
       if (const auto text = texts->find(name); text != texts->end()) {
         default_font = text->second;
       }
     });
-    lua.set_function("get_adjacent_points", [&](const int x, const int y, const sol::this_state state) {
-      sol::state_view _lua(state);
+    _lua.set_function("get_adjacent_points", [&](const int x, const int y, const sol::this_state s) {
+      sol::state_view lua(s);
       std::vector<roguely::common::Point> points = {
         /* UP    */ {x, y - 1},
         /* DOWN  */ {x, y + 1},
@@ -1428,31 +1428,29 @@ namespace roguely::engine {
       entity_manager->lua_is_point_unique(points[3]) && current_map_info.map->is_point_blocked(
         points[3].x, points[3].y);
 
-      sol::table adjacent_points = _lua.create_table_with(
-        "up", _lua.create_table_with("blocked", is_up_blocked, "x", points[0].x, "y", points[0].y),
-        "down", _lua.create_table_with("blocked", is_down_blocked, "x", points[1].x, "y", points[1].y),
-        "left", _lua.create_table_with("blocked", is_left_blocked, "x", points[2].x, "y", points[2].y),
+      sol::table adjacent_points = lua.create_table_with(
+        "up", lua.create_table_with("blocked", is_up_blocked, "x", points[0].x, "y", points[0].y),
+        "down", lua.create_table_with("blocked", is_down_blocked, "x", points[1].x, "y", points[1].y),
+        "left", lua.create_table_with("blocked", is_left_blocked, "x", points[2].x, "y", points[2].y),
         "right",
-        _lua.create_table_with("blocked", is_right_blocked, "x", points[3].x, "y", points[3].y));
+        lua.create_table_with("blocked", is_right_blocked, "x", points[3].x, "y", points[3].y));
       return adjacent_points;
     });
-    lua.set_function("map_to_world", [&](int x, int y, const std::string &ss_name, const sol::this_state state) {
-      sol::state_view _lua(state);
-      sol::table table = _lua.create_table();
-      if (current_map_info.map != nullptr) {
-        auto [world_x, world_y] = map::Map::map_to_world(
-          x, y, current_dimension, sprite_sheets->at(ss_name));
-        table.set("x", world_x);
-        table.set("y", world_y);
-        table.set("x", x);
-        table.set("y", y);
-      }
-      return table;
+    _lua.set_function("map_to_world", [&](int x, int y, const std::string &ss_name, const sol::this_state s) {
+      sol::state_view lua(s);
+      sol::table table = lua.create_table();
+     if(current_map_info.map != nullptr)
+     {
+        auto [point_x, point_y] = current_map_info.map->map_to_world(x, y, current_dimension, sprite_sheets->at(ss_name));
+        table.set("x", point_x);
+        table.set("y", point_y);
+     }
+     return table;
     });
-    lua.set_function("set_highlight_color", [&](const std::string &ss_name, const int r, const int g, const int b) {
+    _lua.set_function("set_highlight_color", [&](const std::string &ss_name, const int r, const int g, const int b) {
       if (sprite_sheets->contains(ss_name)) { (*sprite_sheets)[ss_name]->set_highlight_color(r, g, b); }
     });
-    lua.set_function("reset_highlight_color", [&](const std::string &ss_name) {
+    _lua.set_function("reset_highlight_color", [&](const std::string &ss_name) {
       if (sprite_sheets->contains(ss_name)) {
         (*sprite_sheets)[ss_name]->reset_highlight_color();
         if (current_map_info.map != nullptr) {

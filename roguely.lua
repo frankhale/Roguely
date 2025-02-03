@@ -737,10 +737,10 @@ function add_action_log(who, type, multiplier, value, x, y)
 
     local text_extents = get_text_extents(string.format("%s%d", multiplier, value))
 
-    -- print(string.format("coords.x: %d", coords.x))
-    -- print(string.format("coords.y: %d", coords.y))
-    -- print(string.format("text_extents.width: %d", text_extents.width / 2))
-    -- print(string.format("text_extents.height: %d", text_extents.height / 2))
+--     print(string.format("coords.x: %d", coords.x))
+--     print(string.format("coords.y: %d", coords.y))
+--     print(string.format("text_extents.width: %d", text_extents.width / 2))
+--     print(string.format("text_extents.height: %d", text_extents.height / 2))
 
     Game.action_log[generate_uuid()] = {
         transparancy = 255,
