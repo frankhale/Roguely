@@ -13,7 +13,7 @@ Look for the golden candle and if you collect it you will win the game.
 There is no real point to the game. It was a fun exercise to create an engine
 and integrate Lua into it.
 
-## Screenshots
+## Screenshots (some are from the progression over the years of development)
 
 Title Screen:
 
@@ -53,17 +53,13 @@ My first screenshot when I was able to render sprites:
 
 ## Building
 
-This code uses `vcpkg` and for dependencies management and `cmake` to build. This expects a sand build environment to be installed. I've installed `Visual Studio 2022` and use `Visual Studio Code` to develop the game.
+This code uses `vcpkg` and for dependencies management and `cmake` to build.
 
 You can get `vckpg` here: [https://github.com/Microsoft/vcpkg](https://github.com/Microsoft/vcpkg)
 
-You can get `Visual Studio` here:
-[https://visualstudio.microsoft.com/downloads/](https://visualstudio.microsoft.com/downloads/)
-
-You can get `Visual Studio Code` here:
-[https://code.visualstudio.com/](https://code.visualstudio.com/)
-
 Roguely has the following dependencies which are managed by `vcpkg`:
+
+In order to build you must install these dependencies:
 
 - SDL2
 - SDL_image
@@ -71,9 +67,12 @@ Roguely has the following dependencies which are managed by `vcpkg`:
 - SDL_ttf
 - Lua
 - Sol2
-- Boost (using boost/uuid, boost/matrix)
+- Boost
 - magic_enum
 - fmt
+
+You may want to have a look at the CMakePresets.json file to see if it needs 
+updating, specifically the location of `vcpkg`.
 
 ## How to use the game engine
 
@@ -286,4 +285,4 @@ Frank Hale &lt;<frankhaledevelops@gmail.com>&gt;
 
 ## Date
 
-21 June 2023
+11 Feb 2025
