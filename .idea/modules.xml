@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/.idea/roguely-future.iml" filepath="$PROJECT_DIR$/.idea/roguely-future.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/.idea/Roguely.iml" filepath="$PROJECT_DIR$/.idea/Roguely.iml" />
+>>>>>>> 9acd588d07958031e18fd2f57015a8deaf20a2bf
     </modules>
   </component>
 </project>

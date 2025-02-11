@@ -5,6 +5,8 @@
 
 out/
 CMakeFiles/
+cmake-build-debug-visual-studio/
+cmake-build-release-visual-studio/
 
 # User-specific files
 *.rsuser
